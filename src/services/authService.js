@@ -2,11 +2,14 @@ import prisma from "../config/db.js";
 import { generateToken } from "../utils/generateToken.js";
 import { comparePassword } from "../utils/hashPassword.js";
 
-export const loginUser = async ({ email, password }) => {
+export const loginUser = async ({ email, password, companyId = null }) => {
 
   // 1. Find user
-  const user = await prisma.user.findUnique({
-    where: { email }
+  const user = await prisma.user.findFirst({
+    where: {
+      email,
+      companyId
+    }
   });
 
   // 2. Check if user exists
