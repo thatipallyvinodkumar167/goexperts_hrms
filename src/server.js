@@ -1,28 +1,33 @@
 import express from "express";
 import dotenv from "dotenv";
-import authRoutes from "./routes/authRoutes.js"; // ✅ import routes
+import authRoutes from "./routes/authRoutes.js";
+import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
 
-// create express app
 const app = express();
 
-// load env variables
 dotenv.config();
 
-// middleware to parse JSON
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
-// routes
-app.use("/api/auth", authRoutes); // ✅ fixed path
-
-// test route
 app.get("/", (req, res) => {
   res.send("Go experts HRMS..");
 });
 
-// PORT
 const PORT = process.env.PORT || 5002;
 
-// start server
-app.listen(PORT, () => {   // ✅ correct method
-  console.log(`Server is running on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await ensureSuperAdmin();
+    console.log("Default super admin ensured: goexperts@admin");
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error.message);
+    process.exit(1);
+  }
+};
+
+startServer();

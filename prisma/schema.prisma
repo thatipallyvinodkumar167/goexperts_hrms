@@ -1,38 +1,247 @@
-// create prisma tool
 generator client {
   provider = "prisma-client-js"
 }
 
-// db connection
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-// blueprint of DATABASE
-model Company {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  users     User[]
-  createdAt DateTime @default(now())
-}
-
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role
-
-  companyId String?
-  company   Company? @relation(fields: [companyId], references: [id])
-}
+//////////////////////////
+// ENUMS
+//////////////////////////
 
 enum Role {
   SUPER_ADMIN
   COMPANY_ADMIN
   HR
   EMPLOYEE
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+//////////////////////////
+// USERS (UNIFIED TABLE)
+//////////////////////////
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  password    String
+  role        Role
+  status      Status   @default(ACTIVE)
+
+  companyId   String?
+  company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])
+  createdCompanies Company[] @relation("CompanyCreator")
+
+  createdAt   DateTime @default(now())
+
+  employee    Employee?
+  hr          HR?
+
+  auditLogs   AuditLog[]
+
+  @@unique([email, companyId]) // multi-tenant login
+}
+
+//////////////////////////
+// SUPER ADMIN → COMPANY
+//////////////////////////
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  domain      String?
+  status      Status   @default(ACTIVE)
+
+  createdById String
+  createdBy   User     @relation("CompanyCreator", fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  users       User[]   @relation("CompanyUsers")
+  departments Department[]
+  designations Designation[]
+  leaveTypes  LeaveType[]
+  subscriptions Subscription[]
+
+  @@index([createdById])
+}
+
+//////////////////////////
+// HR PROFILE
+//////////////////////////
+
+model HR {
+  id        String @id @default(uuid())
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id])
+
+  permissions Json
+}
+
+//////////////////////////
+// EMPLOYEE PROFILE
+//////////////////////////
+
+model Employee {
+  id            String @id @default(uuid())
+
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id])
+
+  employeeCode  String @unique
+
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id])
+
+  joiningDate   DateTime
+  salary        Float
+
+  managerId     String?
+  manager       Employee? @relation("Manager", fields: [managerId], references: [id])
+  subordinates  Employee[] @relation("Manager")
+
+  attendances   Attendance[]
+  leaves        Leave[]
+  payrolls      Payroll[]
+}
+
+//////////////////////////
+// COMPANY STRUCTURE
+//////////////////////////
+
+model Department {
+  id        String @id @default(uuid())
+  name      String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  employees Employee[]
+}
+
+model Designation {
+  id        String @id @default(uuid())
+  title     String
+  level     Int
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  employees Employee[]
+}
+
+//////////////////////////
+// ATTENDANCE
+//////////////////////////
+
+model Attendance {
+  id         String @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     String
+}
+
+//////////////////////////
+// LEAVE
+//////////////////////////
+
+model LeaveType {
+  id        String @id @default(uuid())
+  name      String
+  maxDays   Int
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  leaves    Leave[]
+}
+
+model Leave {
+  id          String @id @default(uuid())
+
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  leaveTypeId String
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  fromDate    DateTime
+  toDate      DateTime
+
+  status      String
+}
+
+//////////////////////////
+// PAYROLL
+//////////////////////////
+
+model Payroll {
+  id          String @id @default(uuid())
+
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  basicSalary Float
+  deductions  Float
+  bonus       Float
+  netSalary   Float
+
+  month       Int
+  year        Int
+}
+
+//////////////////////////
+// SUBSCRIPTION
+//////////////////////////
+
+model SubscriptionPlan {
+  id        String @id @default(uuid())
+  name      String
+  price     Float
+  duration  Int
+  features  Json
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id          String @id @default(uuid())
+
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+
+  planId      String
+  plan        SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  startDate   DateTime
+  endDate     DateTime
+}
+
+//////////////////////////
+// AUDIT
+//////////////////////////
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  action    String
+  module    String
+
+  createdAt DateTime @default(now())
 }
