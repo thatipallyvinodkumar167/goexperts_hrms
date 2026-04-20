@@ -12,6 +12,7 @@ export const createCompanyService = async ({
     createdById
 
 }) => {
+    const normalizedDomain = domain?.trim().toLowerCase() || null;
 
     //checking company is there or not 
     const existingCompany = await prisma.company.findFirst({where : {email}});
@@ -28,6 +29,15 @@ export const createCompanyService = async ({
         throw new Error("admin user already existing");
     }
 
+    if (normalizedDomain) {
+        const existingDomain = await prisma.company.findFirst({
+            where: { domain: normalizedDomain }
+        });
+        if (existingDomain) {
+            throw new Error("company domain already exists");
+        }
+    }
+
     const hashedPassword = await hashPassword(password);
 
     const result = await prisma.$transaction( async (tx) => {
@@ -35,7 +45,7 @@ export const createCompanyService = async ({
         const company = await tx.company.create({
            data : { name,
             email,
-            domain,
+            domain: normalizedDomain,
             createdById
            }  
         });

@@ -83,7 +83,7 @@ model Company {
   id          String   @id @default(uuid())
   name        String
   email       String
-  domain      String?
+  domain      String?  @unique
   status      Status   @default(ACTIVE)
 
   createdById String
