@@ -2,7 +2,10 @@ import prisma from "../config/db.js";
 import { generateToken } from "../utils/generateToken.js";
 import { comparePassword } from "../utils/hashPassword.js";
 
-export const loginUser = async ({ email, password, companyId = null }) => {
+export const loginUser = async ({ email, password, companyId = null } = {}) => {
+  if (!email || !password) {
+    throw new Error("email and password are required");
+  }
 
   // 1. Find user
   const user = await prisma.user.findFirst({
