@@ -379,3 +379,12 @@ model AuditLog {
 
   createdAt DateTime @default(now())
 }
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   // hashed token
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
