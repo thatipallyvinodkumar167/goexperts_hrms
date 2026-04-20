@@ -1,6 +1,7 @@
 import express from "express";
-import { authMiddleware } from "../middleware/authMiddleware";
-import { allowRoles } from "../middleware/roleMiddleware";
+import { authMiddleware } from "../middleware/authMiddleware.js";
+import { allowRoles } from "../middleware/roleMiddleware.js";
+import { createCompany } from "../controller/companyController.js";
 
 
 const routes = express.Router();

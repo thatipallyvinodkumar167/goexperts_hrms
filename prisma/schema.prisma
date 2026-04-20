@@ -23,6 +23,29 @@ enum Status {
   INACTIVE
 }
 
+enum EmploymentType {
+  FRESHER
+  EXPERIENCED
+  INTERN
+  CONTRACT
+}
+
+enum CandidateStatus {
+  APPLIED
+  INTERVIEW
+  SELECTED
+  REJECTED
+  OFFERED
+  HIRED
+}
+
+enum OfferStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
 //////////////////////////
 // USERS (UNIFIED TABLE)
 //////////////////////////
@@ -43,6 +66,9 @@ model User {
 
   employee    Employee?
   hr          HR?
+  createdCandidates Candidate[]
+  interviewsConducted Interview[]
+  createdOffers OfferLetter[]
 
   auditLogs   AuditLog[]
 
@@ -70,6 +96,7 @@ model Company {
   designations Designation[]
   leaveTypes  LeaveType[]
   subscriptions Subscription[]
+  candidates  Candidate[]
 
   @@index([createdById])
 }
@@ -105,15 +132,122 @@ model Employee {
   designation   Designation @relation(fields: [designationId], references: [id])
 
   joiningDate   DateTime
+  employmentType EmploymentType
+  workLocation  String?
   salary        Float
 
   managerId     String?
   manager       Employee? @relation("Manager", fields: [managerId], references: [id])
   subordinates  Employee[] @relation("Manager")
 
+  experience    EmployeeExperience[]
+  personal      EmployeePersonal?
+  candidateId   String?
+  candidate     Candidate? @relation(fields: [candidateId], references: [id])
+  joiningLetter JoiningLetter?
+
   attendances   Attendance[]
   leaves        Leave[]
   payrolls      Payroll[]
+}
+
+//////////////////////////
+// RECRUITMENT
+//////////////////////////
+
+model Candidate {
+  id          String @id @default(uuid())
+
+  name        String
+  email       String
+  phone       String?
+  resumeUrl   String?
+
+  status      CandidateStatus @default(APPLIED)
+
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+
+  createdById String
+  createdBy   User @relation(fields: [createdById], references: [id])
+
+  interviews  Interview[]
+  offer       OfferLetter?
+  employees   Employee[]
+
+  createdAt   DateTime @default(now())
+}
+
+model Interview {
+  id            String @id @default(uuid())
+
+  candidateId   String
+  candidate     Candidate @relation(fields: [candidateId], references: [id])
+
+  interviewerId String
+  interviewer   User @relation(fields: [interviewerId], references: [id])
+
+  round         String
+  feedback      String?
+  status        String
+  scheduledAt   DateTime
+
+  createdAt     DateTime @default(now())
+}
+
+model OfferLetter {
+  id          String @id @default(uuid())
+
+  candidateId String @unique
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+
+  salary      Float
+  joiningDate DateTime
+  status      OfferStatus @default(SENT)
+
+  createdById String
+  createdBy   User @relation(fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+model JoiningLetter {
+  id          String @id @default(uuid())
+
+  employeeId  String @unique
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  joiningDate DateTime
+  documentUrl String?
+
+  createdAt   DateTime @default(now())
+}
+
+model EmployeeExperience {
+  id           String @id @default(uuid())
+
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+
+  companyName  String
+  role         String
+  startDate    DateTime
+  endDate      DateTime?
+
+  totalYears   Float?
+}
+
+model EmployeePersonal {
+  id                String @id @default(uuid())
+
+  employeeId        String @unique
+  employee          Employee @relation(fields: [employeeId], references: [id])
+
+  phone             String?
+  address           String?
+  gender            String?
+  dob               DateTime?
+  emergencyContact  String?
 }
 
 //////////////////////////
