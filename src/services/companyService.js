@@ -6,6 +6,7 @@ export const createCompanyService = async ({
     name,
     email,
     domain,
+    location,
     password,
     adminName,
     adminEmail,
@@ -13,6 +14,7 @@ export const createCompanyService = async ({
 
 }) => {
     const normalizedDomain = domain?.trim().toLowerCase() || null;
+    const normalizedLocation = location?.trim() || null;
 
     //checking company is there or not 
     const existingCompany = await prisma.company.findFirst({where : {email}});
@@ -46,6 +48,7 @@ export const createCompanyService = async ({
            data : { name,
             email,
             domain: normalizedDomain,
+            location: normalizedLocation,
             createdById
            }  
         });

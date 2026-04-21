@@ -1,7 +1,12 @@
 import prisma from "../config/db.js";
+import crypto from "crypto";
 import { generateToken } from "../utils/generateToken.js";
-import { comparePassword } from "../utils/hashPassword.js";
+import { comparePassword, hashPassword } from "../utils/hashPassword.js";
+import { resetPasswordTemplate } from "../utils/templates/resetPasswordTemplate.js";
+import { allowedNodeEnvironmentFlags } from "process";
 
+
+//login user service
 export const loginUser = async ({ email, password } = {}) => {
   if (!email || !password) {
     throw new Error("email and password are required");
@@ -82,3 +87,99 @@ export const loginUser = async ({ email, password } = {}) => {
     token: generateToken(user),
   };
 };
+
+
+
+//forgot password service
+
+export const forgotPasswordService = async (email) => {
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  //checking mail
+  const user = await prisma.user.findFirst({
+    where : {
+      email : normalizedEmail,
+      status :"ACTIVE"
+    }
+  });
+
+if(!user){
+  throw Error("User not found");
+}
+
+//generate random token 
+const rawToken = crypto.randomBytes(32).toString("hex");
+
+//hash token
+const hashToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+//delete old token
+await prisma.passwordResetToken.deleteMany({where : {userId : user.id}});
+
+//store token
+await prisma.passwordResetToken.create({where : {
+
+  data : {
+    token : hashToken,
+    userId :user.id,
+    exprireAt : new Date(Date.now() + 15 * 60 * 1000)//15 min
+  }
+}});
+
+//reset link 
+const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+
+//send email
+await sendEmail(
+  user.email,
+  "Reset Your Password",
+  resetPasswordTemplate(user.email,resetLink)
+);
+
+return {message : "Reset link sent to email"};
+
+};
+
+
+
+//reset password service
+export const resetPasswordService = async (token, newPassword) => {
+
+  //hash incomming token 
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+
+  //find valid token 
+  const resetToken = await prisma.passwordResetToken.findFirst({
+    where : {
+      token : hashedToken,
+      exprireAt : {gt :new Date()}
+    }
+  });
+
+if(!resetToken){
+  throw Error(" Invalid or expired token ") 
+}
+
+
+//new hashed password
+const newHashedPassword = await hashPassword(newPassword);
+
+//update user
+await prisma.user.update({
+  where : {id : resetToken.userId},
+  data : {password : newHashedPassword}
+});
+
+//delete token
+await prisma.passwordResetToken.delete({
+  where : { id : resetToken.id}
+});
+
+
+return {message : "password reset successfully"}
+
+
+
+}

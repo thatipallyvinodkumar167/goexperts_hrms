@@ -30,24 +30,8 @@ enum EmploymentType {
   CONTRACT
 }
 
-enum CandidateStatus {
-  APPLIED
-  INTERVIEW
-  SELECTED
-  REJECTED
-  OFFERED
-  HIRED
-}
-
-enum OfferStatus {
-  SENT
-  ACCEPTED
-  REJECTED
-  EXPIRED
-}
-
 //////////////////////////
-// USERS (UNIFIED TABLE)
+// USERS
 //////////////////////////
 
 model User {
@@ -60,24 +44,22 @@ model User {
 
   companyId   String?
   company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])
+
   createdCompanies Company[] @relation("CompanyCreator")
 
   createdAt   DateTime @default(now())
 
   employee    Employee?
   hr          HR?
-  createdCandidates Candidate[]
-  interviewsConducted Interview[]
-  createdOffers OfferLetter[]
-  passwordResetTokens PasswordResetToken[]
 
   auditLogs   AuditLog[]
+  passwordResetTokens PasswordResetToken[]
 
-  @@unique([email, companyId]) // multi-tenant login
+  @@unique([email, companyId])
 }
 
 //////////////////////////
-// SUPER ADMIN → COMPANY
+// COMPANY
 //////////////////////////
 
 model Company {
@@ -85,6 +67,7 @@ model Company {
   name        String
   email       String
   domain      String?  @unique
+  location    String?
   status      Status   @default(ACTIVE)
 
   createdById String
@@ -97,7 +80,6 @@ model Company {
   designations Designation[]
   leaveTypes  LeaveType[]
   subscriptions Subscription[]
-  candidates  Candidate[]
 
   @@index([createdById])
 }
@@ -115,7 +97,7 @@ model HR {
 }
 
 //////////////////////////
-// EMPLOYEE PROFILE
+// EMPLOYEE
 //////////////////////////
 
 model Employee {
@@ -141,10 +123,9 @@ model Employee {
   manager       Employee? @relation("Manager", fields: [managerId], references: [id])
   subordinates  Employee[] @relation("Manager")
 
-  experience    EmployeeExperience[]
   personal      EmployeePersonal?
-  candidateId   String?
-  candidate     Candidate? @relation(fields: [candidateId], references: [id])
+  experience    EmployeeExperience[]
+
   joiningLetter JoiningLetter?
 
   attendances   Attendance[]
@@ -153,64 +134,8 @@ model Employee {
 }
 
 //////////////////////////
-// RECRUITMENT
+// JOINING LETTER (HRMS STYLE)
 //////////////////////////
-
-model Candidate {
-  id          String @id @default(uuid())
-
-  name        String
-  email       String
-  phone       String?
-  resumeUrl   String?
-
-  status      CandidateStatus @default(APPLIED)
-
-  companyId   String
-  company     Company @relation(fields: [companyId], references: [id])
-
-  createdById String
-  createdBy   User @relation(fields: [createdById], references: [id])
-
-  interviews  Interview[]
-  offer       OfferLetter?
-  employees   Employee[]
-
-  createdAt   DateTime @default(now())
-}
-
-model Interview {
-  id            String @id @default(uuid())
-
-  candidateId   String
-  candidate     Candidate @relation(fields: [candidateId], references: [id])
-
-  interviewerId String
-  interviewer   User @relation(fields: [interviewerId], references: [id])
-
-  round         String
-  feedback      String?
-  status        String
-  scheduledAt   DateTime
-
-  createdAt     DateTime @default(now())
-}
-
-model OfferLetter {
-  id          String @id @default(uuid())
-
-  candidateId String @unique
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
-
-  salary      Float
-  joiningDate DateTime
-  status      OfferStatus @default(SENT)
-
-  createdById String
-  createdBy   User @relation(fields: [createdById], references: [id])
-
-  createdAt   DateTime @default(now())
-}
 
 model JoiningLetter {
   id          String @id @default(uuid())
@@ -222,6 +147,23 @@ model JoiningLetter {
   documentUrl String?
 
   createdAt   DateTime @default(now())
+}
+
+//////////////////////////
+// PERSONAL & EXPERIENCE
+//////////////////////////
+
+model EmployeePersonal {
+  id                String @id @default(uuid())
+
+  employeeId        String @unique
+  employee          Employee @relation(fields: [employeeId], references: [id])
+
+  phone             String?
+  address           String?
+  gender            String?
+  dob               DateTime?
+  emergencyContact  String?
 }
 
 model EmployeeExperience {
@@ -236,19 +178,6 @@ model EmployeeExperience {
   endDate      DateTime?
 
   totalYears   Float?
-}
-
-model EmployeePersonal {
-  id                String @id @default(uuid())
-
-  employeeId        String @unique
-  employee          Employee @relation(fields: [employeeId], references: [id])
-
-  phone             String?
-  address           String?
-  gender            String?
-  dob               DateTime?
-  emergencyContact  String?
 }
 
 //////////////////////////
@@ -317,7 +246,6 @@ model Leave {
 
   fromDate    DateTime
   toDate      DateTime
-
   status      String
 }
 
@@ -350,6 +278,7 @@ model SubscriptionPlan {
   price     Float
   duration  Int
   features  Json
+
   subscriptions Subscription[]
 }
 
@@ -380,9 +309,14 @@ model AuditLog {
 
   createdAt DateTime @default(now())
 }
+
+//////////////////////////
+// PASSWORD RESET
+//////////////////////////
+
 model PasswordResetToken {
   id        String   @id @default(uuid())
-  token     String   // hashed token
+  token     String
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 

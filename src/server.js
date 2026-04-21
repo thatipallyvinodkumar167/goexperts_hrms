@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
-import candidateRoutes from "./routes/candidateRoutes.js"
+import employeeRoutes from "./routes/employeeRoutes.js"
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
 
 const app = express();
@@ -14,7 +14,7 @@ app.use(express.json());
 //routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
-app.use("/api/candidate", candidateRoutes)
+app.use("/api/employee", employeeRoutes);
 
 
 app.get("/", (req, res) => {
