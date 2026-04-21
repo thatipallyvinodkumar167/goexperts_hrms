@@ -14,7 +14,7 @@ export const createEmployeeService = async (data) => {
         designationId,
         salary,
         joiningDate,
-        employeeType,
+        employmentType,
         managerId,
         personal,
         experience,
@@ -83,7 +83,7 @@ const employee = await tx.employee.create({
         designationId,
         joiningDate : new Date(joiningDate),
         salary,
-        employeeType,
+        employmentType,
         managerId: managerId || null,
     
     }
@@ -101,7 +101,7 @@ if(personal){
 }
 
 //Experience 
-if(employeeType === "EXPERIENCED" && experience?.length){
+if(employmentType === "EXPERIENCED" && experience?.length){
     for( const exp of experience){
         await tx.employeeExperience.create({
             data : {
