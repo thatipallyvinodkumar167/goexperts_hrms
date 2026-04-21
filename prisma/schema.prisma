@@ -69,6 +69,7 @@ model User {
   createdCandidates Candidate[]
   interviewsConducted Interview[]
   createdOffers OfferLetter[]
+  passwordResetTokens PasswordResetToken[]
 
   auditLogs   AuditLog[]
 
