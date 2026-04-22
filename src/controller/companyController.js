@@ -1,4 +1,5 @@
 import { createCompanyService } from "../services/companyService.js";
+import prisma from "../config/db.js";
 
 //create company
 export const createCompany = async (req, res) => {
