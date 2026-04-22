@@ -211,6 +211,79 @@ export const deleteCompanyService = async ({ id, deletedById }) => {
   }
 
   await prisma.$transaction(async (tx) => {
+    // Collect company user ids for cleanup of user-bound tables.
+    const companyUsers = await tx.user.findMany({
+      where: { companyId: id },
+      select: { id: true },
+    });
+    const companyUserIds = companyUsers.map((u) => u.id);
+
+    // Employee tree cleanup.
+    await tx.attendance.deleteMany({
+      where: { employee: { user: { companyId: id } } },
+    });
+    await tx.leave.deleteMany({
+      where: { employee: { user: { companyId: id } } },
+    });
+    await tx.payroll.deleteMany({
+      where: { employee: { user: { companyId: id } } },
+    });
+    await tx.employeeExperience.deleteMany({
+      where: { employee: { user: { companyId: id } } },
+    });
+    await tx.employeePersonal.deleteMany({
+      where: { employee: { user: { companyId: id } } },
+    });
+    await tx.joiningLetter.deleteMany({
+      where: { employee: { user: { companyId: id } } },
+    });
+    await tx.employee.deleteMany({
+      where: { user: { companyId: id } },
+    });
+
+    // Candidate pipeline cleanup.
+    await tx.interview.deleteMany({
+      where: { candidate: { companyId: id } },
+    });
+    await tx.offerLetter.deleteMany({
+      where: { candidate: { companyId: id } },
+    });
+    await tx.candidate.deleteMany({
+      where: { companyId: id },
+    });
+
+    // Company-level cleanup.
+    await tx.subscription.deleteMany({
+      where: { companyId: id },
+    });
+    await tx.leaveType.deleteMany({
+      where: { companyId: id },
+    });
+    await tx.department.deleteMany({
+      where: { companyId: id },
+    });
+    await tx.designation.deleteMany({
+      where: { companyId: id },
+    });
+
+    // User-bound cleanup for company users.
+    if (companyUserIds.length > 0) {
+      await tx.passwordResetToken.deleteMany({
+        where: { userId: { in: companyUserIds } },
+      });
+      await tx.auditLog.deleteMany({
+        where: { userId: { in: companyUserIds } },
+      });
+      await tx.hR.deleteMany({
+        where: { userId: { in: companyUserIds } },
+      });
+    }
+
+    // Finally remove company users and company.
+    await tx.user.deleteMany({
+      where: { companyId: id },
+    });
+
     await tx.company.delete({
       where: { id },
     });
