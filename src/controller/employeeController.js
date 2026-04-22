@@ -1,7 +1,7 @@
 import { createEmployeeService } from "../services/createEmployeeService.js"
 import prisma from "../config/db.js";
 
-
+//create emp
 export const createEmployee = async (req, res) => {
   try {
     
@@ -10,14 +10,14 @@ export const createEmployee = async (req, res) => {
       createdBy: req.user,
     });
 
-
-
     res.status(201).json({ success: true, message: "Employee created successfully", data });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
+
+//get all emps
 export const getAllEmployees = async (req, res) => {
   try {
     const companyId = req.user?.companyId;
@@ -37,6 +37,8 @@ export const getAllEmployees = async (req, res) => {
   }
 };
 
+
+//get emp by id
 export const getEmployeeById = async (req, res) => {
   try {
     const companyId = req.user?.companyId;
@@ -60,6 +62,8 @@ export const getEmployeeById = async (req, res) => {
   }
 };
 
+
+//update emp by id
 export const updateEmployee = async (req, res) => {
   res.status(501).json({ success: false, message: "Update employee not implemented yet" });
 };

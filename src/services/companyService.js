@@ -2,6 +2,8 @@ import prisma from "../config/db.js";
 import { hashPassword } from "../utils/hashPassword.js";
 
 
+
+//
 export const createCompanyService = async ({
     name,
     email,
