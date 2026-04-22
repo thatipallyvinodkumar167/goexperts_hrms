@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js"
+import logger from "./middleware/loggerMiddleware.js";
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
 
 const app = express();
@@ -10,6 +11,9 @@ const app = express();
 dotenv.config();
 
 app.use(express.json());
+
+//loggers
+app.use(logger);
 
 //routes
 app.use("/api/auth", authRoutes);

@@ -211,6 +211,20 @@ export const deleteCompanyService = async ({ id, deletedById }) => {
   }
 
   await prisma.$transaction(async (tx) => {
+    const deleteManyIfExists = async (delegateName, args) => {
+      const delegate = tx[delegateName];
+      if (delegate && typeof delegate.deleteMany === "function") {
+        await delegate.deleteMany(args);
+      }
+    };
+
+    const deleteIfExists = async (delegateName, args) => {
+      const delegate = tx[delegateName];
+      if (delegate && typeof delegate.delete === "function") {
+        await delegate.delete(args);
+      }
+    };
+
     // Collect company user ids for cleanup of user-bound tables.
     const companyUsers = await tx.user.findMany({
       where: { companyId: id },
@@ -219,81 +233,89 @@ export const deleteCompanyService = async ({ id, deletedById }) => {
     const companyUserIds = companyUsers.map((u) => u.id);
 
     // Employee tree cleanup.
-    await tx.attendance.deleteMany({
+    await deleteManyIfExists("attendance", {
       where: { employee: { user: { companyId: id } } },
     });
-    await tx.leave.deleteMany({
+    await deleteManyIfExists("leave", {
       where: { employee: { user: { companyId: id } } },
     });
-    await tx.payroll.deleteMany({
+    await deleteManyIfExists("payroll", {
       where: { employee: { user: { companyId: id } } },
     });
-    await tx.employeeExperience.deleteMany({
+    await deleteManyIfExists("employeeExperience", {
       where: { employee: { user: { companyId: id } } },
     });
-    await tx.employeePersonal.deleteMany({
+    await deleteManyIfExists("employeePersonal", {
       where: { employee: { user: { companyId: id } } },
     });
-    await tx.joiningLetter.deleteMany({
+    await deleteManyIfExists("joiningLetter", {
       where: { employee: { user: { companyId: id } } },
     });
-    await tx.employee.deleteMany({
+    await deleteManyIfExists("employee", {
       where: { user: { companyId: id } },
     });
 
     // Candidate pipeline cleanup.
-    await tx.interview.deleteMany({
+    await deleteManyIfExists("interview", {
       where: { candidate: { companyId: id } },
     });
-    await tx.offerLetter.deleteMany({
+    await deleteManyIfExists("offerLetter", {
       where: { candidate: { companyId: id } },
     });
-    await tx.candidate.deleteMany({
+    await deleteManyIfExists("candidate", {
       where: { companyId: id },
     });
 
     // Company-level cleanup.
-    await tx.subscription.deleteMany({
+    await deleteManyIfExists("subscription", {
       where: { companyId: id },
     });
-    await tx.leaveType.deleteMany({
+    await deleteManyIfExists("leaveType", {
       where: { companyId: id },
     });
-    await tx.department.deleteMany({
+    await deleteManyIfExists("department", {
       where: { companyId: id },
     });
-    await tx.designation.deleteMany({
+    await deleteManyIfExists("designation", {
       where: { companyId: id },
     });
 
     // User-bound cleanup for company users.
     if (companyUserIds.length > 0) {
-      await tx.passwordResetToken.deleteMany({
+      await deleteManyIfExists("passwordResetToken", {
         where: { userId: { in: companyUserIds } },
       });
-      await tx.auditLog.deleteMany({
+      await deleteManyIfExists("auditLog", {
         where: { userId: { in: companyUserIds } },
       });
-      await tx.hR.deleteMany({
-        where: { userId: { in: companyUserIds } },
-      });
+      // Prisma naming can be `hr` or `hR` depending on generated client shape.
+      if (tx.hr && typeof tx.hr.deleteMany === "function") {
+        await tx.hr.deleteMany({ where: { userId: { in: companyUserIds } } });
+      } else if (tx.hR && typeof tx.hR.deleteMany === "function") {
+        await tx.hR.deleteMany({ where: { userId: { in: companyUserIds } } });
+      }
     }
 
     // Finally remove company users and company.
-    await tx.user.deleteMany({
+    await deleteManyIfExists("user", {
       where: { companyId: id },
     });
 
-    await tx.company.delete({
+    await deleteIfExists("company", {
       where: { id },
     });
 
-    await tx.auditLog.create({
-      data: {
-        userId: deletedById,
-        action: "DELETE",
-        module: "COMPANY",
-      },
-    });
+    if (tx.auditLog && typeof tx.auditLog.create === "function") {
+      await tx.auditLog.create({
+        data: {
+          userId: deletedById,
+          action: "DELETE",
+          module: "COMPANY",
+        },
+      });
+    }
+  }, {
+    maxWait: 10000,
+    timeout: 60000,
   });
 };
