@@ -20,7 +20,7 @@ export const companyStatusCron = () => {
 
     const activeUsers = company.users.filter(
         (user) => 
-        ["COMPANY_ADMIN","HR"].includes(user.role) && 
+        ["OWNER","HR"].includes(user.role) && 
         user.lastLoginAt &&
         user.lastLoginAt > thirtyDaysAgo
     );

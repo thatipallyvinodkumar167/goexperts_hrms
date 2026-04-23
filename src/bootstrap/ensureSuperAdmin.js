@@ -3,7 +3,8 @@
 
 // const SUPER_ADMIN_EMAIL = "goexperts@admin";
 // const SUPER_ADMIN_PASSWORD = "goexperts";
-// const SUPER_ADMIN_NAME = "GoExperts Super Admin";
+// const SUPER_ADMIN_NAME = "GoExperts";
+// const SUPER_ADMIN_PROFILE_LOGO = "https://cdn.goexperts.com/profiles/super-admin.png";
 
 // export const ensureSuperAdmin = async () => {
 //   const hashedPassword = await hashPassword(SUPER_ADMIN_PASSWORD);
@@ -22,6 +23,7 @@
 //         name: SUPER_ADMIN_NAME,
 //         password: hashedPassword,
 //         role: "SUPER_ADMIN",
+//         profileLogo: SUPER_ADMIN_PROFILE_LOGO,
 //         companyId: null,
 //       },
 //     });
@@ -34,6 +36,7 @@
 //       email: SUPER_ADMIN_EMAIL,
 //       password: hashedPassword,
 //       role: "SUPER_ADMIN",
+//       profileLogo: SUPER_ADMIN_PROFILE_LOGO,
 //       companyId: null,
 //     },
 //   });

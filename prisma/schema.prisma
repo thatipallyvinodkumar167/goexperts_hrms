@@ -13,7 +13,7 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN
-  COMPANY_ADMIN
+  OWNER
   HR
   EMPLOYEE
 }

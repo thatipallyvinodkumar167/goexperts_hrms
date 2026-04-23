@@ -62,7 +62,7 @@ export const createCompanyService = async ({
                 name : adminName,
                 email,
                 password : hashedPassword,
-                role : "COMPANY_ADMIN",
+                role : "OWNER",
                 companyId : company.id
             }
         });
@@ -139,9 +139,9 @@ export const updateCompanyService = async ({
     throw new Error("company not found");
   }
 
-  const adminUser = existing.users.find((u) => u.role === "COMPANY_ADMIN");
+  const adminUser = existing.users.find((u) => u.role === "OWNER");
   if (!adminUser) {
-    throw new Error("company admin not found");
+    throw new Error("company owner not found");
   }
 
   let normalizedDomain = existing.domain;

@@ -10,23 +10,23 @@ const router = express.Router();
 router.post(
   "/create",
   authMiddleware,
-  allowRoles("COMPANY_ADMIN", "HR"),
+  allowRoles("OWNER", "HR"),
   createEmployee
 );
 
 
 //get emp
-router.get("/", authMiddleware, allowRoles("COMPANY_ADMIN", "HR", "MANAGER"), getAllEmployees);
+router.get("/", authMiddleware, allowRoles("OWNER", "HR"), getAllEmployees);
 
 
 //get emp by id
-router.get("/:id", authMiddleware, allowRoles("COMPANY_ADMIN", "HR", "MANAGER"), getEmployeeById);
+router.get("/:id", authMiddleware, allowRoles("OWNER", "HR"), getEmployeeById);
 
 //update emp
-router.put("/:id", authMiddleware, allowRoles("COMPANY_ADMIN", "HR", "MANAGER"), updateEmployee);
+router.put("/:id", authMiddleware, allowRoles("OWNER", "HR"), updateEmployee);
 
 //delete emp 
-router.delete("/:id", authMiddleware, allowRoles("COMPANY_ADMIN", "HR", "MANAGER"), deleteEmployee);
+router.delete("/:id", authMiddleware, allowRoles("OWNER", "HR"), deleteEmployee);
 
 
 
