@@ -2,6 +2,7 @@ import cron from "node-cron";
 import prisma from "../config/db.js";
 
 
+
 export const companyStatusCron = () => {
     cron.schedule("0 0 * * *", async () => {
         console.log("running company status cron");
