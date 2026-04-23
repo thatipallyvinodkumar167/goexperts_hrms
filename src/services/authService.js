@@ -197,4 +197,53 @@ return {message : "password reset successfully"}
 
 
 
+};
+
+
+export const changePasswordService = async ({ userId, oldPassword, newPassword }) => {
+
+  if( !oldPassword || !newPassword ){
+    throw Error("old password and new password requried");
+  }
+
+  //get user
+  const user = await prisma.user.findUnique({
+    where : { id : userId}
+  });
+
+  if(!user){
+    throw Error("user not found");
+  }
+
+  //checking password
+  const isMatch = await comparePassword(oldPassword, newPassword);
+
+  if(!isMatch){
+    throw Error("old password is inncorrect");
+  }
+
+  //prevent same password
+  const isSame = await comparePassword(newPassword, user.password);
+
+  if(!isSame){
+    throw Error(" New password cannot be same as old password");
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  //update password
+  await prisma.user.update({
+    where : {id : userId},
+    data : {password : hashPassword}
+  });
+
+  await prisma.auditLog.create({
+    data : {
+      userId,
+      action : "changed_password",
+      module : "AUTH"
+    }
+  });
+
+  return {message : "password changed successfully"};
 }

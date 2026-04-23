@@ -69,6 +69,9 @@ model Company {
   id          String   @id @default(uuid())
   name        String
   email       String
+  ownerName   String?
+  ownerEmail  String?
+  ownerPhone  String?
   domain      String?  @unique
   location    String?
   status      Status   @default(ACTIVE)
