@@ -11,7 +11,6 @@ export const createCompanyService = async ({
     location,
     password,
     adminName,
-    adminEmail,
     createdById
 
 }) => {
@@ -27,7 +26,7 @@ export const createCompanyService = async ({
     }
 
     //checking company admin email is there or not 
-    const existingAdmin = await prisma.user.findFirst({where : {email : adminEmail, companyId : null}});
+    const existingAdmin = await prisma.user.findFirst({where : {email, companyId : null}});
 
     if(existingAdmin){
         throw new Error("admin user already existing");
@@ -58,7 +57,7 @@ export const createCompanyService = async ({
         const adminUser = await tx.user.create({
             data : {
                 name : adminName,
-                email : adminEmail,
+                email,
                 password : hashedPassword,
                 role : "COMPANY_ADMIN",
                 companyId : company.id
@@ -80,6 +79,7 @@ export const createCompanyService = async ({
 return result;
 };
 
+//get all company
 export const getAllCompaniesService = async () => {
   return prisma.company.findMany({
     include: {
@@ -100,6 +100,7 @@ export const getAllCompaniesService = async () => {
   });
 };
 
+//get company by id
 export const getCompanyByIdService = async (id) => {
   return prisma.company.findUnique({
     where: { id },
@@ -113,6 +114,7 @@ export const getCompanyByIdService = async (id) => {
   });
 };
 
+//update company 
 export const updateCompanyService = async ({
   id,
   name,
@@ -120,7 +122,6 @@ export const updateCompanyService = async ({
   domain,
   location,
   adminName,
-  adminEmail,
   updatedById,
 }) => {
   const existing = await prisma.company.findUnique({
@@ -157,10 +158,10 @@ export const updateCompanyService = async ({
     }
   }
 
-  if (adminEmail) {
+  if (email) {
     const existingAdmin = await prisma.user.findFirst({
       where: {
-        email: adminEmail,
+        email,
         NOT: { id: adminUser.id },
       },
     });
@@ -185,7 +186,7 @@ export const updateCompanyService = async ({
       where: { id: adminUser.id },
       data: {
         name: adminName ?? adminUser.name,
-        email: adminEmail ?? adminUser.email,
+        email: email ?? adminUser.email,
       },
     });
 
@@ -201,6 +202,8 @@ export const updateCompanyService = async ({
   });
 };
 
+
+//delete company
 export const deleteCompanyService = async ({ id, deletedById }) => {
   const company = await prisma.company.findUnique({
     where: { id },
