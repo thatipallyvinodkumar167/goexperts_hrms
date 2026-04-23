@@ -41,6 +41,7 @@ model User {
   password    String
   role        Role
   status      Status   @default(ACTIVE)
+  profileLogo String? 
 
   companyId   String?
   company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])
@@ -74,6 +75,7 @@ model Company {
   lastActiveAt DateTime?
   inactiveAt   DateTime?
   deletedAt    DateTime?
+  companyLogo String?
 
   createdById String
   createdBy   User     @relation("CompanyCreator", fields: [createdById], references: [id])

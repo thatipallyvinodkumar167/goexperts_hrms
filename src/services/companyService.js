@@ -9,6 +9,7 @@ export const createCompanyService = async ({
     email,
     domain,
     location,
+    companyLogo,
     password,
     adminName,
     createdById
@@ -16,6 +17,7 @@ export const createCompanyService = async ({
 }) => {
     const normalizedDomain = domain?.trim().toLowerCase() || null;
     const normalizedLocation = location?.trim() || null;
+    const normalizedCompanyLogo = companyLogo?.trim() || null;
 
     //checking company is there or not 
     const existingCompany = await prisma.company.findFirst({where : {email}});
@@ -50,6 +52,7 @@ export const createCompanyService = async ({
             email,
             domain: normalizedDomain,
             location: normalizedLocation,
+            companyLogo: normalizedCompanyLogo,
             createdById
            }  
         });
@@ -121,6 +124,7 @@ export const updateCompanyService = async ({
   email,
   domain,
   location,
+  companyLogo,
   adminName,
   updatedById,
 }) => {
@@ -179,6 +183,7 @@ export const updateCompanyService = async ({
         email: email ?? existing.email,
         domain: normalizedDomain,
         location: location ?? existing.location,
+        companyLogo: companyLogo ?? existing.companyLogo,
       },
     });
 
