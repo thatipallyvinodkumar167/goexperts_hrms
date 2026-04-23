@@ -17,7 +17,9 @@ export const login = async (req, res) => {
             success : true,
             message : "login successful",
             ...data
-        })
+        });
+
+        
     } catch (error) {
         res.status(400).json({
             success :false,
@@ -61,6 +63,9 @@ export const  resetPassword = async (req, res) => {
             success : true,
             ...data
         });
+
+
+
 
     } catch (error) {
         

@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { generateToken } from "../utils/generateToken.js";
 import { comparePassword, hashPassword } from "../utils/hashPassword.js";
 import { resetPasswordTemplate } from "../utils/templates/resetPasswordTemplate.js";
-import { allowedNodeEnvironmentFlags } from "process";
+// import { sendEmail } from "../utils/sendEmail.js"; 
 
 
 //login user service
@@ -28,6 +28,13 @@ export const loginUser = async ({ email, password } = {}) => {
     if (!isMatch) {
       throw new Error("Invalid credentials");
     }
+
+
+    await prisma.user.update({
+      where : { id : superAdmin.id},
+      data : {lastLoginAt : new Date() }
+
+    });
 
     return {
       user: {
@@ -76,6 +83,14 @@ export const loginUser = async ({ email, password } = {}) => {
     throw new Error("Invalid credentials");
   }
 
+
+    // ⭐ CHANGE 3 → UPDATE LAST LOGIN
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+
+
   return {
     user: {
       id: user.id,
@@ -118,14 +133,13 @@ const hashToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 await prisma.passwordResetToken.deleteMany({where : {userId : user.id}});
 
 //store token
-await prisma.passwordResetToken.create({where : {
-
-  data : {
-    token : hashToken,
-    userId :user.id,
-    exprireAt : new Date(Date.now() + 15 * 60 * 1000)//15 min
-  }
-}});
+  await prisma.passwordResetToken.create({
+    data : {
+      token : hashToken,
+      userId : user.id,
+      expiresAt : new Date(Date.now() + 15 * 60 * 1000) // ⭐ FIXED spelling
+    }
+  });
 
 //reset link 
 const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
@@ -150,11 +164,10 @@ export const resetPasswordService = async (token, newPassword) => {
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
 
-  //find valid token 
   const resetToken = await prisma.passwordResetToken.findFirst({
     where : {
       token : hashedToken,
-      exprireAt : {gt :new Date()}
+      expiresAt : { gt : new Date() }
     }
   });
 

@@ -4,6 +4,7 @@ import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js"
 import logger from "./middleware/loggerMiddleware.js";
+import { companyStatusCron } from "./jobs/companyStatusCron.js";
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
 
 const app = express();
@@ -31,6 +32,9 @@ const startServer = async () => {
   try {
     // await ensureSuperAdmin();
     // console.log("Default super admin ensured: goexperts@admin");
+
+
+    companyStatusCron();
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
