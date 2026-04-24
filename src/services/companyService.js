@@ -12,7 +12,6 @@ export const createCompanyService = async ({
     companyLogo,
     ownerName,
     ownerEmail,
-    ownerPhone,
     password,
     adminName,
     createdById
@@ -23,7 +22,6 @@ export const createCompanyService = async ({
     const normalizedCompanyLogo = companyLogo?.trim() || null;
     const normalizedOwnerName = ownerName?.trim() || adminName?.trim() || null;
     const normalizedOwnerEmail = ownerEmail?.trim().toLowerCase() || email?.trim().toLowerCase() || null;
-    const normalizedOwnerPhone = ownerPhone?.trim() || null;
 
     //checking company is there or not 
     const existingCompany = await prisma.company.findFirst({where : {email}});
@@ -58,7 +56,6 @@ export const createCompanyService = async ({
             email,
             ownerName: normalizedOwnerName,
             ownerEmail: normalizedOwnerEmail,
-            ownerPhone: normalizedOwnerPhone,
             domain: normalizedDomain,
             location: normalizedLocation,
             companyLogo: normalizedCompanyLogo,
@@ -94,7 +91,22 @@ return result;
 //get all company
 export const getAllCompaniesService = async () => {
   return prisma.company.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      ownerName: true,
+      ownerEmail: true,
+      domain: true,
+      location: true,
+      status: true,
+      lastActiveAt: true,
+      inactiveAt: true,
+      deletedAt: true,
+      companyLogo: true,
+      createdById: true,
+      createdAt: true,
+      updatedAt: true,
       users: {
         select: {
           id: true,
@@ -116,7 +128,22 @@ export const getAllCompaniesService = async () => {
 export const getCompanyByIdService = async (id) => {
   return prisma.company.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      ownerName: true,
+      ownerEmail: true,
+      domain: true,
+      location: true,
+      status: true,
+      lastActiveAt: true,
+      inactiveAt: true,
+      deletedAt: true,
+      companyLogo: true,
+      createdById: true,
+      createdAt: true,
+      updatedAt: true,
       users: true,
       departments: true,
       designations: true,
@@ -133,7 +160,6 @@ export const updateCompanyService = async ({
   email,
   ownerName,
   ownerEmail,
-  ownerPhone,
   domain,
   location,
   companyLogo,
@@ -195,7 +221,6 @@ export const updateCompanyService = async ({
         email: email ?? existing.email,
         ownerName: ownerName ?? existing.ownerName,
         ownerEmail: ownerEmail ?? existing.ownerEmail,
-        ownerPhone: ownerPhone ?? existing.ownerPhone,
         domain: normalizedDomain,
         location: location ?? existing.location,
         companyLogo: companyLogo ?? existing.companyLogo,

@@ -216,7 +216,7 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
   }
 
   //checking password
-  const isMatch = await comparePassword(oldPassword, newPassword);
+  const isMatch = await comparePassword(oldPassword, user.password);
 
   if(!isMatch){
     throw Error("old password is inncorrect");
@@ -225,7 +225,7 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
   //prevent same password
   const isSame = await comparePassword(newPassword, user.password);
 
-  if(!isSame){
+  if(isSame){
     throw Error(" New password cannot be same as old password");
   }
 
@@ -234,7 +234,7 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
   //update password
   await prisma.user.update({
     where : {id : userId},
-    data : {password : hashPassword}
+    data : {password : hashedPassword}
   });
 
   await prisma.auditLog.create({
