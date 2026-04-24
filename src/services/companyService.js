@@ -168,7 +168,15 @@ export const updateCompanyService = async ({
 }) => {
   const existing = await prisma.company.findUnique({
     where: { id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      ownerName: true,
+      ownerEmail: true,
+      domain: true,
+      location: true,
+      companyLogo: true,
       users: true,
     },
   });
@@ -252,6 +260,7 @@ export const updateCompanyService = async ({
 export const deleteCompanyService = async ({ id, deletedById }) => {
   const company = await prisma.company.findUnique({
     where: { id },
+    select: { id: true },
   });
 
   if (!company) {

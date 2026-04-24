@@ -13,7 +13,16 @@ export const companyStatusCron = () => {
    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
    const companies = await prisma.company.findMany({
-    include : { users: true}
+    select: {
+      id: true,
+      name: true,
+      users: {
+        select: {
+          role: true,
+          lastLoginAt: true,
+        },
+      },
+    },
    });
 
    for (const company of companies) {

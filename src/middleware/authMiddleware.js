@@ -14,7 +14,9 @@ export const authMiddleware = (req, res, next) => {
         const token = authHeader.split(" ")[1];
 
         //verifying token 
+        console.log("--- Token Verification Start ---");
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("Token is VALID. Expires at:", new Date(decoded.exp * 1000).toLocaleTimeString());
 
         req.user = decoded;
 
@@ -22,6 +24,7 @@ export const authMiddleware = (req, res, next) => {
 
 
     } catch (error) {
+        console.log("Token Verification FAILED:", error.message);
         res.status(401).json({success : false, message : "invalid or expire token"})
     }
 
