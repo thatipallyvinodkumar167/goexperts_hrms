@@ -15,6 +15,7 @@ export const authMiddleware = (req, res, next) => {
 
         //verifying token 
         console.log("--- Token Verification Start ---");
+        console.log("Current Server Time:", new Date().toLocaleTimeString());
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log("Token is VALID. Expires at:", new Date(decoded.exp * 1000).toLocaleTimeString());
 
