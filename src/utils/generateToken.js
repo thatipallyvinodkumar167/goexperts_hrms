@@ -4,7 +4,7 @@ export const generateToken =  (user) => {
     const token = jwt.sign(
         {id : user.id, role : user.role, companyId : user.companyId || null},
         process.env.JWT_SECRET,
-        {expiresIn : "1d"} // 120 seconds = 2 minutes
+        {expiresIn : "1d"} 
     );
     console.log("New Token Generated. Current Server Time:", new Date().toLocaleTimeString());
     return token;

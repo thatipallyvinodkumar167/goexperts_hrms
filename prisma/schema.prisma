@@ -30,6 +30,14 @@ enum EmploymentType {
   CONTRACT
 }
 
+enum EmployeeStatus {
+  ACTIVE
+  ONBOARDING
+  PROBATION
+  RESIGNED
+  TERMINATED
+}
+
 //////////////////////////
 // USERS
 //////////////////////////
@@ -41,16 +49,18 @@ model User {
   password    String
   role        Role
   status      Status   @default(ACTIVE)
-  profileLogo String? 
+  profileLogo String?
 
   companyId   String?
   company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])
 
+  // OWNER RELATION
+  ownedCompany Company? @relation("CompanyOwner")
+
   createdCompanies Company[] @relation("CompanyCreator")
 
   createdAt   DateTime @default(now())
-
-    lastLoginAt DateTime? 
+  lastLoginAt DateTime?
 
   employee    Employee?
   hr          HR?
@@ -69,30 +79,35 @@ model Company {
   id          String   @id @default(uuid())
   name        String
   email       String
-  ownerName   String?
-  ownerEmail  String?
- 
+
   domain      String?  @unique
   location    String?
+
   status      Status   @default(ACTIVE)
+
   lastActiveAt DateTime?
   inactiveAt   DateTime?
   deletedAt    DateTime?
+
   companyLogo String?
+
+  // OWNER LINK
+  ownerId     String?   @unique
+  owner       User?     @relation("CompanyOwner", fields: [ownerId], references: [id])
 
   createdById String
   createdBy   User     @relation("CompanyCreator", fields: [createdById], references: [id])
 
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  updatedAt   DateTime @updatedAt
 
   users       User[]   @relation("CompanyUsers")
+
   departments Department[]
   designations Designation[]
   leaveTypes  LeaveType[]
   subscriptions Subscription[]
 
-  @@index([createdById])
   @@index([status])
   @@index([lastActiveAt])
 }
@@ -106,6 +121,7 @@ model HR {
   userId    String @unique
   user      User   @relation(fields: [userId], references: [id])
 
+  // granular permissions
   permissions Json
 }
 
@@ -121,6 +137,7 @@ model Employee {
 
   employeeCode  String @unique
 
+  // JOB INFO
   departmentId  String
   department    Department @relation(fields: [departmentId], references: [id])
 
@@ -129,25 +146,36 @@ model Employee {
 
   joiningDate   DateTime
   employmentType EmploymentType
+
+  employeeStatus EmployeeStatus @default(ONBOARDING)
+
   workLocation  String?
   salary        Float
 
+  // reporting hierarchy
   managerId     String?
   manager       Employee? @relation("Manager", fields: [managerId], references: [id])
   subordinates  Employee[] @relation("Manager")
 
+  // HRMS STRUCTURE
   personal      EmployeePersonal?
   experience    EmployeeExperience[]
 
   joiningLetter JoiningLetter?
 
+  // lifecycle
+  relievedAt    DateTime?
+  reasonOfExit  String?
+
   attendances   Attendance[]
   leaves        Leave[]
   payrolls      Payroll[]
+
+  @@index([employeeCode])
 }
 
 //////////////////////////
-// JOINING LETTER (HRMS STYLE)
+// JOINING LETTER
 //////////////////////////
 
 model JoiningLetter {
@@ -163,7 +191,7 @@ model JoiningLetter {
 }
 
 //////////////////////////
-// PERSONAL & EXPERIENCE
+// PERSONAL DETAILS
 //////////////////////////
 
 model EmployeePersonal {
@@ -176,8 +204,16 @@ model EmployeePersonal {
   address           String?
   gender            String?
   dob               DateTime?
+
   emergencyContact  String?
+
+  bloodGroup        String?
+  maritalStatus     String?
 }
+
+//////////////////////////
+// EXPERIENCE
+//////////////////////////
 
 model EmployeeExperience {
   id           String @id @default(uuid())
@@ -224,13 +260,17 @@ model Designation {
 
 model Attendance {
   id         String @id @default(uuid())
+
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id])
 
   date       DateTime
   checkIn    DateTime?
   checkOut   DateTime?
+
   status     String
+
+  @@index([date])
 }
 
 //////////////////////////
@@ -259,6 +299,7 @@ model Leave {
 
   fromDate    DateTime
   toDate      DateTime
+
   status      String
 }
 
@@ -314,6 +355,7 @@ model Subscription {
 
 model AuditLog {
   id        String   @id @default(uuid())
+
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 
@@ -329,6 +371,7 @@ model AuditLog {
 
 model PasswordResetToken {
   id        String   @id @default(uuid())
+
   token     String
   userId    String
   user      User     @relation(fields: [userId], references: [id])
