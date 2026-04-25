@@ -20,20 +20,26 @@ export const createCompanyWithInvite = async ({
   createdById,
 }) => {
 
-  // check existing
+  const [, domain] = email.split("@");
+
+  // check existing email or domain
   const existing = await prisma.company.findFirst({
-    where: { email },
+    where: { 
+      OR: [
+        { email },
+        { domain }
+      ]
+    },
   });
 
   if (existing) {
-    throw new Error("Company already exists");
+    const reason = existing.email === email ? "Email" : "Domain";
+    throw new Error(`Company with this ${reason} already exists`);
   }
 
   // ✅ TOKEN GENERATION (NO CHANGE, BUT USED PROPERLY NOW)
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
-
-  const [, domain] = email.split("@");
 
   const result = await prisma.$transaction(async (tx) => {
 
