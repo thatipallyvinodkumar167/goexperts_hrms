@@ -20,15 +20,21 @@ export const createCompanyWithInvite = async ({
   createdById,
 }) => {
 
-  const [, domain] = email.split("@");
+  if (!email || !email.includes("@")) {
+    throw new Error("Invalid company email address");
+  }
 
-  // check existing email or domain
+  const [, domain] = email.split("@");
+  const publicDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"];
+  const isPublic = publicDomains.includes(domain.toLowerCase());
+
+  // check existing email or domain (skip domain check if it's a public provider)
   const existing = await prisma.company.findFirst({
     where: { 
       OR: [
         { email },
-        { domain }
-      ]
+        !isPublic ? { domain } : {}
+      ].filter(Boolean)
     },
   });
 
