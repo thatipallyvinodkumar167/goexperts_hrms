@@ -98,6 +98,7 @@ model Company {
 
   // 🔐 Verification
   isEmailVerified Boolean @default(false)
+  isProfileCompleted Boolean @default(false)
 
   createdById String
   createdBy   User     @relation("CompanyCreator", fields: [createdById], references: [id])
