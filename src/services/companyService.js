@@ -75,22 +75,27 @@ export const createCompanyWithInvite = async ({
       },
     });
 
-    // ✅ SEND EMAIL (NEW - IMPORTANT)
-    const inviteLink = `${process.env.FRONTEND_URL}/setup-account?token=${rawToken}`;
+    // ❌ REMOVED rawToken from return (SECURITY FIX)
+    return { company, ownerUser };
+  });
 
+  // ✅ SEND EMAIL (OUTSIDE TRANSACTION TO AVOID TIMEOUTS)
+  const inviteLink = `${process.env.FRONTEND_URL}/setup-account?token=${rawToken}`;
+  
+  try {
     await sendEmail(
       ownerEmail,
       "Activate Your Company Account",
       companyInviteTemplate(ownerName, inviteLink)
     );
-
-    // ❌ REMOVED rawToken from return (SECURITY FIX)
-    return { company, ownerUser };
-  });
+  } catch (error) {
+    console.error("Delayed Email Error:", error.message);
+    // We don't throw here because the DB records are already saved
+  }
 
   return {
     ...result,
-    message: "Invitation email sent successfully",
+    message: "Company created and invitation email triggered",
   };
 };
 
