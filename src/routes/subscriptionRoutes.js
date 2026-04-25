@@ -5,7 +5,7 @@ import {
   addPlan,
   removePlan,
   getPlans,
-  getAdminStats
+  getAdminStatus
 } from "../controller/subscriptionController.js";
 
 const router = express.Router();
@@ -16,6 +16,6 @@ router.get("/plans", authMiddleware, getPlans);
 // Super Admin Only
 router.post("/plans", authMiddleware, allowRoles("SUPER_ADMIN"), addPlan);
 router.delete("/plans/:id", authMiddleware, allowRoles("SUPER_ADMIN"), removePlan);
-router.get("/status", authMiddleware, allowRoles("SUPER_ADMIN"), getAdminStats);
+router.get("/status", authMiddleware, allowRoles("SUPER_ADMIN"), getAdminStatus);
 
 export default router;

@@ -27,7 +27,7 @@ export const getPlans = async (req, res) => {
   }
 };
 
-export const getAdminStats = async (req, res) => {
+export const getAdminStatus = async (req, res) => {
   try {
     const stats = await subsService.getSubscriptionStats();
     res.status(200).json({ success: true, data: stats });
