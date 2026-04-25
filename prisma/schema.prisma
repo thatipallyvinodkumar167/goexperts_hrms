@@ -110,6 +110,7 @@ model Company {
   designations Designation[]
   leaveTypes  LeaveType[]
   subscriptions Subscription[]
+  invites      CompanyInvite[]
 
   @@index([createdById])
   @@index([status])
