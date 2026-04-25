@@ -95,10 +95,18 @@ export const createCompanyWithInvite = async ({
   const inviteLink = `${process.env.FRONTEND_URL}/setup-account?token=${rawToken}`;
   
   try {
+    // 1. Send invitation to the OWNER
     await sendEmail(
       ownerEmail,
       "Activate Your Company Account",
       companyInviteTemplate(ownerName, inviteLink)
+    );
+
+    // 2. Send confirmation to the COMPANY
+    await sendEmail(
+      email,
+      "Welcome to GOExperts HRMS",
+      `<h1>Welcome ${name}!</h1><p>Your company has been successfully registered. The owner (${ownerName}) has been invited to set up the account.</p>`
     );
   } catch (error) {
     console.error("Delayed Email Error:", error.message);
