@@ -47,9 +47,6 @@ async function main() {
     await run("node", ["--check", file]);
   }
 
-  console.log("Generating Prisma client...");
-  await run("npx", ["-y", "prisma@6.19.3", "generate"]);
-
   console.log("Build completed successfully.");
 }
 
