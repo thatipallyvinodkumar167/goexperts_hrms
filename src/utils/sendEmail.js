@@ -1,25 +1,25 @@
 
 import nodemailer from "nodemailer";
 
-export const sendEmail = async (toString, subject, html) => {
+export const sendEmail = async (to, subject, html) => {
 
     try{
         const transporter = nodemailer.createTransport({
 
             host : process.env.SMTP_HOST,
-            port : process.env.SMPT_PORT,
+            port : process.env.SMTP_PORT,
             secure : false,
             
             auth : {
-                user : process.env.SMPT_USER,
-                pass : process.env.SMPT_PASS
+                user : process.env.SMTP_USER,
+                pass : process.env.SMTP_PASS
             },
 
         });
 
         const info = await transporter.sendMail({
 
-            from : `"GOExperts HRMS" <${process.env.SMPT_USER}>`,
+            from : `"GOExperts HRMS" <${process.env.SMTP_USER}>`,
             to,
             subject,
             html
