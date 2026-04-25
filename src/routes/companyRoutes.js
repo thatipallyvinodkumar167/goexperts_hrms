@@ -24,7 +24,7 @@ router.post("/setup-account", setupAccount);
 // OWNER → complete profile
 router.put("/complete-profile", authMiddleware, allowRoles("OWNER"), completeProfile);
 
-// OWNER → activate company
-router.post("/activate", authMiddleware, allowRoles("OWNER"), activateCompanyController);
+// SUPER ADMIN → approve/activate company
+router.post("/activate/:id", authMiddleware, allowRoles("SUPER_ADMIN"), activateCompanyController);
 
 export default router;

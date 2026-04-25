@@ -16,6 +16,6 @@ router.get("/plans", authMiddleware, getPlans);
 // Super Admin Only
 router.post("/plans", authMiddleware, allowRoles("SUPER_ADMIN"), addPlan);
 router.delete("/plans/:id", authMiddleware, allowRoles("SUPER_ADMIN"), removePlan);
-router.get("/stats", authMiddleware, allowRoles("SUPER_ADMIN"), getAdminStats);
+router.get("/status", authMiddleware, allowRoles("SUPER_ADMIN"), getAdminStats);
 
 export default router;

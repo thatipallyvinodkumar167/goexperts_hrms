@@ -24,6 +24,7 @@ enum Status {
   INACTIVE
   SUSPENDED
   INVITED
+  PENDING_APPROVAL
 }
 
 enum EmploymentType {
@@ -88,6 +89,7 @@ model Company {
   status      Status   @default(INVITED)
 
   companyLogo String?
+  verificationDocs Json?
 
   // 🔥 Lifecycle tracking
   invitedAt     DateTime?

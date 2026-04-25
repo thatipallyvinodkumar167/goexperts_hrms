@@ -91,13 +91,13 @@ export const completeProfile = async (req, res) => {
 
 export const activateCompanyController = async (req, res) => {
   try {
-    const companyId = req.user.companyId;
+    const { id } = req.params;
 
-    const data = await activateCompany(companyId);
+    const data = await activateCompany(id);
 
     res.status(200).json({
       success: true,
-      message: "Company activated",
+      message: "Company approved and activated successfully",
       data,
     });
 

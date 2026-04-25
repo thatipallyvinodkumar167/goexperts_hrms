@@ -138,6 +138,7 @@ export const completeCompanyProfile = async (companyId, data) => {
     data: {
       ...data,
       isProfileCompleted: true,
+      status: "PENDING_APPROVAL",
     },
   });
 
