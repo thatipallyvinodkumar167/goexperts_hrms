@@ -30,14 +30,6 @@ enum EmploymentType {
   CONTRACT
 }
 
-enum EmployeeStatus {
-  ACTIVE
-  ONBOARDING
-  PROBATION
-  RESIGNED
-  TERMINATED
-}
-
 //////////////////////////
 // USERS
 //////////////////////////
@@ -49,18 +41,16 @@ model User {
   password    String
   role        Role
   status      Status   @default(ACTIVE)
-  profileLogo String?
+  profileLogo String? 
 
   companyId   String?
   company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])
 
-  // OWNER RELATION
-  ownedCompany Company? @relation("CompanyOwner")
-
   createdCompanies Company[] @relation("CompanyCreator")
 
   createdAt   DateTime @default(now())
-  lastLoginAt DateTime?
+
+    lastLoginAt DateTime? 
 
   employee    Employee?
   hr          HR?
@@ -79,35 +69,30 @@ model Company {
   id          String   @id @default(uuid())
   name        String
   email       String
-
+  ownerName   String?
+  ownerEmail  String?
+ 
   domain      String?  @unique
   location    String?
-
   status      Status   @default(ACTIVE)
-
   lastActiveAt DateTime?
   inactiveAt   DateTime?
   deletedAt    DateTime?
-
   companyLogo String?
-
-  // OWNER LINK
-  ownerId     String?   @unique
-  owner       User?     @relation("CompanyOwner", fields: [ownerId], references: [id])
 
   createdById String
   createdBy   User     @relation("CompanyCreator", fields: [createdById], references: [id])
 
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 
   users       User[]   @relation("CompanyUsers")
-
   departments Department[]
   designations Designation[]
   leaveTypes  LeaveType[]
   subscriptions Subscription[]
 
+  @@index([createdById])
   @@index([status])
   @@index([lastActiveAt])
 }
@@ -121,7 +106,6 @@ model HR {
   userId    String @unique
   user      User   @relation(fields: [userId], references: [id])
 
-  // granular permissions
   permissions Json
 }
 
@@ -137,7 +121,6 @@ model Employee {
 
   employeeCode  String @unique
 
-  // JOB INFO
   departmentId  String
   department    Department @relation(fields: [departmentId], references: [id])
 
@@ -146,36 +129,25 @@ model Employee {
 
   joiningDate   DateTime
   employmentType EmploymentType
-
-  employeeStatus EmployeeStatus @default(ONBOARDING)
-
   workLocation  String?
   salary        Float
 
-  // reporting hierarchy
   managerId     String?
   manager       Employee? @relation("Manager", fields: [managerId], references: [id])
   subordinates  Employee[] @relation("Manager")
 
-  // HRMS STRUCTURE
   personal      EmployeePersonal?
   experience    EmployeeExperience[]
 
   joiningLetter JoiningLetter?
 
-  // lifecycle
-  relievedAt    DateTime?
-  reasonOfExit  String?
-
   attendances   Attendance[]
   leaves        Leave[]
   payrolls      Payroll[]
-
-  @@index([employeeCode])
 }
 
 //////////////////////////
-// JOINING LETTER
+// JOINING LETTER (HRMS STYLE)
 //////////////////////////
 
 model JoiningLetter {
@@ -191,7 +163,7 @@ model JoiningLetter {
 }
 
 //////////////////////////
-// PERSONAL DETAILS
+// PERSONAL & EXPERIENCE
 //////////////////////////
 
 model EmployeePersonal {
@@ -204,16 +176,8 @@ model EmployeePersonal {
   address           String?
   gender            String?
   dob               DateTime?
-
   emergencyContact  String?
-
-  bloodGroup        String?
-  maritalStatus     String?
 }
-
-//////////////////////////
-// EXPERIENCE
-//////////////////////////
 
 model EmployeeExperience {
   id           String @id @default(uuid())
@@ -260,17 +224,13 @@ model Designation {
 
 model Attendance {
   id         String @id @default(uuid())
-
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id])
 
   date       DateTime
   checkIn    DateTime?
   checkOut   DateTime?
-
   status     String
-
-  @@index([date])
 }
 
 //////////////////////////
@@ -299,7 +259,6 @@ model Leave {
 
   fromDate    DateTime
   toDate      DateTime
-
   status      String
 }
 
@@ -355,7 +314,6 @@ model Subscription {
 
 model AuditLog {
   id        String   @id @default(uuid())
-
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 
@@ -371,7 +329,381 @@ model AuditLog {
 
 model PasswordResetToken {
   id        String   @id @default(uuid())
+  token     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////
+// ENUMS
+//////////////////////////
+
+enum Role {
+  SUPER_ADMIN
+  OWNER
+  HR
+  EMPLOYEE
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  INVITED
+}
+
+enum EmploymentType {
+  FRESHER
+  EXPERIENCED
+  INTERN
+  CONTRACT
+}
+
+//////////////////////////
+// USERS
+//////////////////////////
+
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  password    String
+  role        Role
+  status      Status   @default(INVITED)
+
+  profileLogo String?
+
+  companyId   String?
+  company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])
+
+  createdCompanies Company[] @relation("CompanyCreator")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lastLoginAt DateTime?
+  failedLoginAttempts Int @default(0)
+  lockUntil   DateTime?
+
+  isEmailVerified Boolean @default(false)
+
+  employee    Employee?
+  hr          HR?
+
+  auditLogs   AuditLog[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@unique([email, companyId])
+}
+
+//////////////////////////
+// COMPANY
+//////////////////////////
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+
+  ownerName   String?
+  ownerEmail  String?
+
+  domain      String?  @unique
+  location    String?
+
+  status      Status   @default(INVITED)
+
+  companyLogo String?
+
+  // 🔥 Lifecycle tracking
+  invitedAt     DateTime?
+  activatedAt   DateTime?
+  lastActiveAt  DateTime?
+  inactiveAt    DateTime?
+  deletedAt     DateTime?
+
+  // 🔐 Verification
+  isEmailVerified Boolean @default(false)
+
+  createdById String
+  createdBy   User     @relation("CompanyCreator", fields: [createdById], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]   @relation("CompanyUsers")
+  departments Department[]
+  designations Designation[]
+  leaveTypes  LeaveType[]
+  subscriptions Subscription[]
+
+  @@index([createdById])
+  @@index([status])
+  @@index([lastActiveAt])
+}
+
+//////////////////////////
+// COMPANY INVITATION (NEW 🔥)
+//////////////////////////
+
+model CompanyInvite {
+  id          String   @id @default(uuid())
+
+  email       String
+  token       String   @unique
+
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+}
+
+//////////////////////////
+// HR PROFILE
+//////////////////////////
+
+model HR {
+  id        String @id @default(uuid())
+  userId    String @unique
+  user      User   @relation(fields: [userId], references: [id])
+
+  permissions Json
+}
+
+//////////////////////////
+// EMPLOYEE
+//////////////////////////
+
+model Employee {
+  id            String @id @default(uuid())
+
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id])
+
+  employeeCode  String @unique
+
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id])
+
+  joiningDate   DateTime
+  employmentType EmploymentType
+  workLocation  String?
+  salary        Float
+
+  managerId     String?
+  manager       Employee? @relation("Manager", fields: [managerId], references: [id])
+  subordinates  Employee[] @relation("Manager")
+
+  personal      EmployeePersonal?
+  experience    EmployeeExperience[]
+
+  joiningLetter JoiningLetter?
+
+  attendances   Attendance[]
+  leaves        Leave[]
+  payrolls      Payroll[]
+}
+
+//////////////////////////
+// JOINING LETTER
+//////////////////////////
+
+model JoiningLetter {
+  id          String @id @default(uuid())
+
+  employeeId  String @unique
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  joiningDate DateTime
+  documentUrl String?
+
+  createdAt   DateTime @default(now())
+}
+
+//////////////////////////
+// PERSONAL & EXPERIENCE
+//////////////////////////
+
+model EmployeePersonal {
+  id                String @id @default(uuid())
+
+  employeeId        String @unique
+  employee          Employee @relation(fields: [employeeId], references: [id])
+
+  phone             String?
+  address           String?
+  gender            String?
+  dob               DateTime?
+  emergencyContact  String?
+}
+
+model EmployeeExperience {
+  id           String @id @default(uuid())
+
+  employeeId   String
+  employee     Employee @relation(fields: [employeeId], references: [id])
+
+  companyName  String
+  role         String
+  startDate    DateTime
+  endDate      DateTime?
+
+  totalYears   Float?
+}
+
+//////////////////////////
+// COMPANY STRUCTURE
+//////////////////////////
+
+model Department {
+  id        String @id @default(uuid())
+  name      String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  employees Employee[]
+}
+
+model Designation {
+  id        String @id @default(uuid())
+  title     String
+  level     Int
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  employees Employee[]
+}
+
+//////////////////////////
+// ATTENDANCE
+//////////////////////////
+
+model Attendance {
+  id         String @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     String
+}
+
+//////////////////////////
+// LEAVE
+//////////////////////////
+
+model LeaveType {
+  id        String @id @default(uuid())
+  name      String
+  maxDays   Int
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  leaves    Leave[]
+}
+
+model Leave {
+  id          String @id @default(uuid())
+
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  leaveTypeId String
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  fromDate    DateTime
+  toDate      DateTime
+  status      String
+}
+
+//////////////////////////
+// PAYROLL
+//////////////////////////
+
+model Payroll {
+  id          String @id @default(uuid())
+
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  basicSalary Float
+  deductions  Float
+  bonus       Float
+  netSalary   Float
+
+  month       Int
+  year        Int
+}
+
+//////////////////////////
+// SUBSCRIPTION
+//////////////////////////
+
+model SubscriptionPlan {
+  id        String @id @default(uuid())
+  name      String
+  price     Float
+  duration  Int
+  features  Json
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id          String @id @default(uuid())
+
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+
+  planId      String
+  plan        SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  startDate   DateTime
+  endDate     DateTime
+}
+
+//////////////////////////
+// AUDIT
+//////////////////////////
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  action    String
+  module    String
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////////
+// PASSWORD RESET
+//////////////////////////
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
   token     String
   userId    String
   user      User     @relation(fields: [userId], references: [id])

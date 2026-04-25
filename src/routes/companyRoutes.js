@@ -1,24 +1,26 @@
 import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
-import { createCompany, deleteCompany, getAllCompanies, getCompanyById, updateCompany } from "../controller/companyController.js";
 
+import {
+  createCompany,
+  setupAccount,
+  completeProfile,
+  activateCompanyController
+} from "../controller/companyController.js";
 
 const router = express.Router();
 
-//only super admin
+// SUPER ADMIN → create company
 router.post("/create", authMiddleware, allowRoles("SUPER_ADMIN"), createCompany);
 
-//get all compines
-router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), getAllCompanies);
+// PUBLIC → setup account
+router.post("/setup-account", setupAccount);
 
-//get company by id
-router.get("/:id", authMiddleware, allowRoles("SUPER_ADMIN"), getCompanyById);
+// OWNER → complete profile
+router.put("/complete-profile", authMiddleware, allowRoles("OWNER"), completeProfile);
 
-//update company
-router.put("/:id", authMiddleware, allowRoles("SUPER_ADMIN"), updateCompany);
-
-//delete company
-router.delete("/:id", authMiddleware, allowRoles("SUPER_ADMIN"), deleteCompany);
+// OWNER → activate company
+router.post("/activate", authMiddleware, allowRoles("OWNER"), activateCompanyController);
 
 export default router;

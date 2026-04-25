@@ -1,97 +1,86 @@
 import {
-  createCompanyService,
-  getAllCompaniesService,
-  getCompanyByIdService,
-  updateCompanyService,
-  deleteCompanyService,
+  createCompanyWithInvite,
+  setupCompanyAccount,
+  completeCompanyProfile,
+  activateCompany
 } from "../services/companyService.js";
+
+//////////////////////////
+// CREATE COMPANY
+//////////////////////////
 
 export const createCompany = async (req, res) => {
   try {
-    const result = await createCompanyService({
+    const data = await createCompanyWithInvite({
       ...req.body,
       createdById: req.user.id,
     });
 
     res.status(201).json({
       success: true,
-      message: "company created successfully",
-      data: result,
+      message: "Company invited successfully",
+      inviteToken: data.rawToken, // for testing
     });
+
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const getAllCompanies = async (req, res) => {
-  try {
-    const companies = await getAllCompaniesService();
+//////////////////////////
+// SETUP ACCOUNT
+//////////////////////////
 
-    res.status(200).json({
-      success: true,
-      count: companies.length,
-      data: companies,
-    });
+export const setupAccount = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    const result = await setupCompanyAccount(token, password);
+
+    res.status(200).json({ success: true, ...result });
+
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const getCompanyById = async (req, res) => {
-  try {
-    const company = await getCompanyByIdService(req.params.id);
+//////////////////////////
+// COMPLETE PROFILE
+//////////////////////////
 
-    if (!company) {
-      return res.status(404).json({
-        success: false,
-        message: "company not found",
-      });
-    }
+export const completeProfile = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+
+    const data = await completeCompanyProfile(companyId, req.body);
 
     res.status(200).json({
       success: true,
-      data: company,
+      message: "Profile completed",
+      data,
     });
+
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
-export const updateCompany = async (req, res) => {
+//////////////////////////
+// ACTIVATE COMPANY
+//////////////////////////
+
+export const activateCompanyController = async (req, res) => {
   try {
-    const result = await updateCompanyService({
-      id: req.params.id,
-      ...req.body,
-      updatedById: req.user.id,
-    });
+    const companyId = req.user.companyId;
+
+    const data = await activateCompany(companyId);
 
     res.status(200).json({
       success: true,
-      message: "Company updated successfully",
-      data: result,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-export const deleteCompany = async (req, res) => {
-  try {
-    await deleteCompanyService({
-      id: req.params.id,
-      deletedById: req.user.id,
+      message: "Company activated",
+      data,
     });
 
-    res.status(200).json({
-      success: true,
-      message: "Company deleted successfully",
-    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
