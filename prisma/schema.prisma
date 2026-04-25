@@ -53,7 +53,7 @@ model User {
   createdCompanies Company[] @relation("CompanyCreator")
 
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 
   lastLoginAt DateTime?
   failedLoginAttempts Int @default(0)
@@ -103,7 +103,7 @@ model Company {
   createdBy   User     @relation("CompanyCreator", fields: [createdById], references: [id])
 
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @default(now()) @updatedAt
 
   users       User[]   @relation("CompanyUsers")
   departments Department[]
