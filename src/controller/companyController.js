@@ -2,8 +2,28 @@ import {
   createCompanyWithInvite,
   setupCompanyAccount,
   completeCompanyProfile,
-  activateCompany
+  activateCompany,
+  getCompaniesForAdmin
 } from "../services/companyService.js";
+
+//////////////////////////
+// GET ALL COMPANIES (SUPER ADMIN)
+//////////////////////////
+
+export const getAllCompanies = async (req, res) => {
+  try {
+    const data = await getCompaniesForAdmin();
+
+    res.status(200).json({
+      success: true,
+      count: data.length,
+      data,
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 //////////////////////////
 // CREATE COMPANY

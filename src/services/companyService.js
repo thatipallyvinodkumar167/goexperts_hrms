@@ -175,3 +175,19 @@ export const activateCompany = async (companyId) => {
     },
   });
 };
+
+export const getCompaniesForAdmin = async () => {
+  return prisma.company.findMany({
+    include: {
+      subscriptions: {
+        include: { plan: true },
+        orderBy: { endDate: "desc" },
+        take: 1,
+      },
+      createdBy: {
+        select: { name: true, email: true }
+      }
+    },
+    orderBy: { createdAt: "desc" },
+  });
+};

@@ -6,10 +6,14 @@ import {
   createCompany,
   setupAccount,
   completeProfile,
-  activateCompanyController
+  activateCompanyController,
+  getAllCompanies
 } from "../controller/companyController.js";
 
 const router = express.Router();
+
+// SUPER ADMIN → list all companies
+router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), getAllCompanies);
 
 // SUPER ADMIN → create company
 router.post("/create", authMiddleware, allowRoles("SUPER_ADMIN"), createCompany);
