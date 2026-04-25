@@ -28,12 +28,15 @@ export const createCompanyWithInvite = async ({
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
+  const [, domain] = email.split("@");
+
   const result = await prisma.$transaction(async (tx) => {
 
     const company = await tx.company.create({
       data: {
         name,
         email,
+        domain, // Automatically extract from email
         ownerName,
         ownerEmail,
         location,
@@ -109,6 +112,8 @@ export const setupCompanyAccount = async (token, password) => {
       where: { id: invite.companyId },
       data: {
         isEmailVerified: true,
+        status: "ACTIVE",
+        activatedAt: new Date(),
       },
     });
 
