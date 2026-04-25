@@ -1,6 +1,7 @@
 import prisma from "../config/db.js";
 import crypto from "crypto";
 import { hashPassword } from "../utils/hashPassword.js";
+import { assignTrialSubscription } from "./subscriptionService.js";
 
 //////////////////////////
 // 1. CREATE COMPANY + INVITE
@@ -163,7 +164,7 @@ export const activateCompany = async (companyId) => {
   }
 
   if (!company.subscriptions.length) {
-    throw new Error("Subscription required");
+    await assignTrialSubscription(companyId);
   }
 
   return prisma.company.update({

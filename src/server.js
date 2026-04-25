@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js"
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import logger from "./middleware/loggerMiddleware.js";
 import { companyStatusCron } from "./jobs/companyStatusCron.js";
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
@@ -20,6 +21,7 @@ app.use(logger);
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
 app.use("/api/employee", employeeRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 
 app.get("/", (req, res) => {
