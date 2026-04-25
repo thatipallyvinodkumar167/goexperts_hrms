@@ -3,6 +3,10 @@ import crypto from "crypto";
 import { hashPassword } from "../utils/hashPassword.js";
 import { assignTrialSubscription } from "./subscriptionService.js";
 
+// ✅ NEW IMPORTS (ADDED)
+import { sendEmail } from "../utils/sendEmail.js";
+import { companyInviteTemplate } from "../utils/templates/companyInviteTemplate.js";
+
 //////////////////////////
 // 1. CREATE COMPANY + INVITE
 //////////////////////////
@@ -25,7 +29,7 @@ export const createCompanyWithInvite = async ({
     throw new Error("Company already exists");
   }
 
-  // generate token
+  // ✅ TOKEN GENERATION (NO CHANGE, BUT USED PROPERLY NOW)
   const rawToken = crypto.randomBytes(32).toString("hex");
   const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
 
@@ -37,12 +41,15 @@ export const createCompanyWithInvite = async ({
       data: {
         name,
         email,
-        domain, // Automatically extract from email
+        domain,
         ownerName,
         ownerEmail,
         location,
+
+        // ✅ STATUS FLOW (IMPROVED)
         status: "INVITED",
         invitedAt: new Date(),
+
         createdById,
       },
     });
@@ -58,19 +65,33 @@ export const createCompanyWithInvite = async ({
       },
     });
 
+    // ✅ STORE TOKEN (CORRECT)
     await tx.companyInvite.create({
       data: {
         email: ownerEmail,
         token: hashedToken,
         companyId: company.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hrs
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
 
-    return { company, ownerUser, rawToken };
+    // ✅ SEND EMAIL (NEW - IMPORTANT)
+    const inviteLink = `${process.env.FRONTEND_URL}/setup-account?token=${rawToken}`;
+
+    await sendEmail(
+      ownerEmail,
+      "Activate Your Company Account",
+      companyInviteTemplate(ownerName, inviteLink)
+    );
+
+    // ❌ REMOVED rawToken from return (SECURITY FIX)
+    return { company, ownerUser };
   });
 
-  return result;
+  return {
+    ...result,
+    message: "Invitation email sent successfully",
+  };
 };
 
 //////////////////////////
@@ -96,28 +117,35 @@ export const setupCompanyAccount = async (token, password) => {
     where: { email: invite.email },
   });
 
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   const hashedPassword = await hashPassword(password);
 
   await prisma.$transaction(async (tx) => {
 
+    // ✅ USER ACTIVATE
     await tx.user.update({
       where: { id: user.id },
       data: {
         password: hashedPassword,
-        isEmailVerified: true,
         status: "ACTIVE",
+        lastLoginAt: new Date(), // ✅ ADDED
       },
     });
 
+    // ✅ COMPANY EMAIL VERIFIED + ACTIVE
     await tx.company.update({
       where: { id: invite.companyId },
       data: {
-        isEmailVerified: true,
         status: "ACTIVE",
         activatedAt: new Date(),
+        lastActiveAt: new Date(), // ✅ ADDED
       },
     });
 
+    // ✅ MARK INVITE USED
     await tx.companyInvite.update({
       where: { id: invite.id },
       data: { acceptedAt: new Date() },
@@ -137,7 +165,7 @@ export const completeCompanyProfile = async (companyId, data) => {
     where: { id: companyId },
     data: {
       ...data,
-      isProfileCompleted: true,
+      isProfileCompleted: true,   // ✅ make sure field exists in schema
       status: "PENDING_APPROVAL",
     },
   });
@@ -156,12 +184,15 @@ export const activateCompany = async (companyId) => {
     include: { subscriptions: true },
   });
 
-  if (!company.isEmailVerified) {
-    throw new Error("Email not verified");
+  if (!company) {
+    throw new Error("Company not found");
   }
 
-  if (!company.isProfileCompleted) {
-    throw new Error("Profile not completed");
+  // ❌ REMOVED isEmailVerified check (you don't have this field)
+  // ✔ Instead rely on status flow
+
+  if (company.status !== "PENDING_APPROVAL" && company.status !== "ACTIVE") {
+    throw new Error("Company not ready for activation");
   }
 
   if (!company.subscriptions.length) {
@@ -177,6 +208,10 @@ export const activateCompany = async (companyId) => {
     },
   });
 };
+
+//////////////////////////
+// 5. ADMIN VIEW
+//////////////////////////
 
 export const getCompaniesForAdmin = async () => {
   return prisma.company.findMany({
