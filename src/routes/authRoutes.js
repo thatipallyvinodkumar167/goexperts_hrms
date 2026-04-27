@@ -10,5 +10,6 @@ router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 
 router.post("/change-password", authMiddleware, changePassword);
+router.put("/change-password", authMiddleware, changePassword);
 
 export default router;

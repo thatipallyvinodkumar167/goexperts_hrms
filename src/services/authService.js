@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { generateToken } from "../utils/generateToken.js";
 import { comparePassword, hashPassword } from "../utils/hashPassword.js";
 import { resetPasswordTemplate } from "../utils/templates/resetPasswordTemplate.js";
-// import { sendEmail } from "../utils/sendEmail.js"; 
+import { sendEmail } from "../utils/sendEmail.js"; 
 
 
 //login user service
