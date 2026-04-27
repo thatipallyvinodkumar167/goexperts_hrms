@@ -1,5 +1,7 @@
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js"
@@ -10,8 +12,6 @@ import { inviteReminderCron } from "./jobs/inviteReminderCron.js";
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
 
 const app = express();
-
-dotenv.config();
 
 app.use(express.json());
 
