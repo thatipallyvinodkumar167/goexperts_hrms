@@ -52,7 +52,7 @@ model User {
   role        Role
   status      Status   @default(INVITED)
 
-  profileLogo String?
+  profileLogo String? @db.LongText
 
   companyId   String?
   company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])

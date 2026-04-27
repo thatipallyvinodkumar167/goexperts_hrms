@@ -251,6 +251,18 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
 export const updateUserProfileService = async (userId, data) => {
   const { name, email, profileLogo } = data;
 
+  if (profileLogo !== undefined && profileLogo !== null) {
+    if (typeof profileLogo !== "string" || !profileLogo.trim()) {
+      throw new Error("profileLogo must be a non-empty string");
+    }
+
+    const normalizedLogo = profileLogo.trim();
+    const isDataUrlImage = /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(normalizedLogo);
+    if (!isDataUrlImage) {
+      throw new Error("profileLogo must be a valid base64 image data URL");
+    }
+  }
+
   // If email is being changed, check for conflicts
   if (email) {
     const existingUser = await prisma.user.findFirst({
@@ -270,7 +282,7 @@ export const updateUserProfileService = async (userId, data) => {
     data: {
       name: name || undefined,
       email: email ? email.trim().toLowerCase() : undefined,
-      profileLogo: profileLogo || undefined,
+      profileLogo: profileLogo?.trim() || undefined,
     }
   });
 
