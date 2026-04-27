@@ -13,5 +13,6 @@ router.post("/change-password", authMiddleware, changePassword);
 router.put("/change-password", authMiddleware, changePassword);
 
 router.put("/update-profile", authMiddleware, updateProfile);
+router.post("/update-profile", authMiddleware, updateProfile);
 
 export default router;
