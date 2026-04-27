@@ -144,7 +144,7 @@ await prisma.passwordResetToken.deleteMany({where : {userId : user.id}});
   });
 
 //reset link 
-const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+const resetLink = `${process.env.FRONTEND_URL}://reset-password?token=${rawToken}`;
 
 //send email
 await sendEmail(

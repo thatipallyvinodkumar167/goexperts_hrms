@@ -135,6 +135,7 @@ model CompanyInvite {
 
   expiresAt   DateTime
   acceptedAt  DateTime?
+  reminderSent Boolean  @default(false)
 
   createdAt   DateTime @default(now())
 }

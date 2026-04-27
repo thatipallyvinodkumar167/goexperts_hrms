@@ -69,7 +69,7 @@ export const createCompanyWithInvite = async ({
     const ownerUser = await tx.user.create({
       data: {
         name: ownerName,
-        email: ownerEmail,
+        email: email,
         password: "", // not set yet
         role: "OWNER",
         companyId: company.id,
@@ -80,7 +80,7 @@ export const createCompanyWithInvite = async ({
     // ✅ STORE TOKEN (CORRECT)
     await tx.companyInvite.create({
       data: {
-        email: ownerEmail,
+        email: email,
         token: hashedToken,
         companyId: company.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -92,7 +92,7 @@ export const createCompanyWithInvite = async ({
   });
 
   // ✅ SEND EMAIL (OUTSIDE TRANSACTION TO AVOID TIMEOUTS)
-  const inviteLink = `${process.env.FRONTEND_URL}/setup-account?token=${rawToken}`;
+  const inviteLink = `${process.env.FRONTEND_URL}://setup-account?token=${rawToken}`;
   
   try {
     // Send invitation to the COMPANY EMAIL only (as requested)
@@ -108,7 +108,7 @@ export const createCompanyWithInvite = async ({
 
   return {
     ...result,
-    message: "Company created and invitation email triggered",
+    message : "Company created and invitation email triggered",
   };
 };
 
@@ -245,4 +245,51 @@ export const getCompaniesForAdmin = async () => {
     },
     orderBy: { createdAt: "desc" },
   });
+};
+
+//////////////////////////
+// 6. RESEND INVITE
+//////////////////////////
+
+export const resendCompanyInvite = async (companyId) => {
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+  });
+
+  if (!company) {
+    throw new Error("Company not found");
+  }
+
+  // Only allow resend if not already active
+  if (company.status !== "INVITED") {
+    throw new Error(`Cannot resend invite. Company status is ${company.status}`);
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+  // Update existing invite or create new one
+  await prisma.companyInvite.deleteMany({
+    where: { companyId: company.id }
+  });
+
+  await prisma.companyInvite.create({
+    data: {
+      email: company.email,
+      token: hashedToken,
+      companyId: company.id,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    },
+  });
+
+  const inviteLink = `${process.env.FRONTEND_URL}://setup-account?token=${rawToken}`;
+  
+  await sendEmail(
+    company.email,
+    "New Activation Link - GoExperts HRMS",
+    companyInviteTemplate(company.ownerName, inviteLink)
+  );
+
+  return { message: "New invitation link sent successfully" };
 };

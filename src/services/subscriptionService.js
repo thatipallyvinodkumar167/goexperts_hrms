@@ -9,8 +9,21 @@ export const deletePlan = async (planId) => {
   return prisma.subscriptionPlan.delete({ where: { id: planId } });
 };
 
+export const updatePlan = async (planId, data) => {
+  return prisma.subscriptionPlan.update({
+    where: { id: planId },
+    data
+  });
+};
+
 export const getAllPlans = async () => {
   return prisma.subscriptionPlan.findMany();
+};
+
+export const getPlanById = async (planId) => {
+  return prisma.subscriptionPlan.findUnique({
+    where: { id: planId }
+  });
 };
 
 // 2. Assign Basic Subscription (30 Days)
@@ -46,4 +59,16 @@ export const getSubscriptionStats = async () => {
   });
 
   return { totalActive, plans };
+};
+
+// 4. Update Company Subscription (Super Admin)
+export const updateCompanySubscription = async (subscriptionId, data) => {
+  return prisma.subscription.update({
+    where: { id: subscriptionId },
+    data: {
+      planId: data.planId,
+      endDate: data.endDate ? new Date(data.endDate) : undefined,
+      startDate: data.startDate ? new Date(data.startDate) : undefined,
+    }
+  });
 };

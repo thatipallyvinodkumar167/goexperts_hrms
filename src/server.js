@@ -6,6 +6,7 @@ import employeeRoutes from "./routes/employeeRoutes.js"
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import logger from "./middleware/loggerMiddleware.js";
 import { companyStatusCron } from "./jobs/companyStatusCron.js";
+import { inviteReminderCron } from "./jobs/inviteReminderCron.js";
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
 
 const app = express();
@@ -37,6 +38,7 @@ const startServer = async () => {
 
 
     companyStatusCron();
+    inviteReminderCron();
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

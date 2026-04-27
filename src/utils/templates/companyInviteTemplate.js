@@ -15,6 +15,10 @@ export const companyInviteTemplate = (name, inviteLink) => {
       </a>
 
       <p>This link will expire in 24 hours.</p>
+      <p style="color: #666; font-size: 12px;">
+        If this link has expired, please contact our support team at 
+        <strong>support@goexperts.com</strong> to request a new invitation.
+      </p>
 
       <br/>
       <p>Regards,<br/>GoExperts Team</p>

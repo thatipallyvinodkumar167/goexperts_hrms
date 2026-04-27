@@ -3,7 +3,8 @@ import {
   setupCompanyAccount,
   completeCompanyProfile,
   activateCompany,
-  getCompaniesForAdmin
+  getCompaniesForAdmin,
+  resendCompanyInvite
 } from "../services/companyService.js";
 
 //////////////////////////
@@ -105,3 +106,24 @@ export const activateCompanyController = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+//////////////////////////
+// RESEND INVITATION
+//////////////////////////
+
+export const resendInvitation = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await resendCompanyInvite(id);
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
