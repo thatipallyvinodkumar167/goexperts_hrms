@@ -248,7 +248,7 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
   return {message : "password changed successfully"};
 }
 
-export const updateUserProfileService = async (userId, data) => {
+export const updateUserProfileService = async (userId, data = {}) => {
   const { name, email, profileLogo } = data;
 
   if (profileLogo !== undefined && profileLogo !== null) {
