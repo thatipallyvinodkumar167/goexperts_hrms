@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -32,6 +31,13 @@ enum EmploymentType {
   EXPERIENCED
   INTERN
   CONTRACT
+}
+
+enum OfferStatus {
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }
 
 //////////////////////////
@@ -68,6 +74,8 @@ model User {
   auditLogs   AuditLog[]
   passwordResetTokens PasswordResetToken[]
 
+  deletedAt   DateTime?
+
   @@unique([email, companyId])
 }
 
@@ -91,14 +99,12 @@ model Company {
   companyLogo String?
   verificationDocs Json?
 
-  // 🔥 Lifecycle tracking
   invitedAt     DateTime?
   activatedAt   DateTime?
   lastActiveAt  DateTime?
   inactiveAt    DateTime?
   deletedAt     DateTime?
 
-  // 🔐 Verification
   isEmailVerified Boolean @default(false)
   isProfileCompleted Boolean @default(false)
 
@@ -114,17 +120,38 @@ model Company {
   leaveTypes  LeaveType[]
   subscriptions Subscription[]
   invites      CompanyInvite[]
+  employees    Employee[]
 
-  @@index([createdById])
   @@index([status])
   @@index([lastActiveAt])
 }
 
 //////////////////////////
-// COMPANY INVITATION (NEW 🔥)
+// COMPANY INVITE
 //////////////////////////
 
 model CompanyInvite {
+  id          String   @id @default(uuid())
+  email       String
+  token       String   @unique
+
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+}
+
+//////////////////////////
+// EMPLOYEE / HR INVITE
+//////////////////////////
+
+model EmployeeInvite {
   id          String   @id @default(uuid())
 
   email       String
@@ -133,11 +160,90 @@ model CompanyInvite {
   companyId   String
   company     Company  @relation(fields: [companyId], references: [id])
 
+  role        Role
+
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+
   expiresAt   DateTime
   acceptedAt  DateTime?
-  reminderSent Boolean  @default(false)
 
   createdAt   DateTime @default(now())
+}
+
+//////////////////////////
+// OFFER LETTER
+//////////////////////////
+
+model OfferLetter {
+  id          String   @id @default(uuid())
+
+  employeeEmail String
+  companyId     String
+
+  salary        Float
+  joiningDate   DateTime
+  position      String
+
+  status        OfferStatus @default(SENT)
+
+  documentUrl   String?
+
+  employeeId    String?
+  employee      Employee? @relation(fields: [employeeId], references: [id])
+
+  createdAt     DateTime @default(now())
+  acceptedAt    DateTime?
+}
+
+//////////////////////////
+// EMPLOYEE
+//////////////////////////
+
+model Employee {
+  id            String @id @default(uuid())
+
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id])
+
+  companyId     String
+  company       Company @relation(fields: [companyId], references: [id])
+
+  employeeCode  String @unique
+
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+
+  designationId String
+  designation   Designation @relation(fields: [designationId], references: [id])
+
+  joiningDate   DateTime
+  employmentType EmploymentType
+
+  workLocation  String?
+
+  managerId     String?
+  manager       Employee? @relation("Manager", fields: [managerId], references: [id])
+  subordinates  Employee[] @relation("Manager")
+
+  status        Status @default(INVITED)
+
+  personal      EmployeePersonal?
+  experience    EmployeeExperience[]
+
+  salary        SalaryStructure?
+  compliance    EmployeeCompliance?
+
+  joiningLetter JoiningLetter?
+  offerLetter   OfferLetter?
+
+  documents     EmployeeDocument[]
+
+  attendances   Attendance[]
+  leaves        Leave[]
+  payrolls      Payroll[]
+
+  deletedAt     DateTime?
 }
 
 //////////////////////////
@@ -153,40 +259,55 @@ model HR {
 }
 
 //////////////////////////
-// EMPLOYEE
+// SALARY STRUCTURE
 //////////////////////////
 
-model Employee {
-  id            String @id @default(uuid())
+model SalaryStructure {
+  id          String @id @default(uuid())
 
-  userId        String @unique
-  user          User   @relation(fields: [userId], references: [id])
+  employeeId  String @unique
+  employee    Employee @relation(fields: [employeeId], references: [id])
 
-  employeeCode  String @unique
+  basic       Float
+  hra         Float
+  allowances  Float
+  bonus       Float
+  deductions  Float
 
-  departmentId  String
-  department    Department @relation(fields: [departmentId], references: [id])
+  createdAt   DateTime @default(now())
+}
 
-  designationId String
-  designation   Designation @relation(fields: [designationId], references: [id])
+//////////////////////////
+// COMPLIANCE
+//////////////////////////
 
-  joiningDate   DateTime
-  employmentType EmploymentType
-  workLocation  String?
-  salary        Float
+model EmployeeCompliance {
+  id          String @id @default(uuid())
 
-  managerId     String?
-  manager       Employee? @relation("Manager", fields: [managerId], references: [id])
-  subordinates  Employee[] @relation("Manager")
+  employeeId  String @unique
+  employee    Employee @relation(fields: [employeeId], references: [id])
 
-  personal      EmployeePersonal?
-  experience    EmployeeExperience[]
+  pfNumber    String?
+  esiNumber   String?
+  insuranceId String?
 
-  joiningLetter JoiningLetter?
+  createdAt   DateTime @default(now())
+}
 
-  attendances   Attendance[]
-  leaves        Leave[]
-  payrolls      Payroll[]
+//////////////////////////
+// DOCUMENTS
+//////////////////////////
+
+model EmployeeDocument {
+  id          String @id @default(uuid())
+
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+
+  name        String
+  fileUrl     String
+
+  createdAt   DateTime @default(now())
 }
 
 //////////////////////////
@@ -206,7 +327,7 @@ model JoiningLetter {
 }
 
 //////////////////////////
-// PERSONAL & EXPERIENCE
+// PERSONAL
 //////////////////////////
 
 model EmployeePersonal {
@@ -221,6 +342,10 @@ model EmployeePersonal {
   dob               DateTime?
   emergencyContact  String?
 }
+
+//////////////////////////
+// EXPERIENCE
+//////////////////////////
 
 model EmployeeExperience {
   id           String @id @default(uuid())
@@ -315,9 +440,6 @@ model Payroll {
   employeeId  String
   employee    Employee @relation(fields: [employeeId], references: [id])
 
-  basicSalary Float
-  deductions  Float
-  bonus       Float
   netSalary   Float
 
   month       Int
@@ -362,6 +484,7 @@ model AuditLog {
 
   action    String
   module    String
+  metadata  Json?
 
   createdAt DateTime @default(now())
 }

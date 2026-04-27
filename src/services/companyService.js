@@ -191,6 +191,20 @@ export const completeCompanyProfile = async (companyId, data) => {
   return updated;
 };
 
+export const updateCompanyProfile = async (companyId, data) => {
+  return prisma.company.update({
+    where: { id: companyId },
+    data: {
+      name: data.name || undefined,
+      location: data.location || undefined,
+      companyLogo: data.companyLogo || undefined,
+      // allow owner details update too
+      ownerName: data.ownerName || undefined,
+      ownerEmail: data.ownerEmail || undefined,
+    }
+  });
+};
+
 //////////////////////////
 // 4. ACTIVATE COMPANY
 //////////////////////////

@@ -8,7 +8,8 @@ import {
   completeProfile,
   activateCompanyController,
   getAllCompanies,
-  resendInvitation
+  resendInvitation,
+  updateCompanyProfileController
 } from "../controller/companyController.js";
 
 const router = express.Router();
@@ -24,6 +25,11 @@ router.post("/setup-account", setupAccount);
 
 // OWNER → complete profile
 router.put("/complete-profile", authMiddleware, allowRoles("OWNER"), completeProfile);
+
+// Consolidated Profile Update (Industry Standard)
+// - If ID is provided: Only Super Admin can use it to update any company.
+// - If ID is NOT provided: User updates their own associated company.
+router.put("/profile/:id?", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR"), updateCompanyProfileController);
 
 // SUPER ADMIN → approve/activate company
 router.post("/activate/:id", authMiddleware, allowRoles("SUPER_ADMIN"), activateCompanyController);

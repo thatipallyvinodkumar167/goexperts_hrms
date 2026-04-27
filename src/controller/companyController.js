@@ -4,7 +4,8 @@ import {
   completeCompanyProfile,
   activateCompany,
   getCompaniesForAdmin,
-  resendCompanyInvite
+  resendCompanyInvite,
+  updateCompanyProfile
 } from "../services/companyService.js";
 
 //////////////////////////
@@ -81,6 +82,31 @@ export const completeProfile = async (req, res) => {
       data,
     });
 
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateCompanyProfileController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const companyId = id || req.user.companyId;
+
+    if (!companyId) throw new Error("Company ID is required");
+
+    // Security check: If an ID is provided in params, only Super Admin can use it.
+    // If no ID is provided, the user updates their own company.
+    if (id && req.user.role !== "SUPER_ADMIN") {
+        return res.status(403).json({ success: false, message: "Forbidden: You can only update your own company" });
+    }
+
+    const data = await updateCompanyProfile(companyId, req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Company profile updated successfully",
+      data,
+    });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }

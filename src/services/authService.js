@@ -247,3 +247,42 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
 
   return {message : "password changed successfully"};
 }
+
+export const updateUserProfileService = async (userId, data) => {
+  const { name, email, profileLogo } = data;
+
+  // If email is being changed, check for conflicts
+  if (email) {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: email.trim().toLowerCase(),
+        NOT: { id: userId }
+      }
+    });
+
+    if (existingUser) {
+      throw new Error("Email already in use by another account");
+    }
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: name || undefined,
+      email: email ? email.trim().toLowerCase() : undefined,
+      profileLogo: profileLogo || undefined,
+    }
+  });
+
+  return {
+    message: "Profile updated successfully",
+    user: {
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      profileLogo: updatedUser.profileLogo,
+      companyId: updatedUser.companyId
+    }
+  };
+};
