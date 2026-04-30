@@ -11,7 +11,7 @@ export const inviteService = async ({
 
 }) => {
 
-    normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
 
     const existingUser = await prisma.user.findFirst({
         where : { email: normalizedEmail, companyId}
@@ -21,7 +21,7 @@ export const inviteService = async ({
         throw Error("User  already exists in company ");
     }
 
-    const rawToken = crypto.ramdomBytes(32).toString("hex");
+    const rawToken = crypto.randomBytes(32).toString("hex");
 
     const expireAt = new Date(Date.now() + 48 * 60 * 1000);
 
