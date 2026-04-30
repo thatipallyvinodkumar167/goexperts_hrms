@@ -42,4 +42,84 @@ export const acceptInviteService = async ({token, password, name}) => {
 
 };
 
-//
+// step 2 verify email
+export const verifyEmailService  = async (userId) => {
+
+    const user = await prisma.user.findFirst({
+        where : {id : userId}
+    });
+
+    if(!user){
+        throw Error("user not found")
+    }
+
+    await prisma.user.update({
+        where : {id : user.id},
+        isEmailVerified : true
+    });
+    return { message : "email verified successfully"}
+};
+
+// ✅ STEP 4: Complete Profile
+
+export const completeProfileService  = async ({
+    userId,
+    personal,
+    departmentId,
+  designationId
+}) => {
+
+    const user = await prisma.user.findUnique({
+        where : {id : user.id}
+    });
+
+if(!user){
+    throw Error("user not found");
+}
+
+  // create employee
+  const employee = await prisma.employee.create({
+
+    data : {
+        userId,
+        companyId : user.companyId,
+        employeeCode : `EMP-${Date.now()}`,
+
+        departmentId,
+        designationId,
+        joiningDate : new Date(),
+        employmentType : "FRESHER",
+
+        personal : {
+            create : personal
+        }
+
+    }
+  });
+
+  return {message : "profile compaleted", employee};
+};
+
+// ✅ STEP 5: Activate Employee
+export const activateUserService  = async (userId) => {
+    const user = await prisma.user.findUnique({
+        where : { id : userId}
+    });
+
+    if(!user){
+        throw Error("user not found");
+    }
+
+    if(!user.isEmailVerified){
+        throw Error("Verify email first");
+    }
+
+    await prisma.user.update({
+        where : {id: userId},
+         data: {
+      status: "ACTIVE"
+    }
+    });
+
+    return { message: "Account activated successfully" };
+}
