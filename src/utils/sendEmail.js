@@ -10,6 +10,13 @@ export const sendEmail = async (to, subject, html) => {
             }
         });
 
+        // 🚨 MOCK FOR RENDER FREE TIER TESTING 🚨
+        console.log("=============================================");
+        console.log(`✉️ MOCK EMAIL INTERCEPTED FOR: ${to}`);
+        console.log(`📝 SUBJECT: ${subject}`);
+        console.log(`🔗 CONTENT: ${html}`);
+        console.log("=============================================");
+
         const info = await transporter.sendMail({
             from: `"GOExperts HRMS" <${process.env.SMTP_USER}>`,
             to,
