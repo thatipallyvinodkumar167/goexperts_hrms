@@ -57,6 +57,7 @@ export const createCompany = async (req, res) => {
 export const setupAccount = async (req, res) => {
   try {
     const { token, password } = req.body;
+    console.log("🛠️ setupAccount Controller received token:", token);
 
     const result = await setupCompanyAccount(token, password);
 
