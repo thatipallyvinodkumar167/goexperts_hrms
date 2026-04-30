@@ -14,7 +14,7 @@ export const sendEmail = async (to, subject, html) => {
         const transporter = nodemailer.createTransport({
             host: ipv4Host,
             port: Number(process.env.SMTP_PORT),
-            secure: false,
+            secure: Number(process.env.SMTP_PORT) === 465,
             family: 4,
             connectionTimeout: 10000,
             greetingTimeout: 10000,
