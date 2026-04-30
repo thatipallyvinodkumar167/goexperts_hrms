@@ -301,3 +301,41 @@ export const resendCompanyInvite = async (companyId) => {
 
   return { message: "New invitation link sent successfully" };
 };
+
+//////////////////////////
+// 7. DELETE COMPANY
+//////////////////////////
+
+export const deleteCompany = async (companyId) => {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+  });
+
+  if (!company) {
+    throw new Error("Company not found");
+  }
+
+  // Handle cascading deletion manually if needed, 
+  // or rely on schema ON DELETE CASCADE if configured.
+  // For now, let's do a simple delete.
+  
+  await prisma.$transaction(async (tx) => {
+    // Delete related records that might block deletion
+    await tx.companyInvite.deleteMany({ where: { companyId } });
+    await tx.employeeInvite.deleteMany({ where: { companyId } });
+    await tx.subscription.deleteMany({ where: { companyId } });
+    
+    // Note: Users and Employees might need more careful handling 
+    // depending on business requirements (e.g. archiving vs deleting).
+    // For now, we delete the company.
+    
+    await tx.user.deleteMany({ where: { companyId } });
+    await tx.employee.deleteMany({ where: { companyId } });
+    
+    await tx.company.delete({
+      where: { id: companyId },
+    });
+  });
+
+  return { message: "Company and related data deleted successfully" };
+};

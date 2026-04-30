@@ -5,7 +5,8 @@ import {
   activateCompany,
   getCompaniesForAdmin,
   resendCompanyInvite,
-  updateCompanyProfile
+  updateCompanyProfile,
+  deleteCompany
 } from "../services/companyService.js";
 
 //////////////////////////
@@ -142,6 +143,26 @@ export const resendInvitation = async (req, res) => {
     const { id } = req.params;
 
     const result = await resendCompanyInvite(id);
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+//////////////////////////
+// DELETE COMPANY
+//////////////////////////
+
+export const removeCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await deleteCompany(id);
 
     res.status(200).json({
       success: true,

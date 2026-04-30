@@ -9,7 +9,8 @@ import {
   activateCompanyController,
   getAllCompanies,
   resendInvitation,
-  updateCompanyProfileController
+  updateCompanyProfileController,
+  removeCompany
 } from "../controller/companyController.js";
 
 const router = express.Router();
@@ -38,6 +39,9 @@ router.post("/activate/:id", authMiddleware, allowRoles("SUPER_ADMIN"), activate
 
 // SUPER ADMIN → resend invitation
 router.post("/resend-invite/:id", authMiddleware, allowRoles("SUPER_ADMIN"), resendInvitation);
+
+// SUPER ADMIN → delete company
+router.delete("/:id", authMiddleware, allowRoles("SUPER_ADMIN"), removeCompany);
 
 
 export default router;
