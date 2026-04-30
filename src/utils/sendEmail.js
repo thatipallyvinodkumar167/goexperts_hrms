@@ -1,5 +1,9 @@
 
 import nodemailer from "nodemailer";
+import dns from "dns";
+
+// Force Node.js to prefer IPv4 over IPv6 to fix Render ENETUNREACH error
+dns.setDefaultResultOrder('ipv4first');
 
 export const sendEmail = async (to, subject, html) => {
  
