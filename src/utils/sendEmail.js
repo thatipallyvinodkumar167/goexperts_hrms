@@ -1,31 +1,12 @@
 import nodemailer from "nodemailer";
-import dns from "dns";
-import { promisify } from "util";
-
-const resolve4 = promisify(dns.resolve4);
 
 export const sendEmail = async (to, subject, html) => {
     try {
-        // 1. Manually resolve the hostname to an IPv4 address
-        const addresses = await resolve4(process.env.SMTP_HOST);
-        const ipv4Host = addresses[0];
-
-        // 2. Pass the raw IPv4 to Nodemailer to entirely bypass IPv6 routing
         const transporter = nodemailer.createTransport({
-            host: ipv4Host,
-            port: Number(process.env.SMTP_PORT),
-            secure: Number(process.env.SMTP_PORT) === 465,
-            family: 4,
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000,
+            service: 'gmail',
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
-            },
-            tls: {
-                // Ensure TLS validation still works against the original hostname
-                servername: process.env.SMTP_HOST
             }
         });
 
@@ -43,9 +24,9 @@ export const sendEmail = async (to, subject, html) => {
             ]
         });
 
-        console.log("Email send successfully", info.messageId);
+        console.log("Email sent successfully", info.messageId);
     } catch (error) {
-        console.log("Email error", error.message);
-        throw Error("email sending fail");
+        console.error("Email error:", error.message);
+        throw new Error("email sending fail");
     }
-}
+};
