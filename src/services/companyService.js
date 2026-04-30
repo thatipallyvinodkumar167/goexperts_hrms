@@ -91,17 +91,14 @@ export const createCompanyWithInvite = async ({
   // ✅ SEND EMAIL (OUTSIDE TRANSACTION TO AVOID TIMEOUTS)
   const inviteLink = `${process.env.FRONTEND_URL}://setup-account?token=${rawToken}`;
   
-  try {
-    // Send invitation to the COMPANY EMAIL only (as requested)
-    await sendEmail(
-      normalizedOwnerEmail || normalizedCompanyEmail,
-      "Activate Your Company Account",
-      companyInviteTemplate(ownerName, inviteLink)
-    );
-  } catch (error) {
+  // Fire-and-forget email so API responds immediately even if SMTP is slow/unreachable.
+  sendEmail(
+    normalizedOwnerEmail || normalizedCompanyEmail,
+    "Activate Your Company Account",
+    companyInviteTemplate(ownerName, inviteLink)
+  ).catch((error) => {
     console.error("Delayed Email Error:", error.message);
-    // We don't throw here because the DB records are already saved
-  }
+  });
 
   return {
     ...result,
