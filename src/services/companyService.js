@@ -24,23 +24,20 @@ export const createCompanyWithInvite = async ({
     throw new Error("Invalid company email address");
   }
 
-  const [, domain] = email.split("@");
-  const publicDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"];
-  const isPublic = publicDomains.includes(domain.toLowerCase());
+  const normalizedCompanyEmail = email.trim().toLowerCase();
+  const normalizedOwnerEmail = ownerEmail?.trim().toLowerCase();
 
-  // check existing email or domain (skip domain check if it's a public provider)
+  // check existing company email only
   const existing = await prisma.company.findFirst({
     where: { 
       OR: [
-        { email },
-        !isPublic ? { domain } : {}
+        { email: normalizedCompanyEmail }
       ].filter(Boolean)
     },
   });
 
   if (existing) {
-    const reason = existing.email === email ? "Email" : "Domain";
-    throw new Error(`Company with this ${reason} already exists`);
+    throw new Error("Company with this Email already exists");
   }
 
   // ✅ TOKEN GENERATION (NO CHANGE, BUT USED PROPERLY NOW)
@@ -52,10 +49,10 @@ export const createCompanyWithInvite = async ({
     const company = await tx.company.create({
       data: {
         name,
-        email,
-        domain,
+        email: normalizedCompanyEmail,
+        domain: null,
         ownerName,
-        ownerEmail,
+        ownerEmail: normalizedOwnerEmail,
         location,
 
         // ✅ STATUS FLOW (IMPROVED)
@@ -69,7 +66,7 @@ export const createCompanyWithInvite = async ({
     const ownerUser = await tx.user.create({
       data: {
         name: ownerName,
-        email: email,
+        email: normalizedOwnerEmail || normalizedCompanyEmail,
         password: "", // not set yet
         role: "OWNER",
         companyId: company.id,
@@ -80,7 +77,7 @@ export const createCompanyWithInvite = async ({
     // ✅ STORE TOKEN (CORRECT)
     await tx.companyInvite.create({
       data: {
-        email: email,
+        email: normalizedOwnerEmail || normalizedCompanyEmail,
         token: hashedToken,
         companyId: company.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -97,7 +94,7 @@ export const createCompanyWithInvite = async ({
   try {
     // Send invitation to the COMPANY EMAIL only (as requested)
     await sendEmail(
-      email,
+      normalizedOwnerEmail || normalizedCompanyEmail,
       "Activate Your Company Account",
       companyInviteTemplate(ownerName, inviteLink)
     );
