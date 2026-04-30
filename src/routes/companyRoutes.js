@@ -20,7 +20,7 @@ router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), getAllCompanies);
 // SUPER ADMIN → create company
 router.post("/create", authMiddleware, allowRoles("SUPER_ADMIN"), createCompany);
 
-// PUBLIC → setup account
+// PUBLIC → setup account (API)
 router.post("/setup-account", setupAccount);
 
 // OWNER → complete profile

@@ -46,6 +46,22 @@ app.get("/", (req, res) => {
   res.send("Go experts HRMS..");
 });
 
+// ✅ Serve Android Asset Links for Deep Linking
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.json([
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "com.example.goexperts",
+       sha256_cert_fingerprints: [
+          "2F:89:25:63:17:50:F7:97:98:3E:88:B7:82:6F:34:6D:3C:E0:3C:41:44:20:58:4C:D2:11:67:CC:D1:67:86:7F"
+        ]
+      }
+    }
+  ]);
+});
+
 const PORT = process.env.PORT || 5002;
 
 

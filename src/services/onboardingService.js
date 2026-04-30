@@ -1,6 +1,7 @@
 import prisma from "../config/db";
 
 
+// ✅ STEP 1 + 2: Accept Invite + Set Password
 export const acceptInviteService = async ({token, password, name}) => {
     
     const invite  = await prisma.employeeInvite.findFirst({
@@ -32,7 +33,13 @@ export const acceptInviteService = async ({token, password, name}) => {
 
     //mark invite accepted
     await prisma.employeeInvite.update({
-        
-    })
 
-}
+        where : { id : invite.id},
+        data : {acceptedAt : new Date()}
+    });
+
+    return {message :  "Password set successfully. Please verify email", userId : user.id};
+
+};
+
+//

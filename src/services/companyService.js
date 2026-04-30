@@ -93,7 +93,7 @@ export const createCompanyWithInvite = async ({
   
   // Fire-and-forget email so API responds immediately even if SMTP is slow/unreachable.
   sendEmail(
-    normalizedOwnerEmail || normalizedCompanyEmail,
+    normalizedCompanyEmail,
     "Activate Your Company Account",
     companyInviteTemplate(ownerName, inviteLink)
   ).catch((error) => {
