@@ -40,6 +40,17 @@ enum OfferStatus {
   EXPIRED
 }
 
+enum CompanyDocumentType {
+  GST_CERTIFICATE
+  PAN_CARD
+  INCORPORATION_CERTIFICATE
+  ADDRESS_PROOF
+  BANK_PROOF
+  PF_REGISTRATION
+  ESI_REGISTRATION
+  COMPANY_LOGO
+}
+
 //////////////////////////
 // USERS
 //////////////////////////
@@ -99,7 +110,43 @@ model Company {
   status      Status   @default(INVITED)
 
   companyLogo String?
-  verificationDocs Json?
+
+  legalName    String?
+  phone        String?
+  website      String?
+  industry     String?
+  companySize  String?
+  foundedYear  Int?
+
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  country      String?
+  pincode      String?
+
+  gstNumber    String?
+  panNumber    String?
+  tanNumber    String?
+
+  workingDays     String?
+  workingHours    Int?
+  probationPeriod Int?
+  noticePeriod    Int?
+
+  currency        String?
+  salaryCycle     String?
+  payrollStartDay Int?
+  payrollEndDay   Int?
+
+  pfEnabled         Boolean @default(false)
+  pfPercentage      Float?
+  esiEnabled        Boolean @default(false)
+  insuranceProvider String?
+
+  timezone   String?
+  dateFormat String?
+  language   String?
 
   invitedAt     DateTime?
   activatedAt   DateTime?
@@ -124,9 +171,28 @@ model Company {
   invites      CompanyInvite[]
   employeeInvites EmployeeInvite[]
   employees    Employee[]
+  documents    CompanyDocument[]
 
   @@index([status])
   @@index([lastActiveAt])
+}
+
+model CompanyDocument {
+  id          String @id @default(uuid())
+
+  companyId   String
+  company     Company @relation(fields: [companyId], references: [id])
+
+  name        CompanyDocumentType
+  fileUrl     String
+  status      String @default("PENDING")
+
+  uploadedAt  DateTime @default(now())
+  verifiedAt  DateTime?
+
+  remarks     String?
+
+  @@index([companyId])
 }
 
 //////////////////////////
