@@ -1,4 +1,5 @@
-import prisma from "../config/db";
+import prisma from "../config/db.js";
+import { hashPassword } from "../utils/hashPassword.js";
 
 
 // ✅ STEP 1 + 2: Accept Invite + Set Password
@@ -7,16 +8,22 @@ export const acceptInviteService = async ({token, password, name}) => {
     const invite  = await prisma.employeeInvite.findFirst({
         where : {
             token,
-            expiresAt : {gt : new Date()},
-            acceptedAt : null
         }
     });
 
     if(!invite){
-        throw Error("invalid or expired invite");
+        throw Error("Invalid token");
     }
 
-    const hashedPassword  = await hashedPassword(password);
+    if(invite.expiresAt < new Date()){
+        throw Error("Token has expired");
+    }
+
+    if(invite.acceptedAt){
+        throw Error("The password has already been set for this account");
+    }
+
+    const hashedPassword  = await hashPassword(password);
 
      // create user
     const user = await prisma.user.create({

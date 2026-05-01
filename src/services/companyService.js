@@ -123,13 +123,19 @@ export const setupCompanyAccount = async (token, password) => {
   const invite = await prisma.companyInvite.findFirst({
     where: {
       token: hashedToken,
-      expiresAt: { gt: new Date() },
-      acceptedAt: null, // ✅ Token can only be used once
     },
   });
 
   if (!invite) {
-    throw new Error("Invalid or expired token");
+    throw new Error("Invalid token");
+  }
+
+  if (invite.expiresAt < new Date()) {
+    throw new Error("Token has expired");
+  }
+
+  if (invite.acceptedAt) {
+    throw new Error("The password has already been set for this account");
   }
 
   const user = await prisma.user.findFirst({
