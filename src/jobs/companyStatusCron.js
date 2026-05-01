@@ -1,61 +1,50 @@
 import cron from "node-cron";
 import prisma from "../config/db.js";
 
-
-
 export const companyStatusCron = () => {
-    cron.schedule("0 0 * * *", async () => {
-        console.log("running company status cron");
+  cron.schedule("0 0 * * *", async () => {
+    console.log("🕛 Running Company Status Cron...");
 
+    try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-        try {
-
-   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-   const companies = await prisma.company.findMany({
-    select: {
-      id: true,
-      name: true,
-      users: {
+      // Only check ACTIVE companies for suspension
+      const activeCompanies = await prisma.company.findMany({
+        where: { status: "ACTIVE" },
         select: {
-          role: true,
-          lastLoginAt: true,
+          id: true,
+          name: true,
+          users: {
+            select: { role: true, lastLoginAt: true },
+          },
         },
-      },
-    },
-   });
+      });
 
-   for (const company of companies) {
+      for (const company of activeCompanies) {
+        // Check if any OWNER or HR logged in within the last 30 days
+        const hasRecentLogin = company.users.some(
+          (user) =>
+            ["OWNER", "HR"].includes(user.role) &&
+            user.lastLoginAt &&
+            user.lastLoginAt > thirtyDaysAgo
+        );
 
-    const activeUsers = company.users.filter(
-        (user) => 
-        ["OWNER","HR"].includes(user.role) && 
-        user.lastLoginAt &&
-        user.lastLoginAt > thirtyDaysAgo
-    );
-
-    if (activeUsers.length === 0) {
-        await prisma.company.update({
-            where : {id:company.id},
-            data : {status : "INACTIVE", inactiveAt: new Date()}
-        });
-
-        console.log(`company inactive : ${company.name}`);
-    }
-   }
-
-   console.log("cron completed");
-
-
-
-        } catch (error) {
-           console.error("cron error :", error.message);
+        if (!hasRecentLogin) {
+          await prisma.company.update({
+            where: { id: company.id },
+            data: { status: "SUSPENDED", inactiveAt: new Date() },
+          });
+          console.log(`🔴 Suspended (30 days no login): ${company.name}`);
         }
+      }
 
+      console.log("✅ Company Status Cron completed.");
+    } catch (error) {
+      console.error("❌ Cron error:", error.message);
+    }
+  }, {
+    timezone: "Asia/Kolkata",
+  });
 
-    }, {
-      timezone: "Asia/Kolkata",
-    });
-
-    console.log("company status cron scheduled: 0 0 * * * (Asia/Kolkata)");
+  console.log("⏰ Company status cron scheduled: Every midnight (Asia/Kolkata)");
 };

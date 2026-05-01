@@ -49,35 +49,36 @@ export const loginUser = async ({ email, password } = {}) => {
     };
   }
 
-  // Company user login path (derive company from email domain)
-  const [, emailDomain] = normalizedEmail.split("@");
-  if (!emailDomain) {
-    throw new Error("Invalid email format");
-  }
-
-  const company = await prisma.company.findFirst({
-    where: {
-      domain: emailDomain,
-      status: "ACTIVE",
-    },
-    select: { id: true },
+  // Company user login path
+  let users = await prisma.user.findMany({
+    where: { email: normalizedEmail, status: "ACTIVE" },
+    include: { company: true }
   });
 
-  if (!company) {
-    throw new Error("Company not found for this email domain");
+  // If no user found by direct email, check if they typed the Company Email instead
+  if (users.length === 0) {
+    const companyByEmail = await prisma.company.findFirst({
+      where: { email: normalizedEmail } // removed status: "ACTIVE" to allow unapproved logins
+    });
+
+    if (companyByEmail) {
+      // Find the OWNER of this company
+      const owner = await prisma.user.findFirst({
+        where: { companyId: companyByEmail.id, role: "OWNER", status: "ACTIVE" },
+        include: { company: true }
+      });
+      if (owner) {
+        users = [owner];
+      }
+    }
   }
 
-  const user = await prisma.user.findFirst({
-    where: {
-      email: normalizedEmail,
-      companyId: company.id,
-      status: "ACTIVE",
-    },
-  });
-
-  if (!user) {
-    throw new Error("User not found");
+  if (users.length === 0) {
+    throw new Error("User not found or inactive");
   }
+
+  // Allow login even if company is not ACTIVE yet
+  const user = users[0];
 
   const isMatch = await comparePassword(password, user.password);
   if (!isMatch) {
@@ -91,7 +92,6 @@ export const loginUser = async ({ email, password } = {}) => {
     data: { lastLoginAt: new Date() },
   });
 
-
   return {
     user: {
       id: user.id,
@@ -100,6 +100,9 @@ export const loginUser = async ({ email, password } = {}) => {
       role: user.role,
       profileLogo: user.profileLogo,
       companyId: user.companyId,
+      // Pass these to the frontend so it knows which screen to show!
+      isProfileCompleted: user.company ? user.company.isProfileCompleted : true,
+      companyStatus: user.company ? user.company.status : "ACTIVE"
     },
     token: generateToken(user),
   };
@@ -258,8 +261,10 @@ export const updateUserProfileService = async (userId, data = {}) => {
 
     const normalizedLogo = profileLogo.trim();
     const isDataUrlImage = /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(normalizedLogo);
-    if (!isDataUrlImage) {
-      throw new Error("profileLogo must be a valid base64 image data URL");
+    const isHttpUrl = /^https?:\/\/.+/.test(normalizedLogo);
+
+    if (!isDataUrlImage && !isHttpUrl) {
+      throw new Error("profileLogo must be a valid image URL (https://...) or a base64 data URL");
     }
   }
 

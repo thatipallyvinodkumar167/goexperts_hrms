@@ -5,6 +5,8 @@ import express from "express";
 import helmet from "helmet";
 import cors from "cors";
 import morgan from "morgan";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js"
@@ -14,6 +16,9 @@ import { companyStatusCron } from "./jobs/companyStatusCron.js";
 import { inviteReminderCron } from "./jobs/inviteReminderCron.js";
 import inviteRoutes from "./routes/inviteRoutes.js";
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
@@ -32,6 +37,9 @@ app.use("/api/company", companyRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/invite", inviteRoutes);
+
+// ✅ Serve uploaded files (profile logos, etc.) as static
+app.use("/uploads", express.static(join(__dirname, "../uploads")));
 
 //checking health
 app.get("/health", (req, res) => {

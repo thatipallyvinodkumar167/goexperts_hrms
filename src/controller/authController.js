@@ -1,12 +1,38 @@
 import { changePasswordService, forgotPasswordService, loginUser, resetPasswordService, updateUserProfileService } from "../services/authService.js"
-
-
+import fs from "fs";
 
 export const updateProfile = async (req, res) => {
     try {
         const data = await updateUserProfileService(req.user.id, req.body);
         res.status(200).json({ success: true, ...data });
     } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+// Upload profile logo via multipart/form-data
+export const uploadProfileLogo = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "No image file provided." });
+        }
+
+        // Build the public URL for the uploaded file
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+        const fileUrl = `${baseUrl}/uploads/profiles/${req.file.filename}`;
+
+        // Save URL to user profile
+        const data = await updateUserProfileService(req.user.id, { profileLogo: fileUrl });
+
+        res.status(200).json({
+            success: true,
+            message: "Profile logo uploaded successfully.",
+            profileLogo: fileUrl,
+            user: data.user,
+        });
+    } catch (error) {
+        // Delete the uploaded file if DB update fails
+        if (req.file) fs.unlinkSync(req.file.path);
         res.status(400).json({ success: false, message: error.message });
     }
 };

@@ -112,7 +112,9 @@ export const createCompanyWithInvite = async ({
 //////////////////////////
 
 export const setupCompanyAccount = async (token, password) => {
+
   const safeToken = token ? token.trim() : "";
+  
   console.log("🛠️ setupCompanyAccount called with raw token:", safeToken);
 
   const hashedToken = crypto.createHash("sha256").update(safeToken).digest("hex");
