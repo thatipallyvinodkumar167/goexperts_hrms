@@ -124,6 +124,7 @@ export const setupCompanyAccount = async (token, password) => {
     where: {
       token: hashedToken,
       expiresAt: { gt: new Date() },
+      acceptedAt: null, // ✅ Token can only be used once
     },
   });
 
