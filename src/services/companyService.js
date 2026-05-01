@@ -85,7 +85,8 @@ export const createCompanyWithInvite = async ({
     });
 
     // ❌ REMOVED rawToken from return (SECURITY FIX)
-    return { company, ownerUser };
+    // ⚠️ TEMPORARY FOR TESTING: Returning rawToken so user can test via Postman easily
+    return { company, ownerUser, rawToken };
   });
 
   // ✅ SEND EMAIL (OUTSIDE TRANSACTION TO AVOID TIMEOUTS)
