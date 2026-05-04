@@ -64,10 +64,10 @@ export const inviteService = async (data) => {
              <p>We are pleased to offer you the position of <strong>${offerData.position}</strong>.</p>
              <p>Please find your formal offer letter attached to this email.</p>
              <br/>
-             <p>Click below to review and accept your offer:</p>
-             <a href="${process.env.FRONTEND_URL}/review-offer?email=${normalizedEmail}" 
-                style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-                Review & Accept Offer
+             <p>Click below to accept your offer directly:</p>
+             <a href="${process.env.BACKEND_URL || 'https://goexperts-hrms.onrender.com'}/api/invite/accept-offer?email=${normalizedEmail}" 
+                style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 10px;">
+                Accept Offer
              </a>`,
             [{ filename: fileName, path: filePath }]
           ).catch(err => console.error("Offer Email Failed:", err.message));
