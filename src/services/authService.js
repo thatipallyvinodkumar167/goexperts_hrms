@@ -253,18 +253,22 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
 
 export const updateUserProfileService = async (userId, data = {}) => {
   const { name, email, profileLogo } = data;
+  console.log(`🛠️ Updating profile for user ${userId}. Received fields:`, Object.keys(data));
 
   if (profileLogo !== undefined && profileLogo !== null) {
-    if (typeof profileLogo !== "string" || !profileLogo.trim()) {
-      throw new Error("profileLogo must be a non-empty string");
+    if (typeof profileLogo !== "string") {
+      throw new Error("profileLogo must be a string");
     }
 
     const normalizedLogo = profileLogo.trim();
-    const isDataUrlImage = /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(normalizedLogo);
-    const isHttpUrl = /^https?:\/\/.+/.test(normalizedLogo);
+    
+    // Accept anything that looks like a URL or a Base64 string
+    const isHttpUrl = normalizedLogo.startsWith("http");
+    const isDataUrl = normalizedLogo.startsWith("data:image");
+    const isProbablyBase64 = normalizedLogo.length > 100; // Large strings are usually images
 
-    if (!isDataUrlImage && !isHttpUrl) {
-      throw new Error("profileLogo must be a valid image URL (https://...) or a base64 data URL");
+    if (!isHttpUrl && !isDataUrl && !isProbablyBase64) {
+      throw new Error("Invalid image format provided");
     }
   }
 
