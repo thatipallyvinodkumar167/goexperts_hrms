@@ -86,7 +86,7 @@ export const inviteService = async (data) => {
          <p>Your HR account has been created.</p>
          <p>Email: ${normalizedEmail}</p>
          <p>You can login now at: ${process.env.FRONTEND_URL}/login</p>`
-      );
+      ).catch(err => console.error("Migration Email Failed:", err.message));
 
       return { message: "Existing HR created successfully", userId: result.user.id };
     }
@@ -109,7 +109,7 @@ export const inviteService = async (data) => {
        <p>Please click the link below to setup your account:</p>
        <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}">
        Setup HR Account</a>`
-    );
+    ).catch(err => console.error("HR Invite Email Failed:", err.message));
   }
 
   ////////////////////////
@@ -141,7 +141,7 @@ export const inviteService = async (data) => {
          <p>Joining: ${offerData.joiningDate}</p>
          <a href="${process.env.FRONTEND_URL}/accept-offer?email=${normalizedEmail}">
          Accept Offer</a>`
-      );
+      ).catch(err => console.error("Offer Email Failed:", err.message));
 
       return { message: "Offer sent successfully" };
     }
@@ -163,7 +163,7 @@ export const inviteService = async (data) => {
       `<h3>You are invited to company</h3>
        <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}">
        Join Company</a>`
-    );
+    ).catch(err => console.error("Emp Invite Email Failed:", err.message));
   }
 
   ////////////////////////
