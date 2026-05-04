@@ -33,11 +33,53 @@ export const inviteService = async (data) => {
   let invite;
 
   ////////////////////////
-  // HR FLOW
+  // 🔥 1. NEW HIRE FLOW (Offer Letter for HR or EMPLOYEE)
   ////////////////////////
-  if (role === "HR") {
-    // 🔥 OPTION A: DIRECT CREATE (Existing HR / Migration)
-    if (!isNewHire && password) {
+  if (isNewHire) {
+      if (!offerData) throw new Error("Offer data required");
+
+      await prisma.offerLetter.create({
+          data: {
+              employeeEmail: normalizedEmail,
+              companyId,
+              salary: offerData.salary,
+              joiningDate: new Date(offerData.joiningDate),
+              position: offerData.position,
+              role: role, // HR or EMPLOYEE
+              status: "SENT"
+          }
+      });
+
+      // Generate the Offer Letter PDF in the background
+      generateOfferLetter({
+          email: normalizedEmail,
+          position: offerData.position,
+          salary: offerData.salary,
+          joiningDate: offerData.joiningDate
+      }).then(({ filePath, fileName }) => {
+          sendEmail(
+            normalizedEmail,
+            "Offer Letter - GOExperts HRMS",
+            `<h2>Congratulations!</h2>
+             <p>We are pleased to offer you the position of <strong>${offerData.position}</strong>.</p>
+             <p>Please find your formal offer letter attached to this email.</p>
+             <br/>
+             <p>Click below to review and accept your offer:</p>
+             <a href="${process.env.FRONTEND_URL}/review-offer?email=${normalizedEmail}" 
+                style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                Review & Accept Offer
+             </a>`,
+            [{ filename: fileName, path: filePath }]
+          ).catch(err => console.error("Offer Email Failed:", err.message));
+      }).catch(err => console.error("PDF Generation Failed:", err.message));
+
+      return { message: "Offer and PDF sent successfully" };
+  }
+
+  ////////////////////////
+  // 🔥 2. MIGRATION FLOW (Existing HR with Password)
+  ////////////////////////
+  if (!isNewHire && role === "HR" && password) {
       const hashedPassword = await hashPassword(password);
       
       const result = await prisma.$transaction(async (tx) => {
@@ -90,96 +132,28 @@ export const inviteService = async (data) => {
       ).catch(err => console.error("Migration Email Failed:", err.message));
 
       return { message: "Account activated successfully and Welcome Letter sent" };
-    }
-
-    // 🔥 OPTION B: INVITE FLOW (New HR)
-    invite = await prisma.employeeInvite.create({
-      data: {
-        email: normalizedEmail,
-        token: rawToken,
-        role: "HR",
-        companyId,
-        expiresAt
-      }
-    });
-
-    sendEmail(
-      normalizedEmail,
-      "HR Invitation",
-      `<h3>You are invited as HR</h3>
-       <p>Please click the link below to setup your account:</p>
-       <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}">
-       Setup HR Account</a>`
-    ).catch(err => console.error("HR Invite Email Failed:", err.message));
   }
 
   ////////////////////////
-  // EMPLOYEE FLOW
+  // 🔥 3. STANDARD INVITE FLOW (Existing Employee/HR without Offer)
   ////////////////////////
-  else if (role === "EMPLOYEE") {
-    // 🔥 NEW EMPLOYEE (Offer Flow)
-    if (isNewHire) {
-      if (!offerData) {
-        throw new Error("Offer data required");
-      }
-
-      await prisma.offerLetter.create({
-        data: {
-          employeeEmail: normalizedEmail,
-          companyId,
-          salary: offerData.salary,
-          joiningDate: new Date(offerData.joiningDate),
-          position: offerData.position,
-          role: role, // Now stored in the DB
-          status: "SENT"
-        }
-      });
-
-      // Generate the Offer Letter PDF in the background
-      generateOfferLetter({
+  invite = await prisma.employeeInvite.create({
+      data: {
           email: normalizedEmail,
-          position: offerData.position,
-          salary: offerData.salary,
-          joiningDate: offerData.joiningDate
-      }).then(({ filePath, fileName }) => {
-          sendEmail(
-            normalizedEmail,
-            "Offer Letter - GOExperts HRMS",
-            `<h2>Congratulations!</h2>
-             <p>We are pleased to offer you the position of <strong>${offerData.position}</strong>.</p>
-             <p>Please find your formal offer letter attached to this email.</p>
-             <br/>
-             <p>Click below to review and accept your offer:</p>
-             <a href="${process.env.FRONTEND_URL}/review-offer?email=${normalizedEmail}" 
-                style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-                Review & Accept Offer
-             </a>`,
-            [{ filename: fileName, path: filePath }]
-          ).catch(err => console.error("Offer Email Failed:", err.message));
-      }).catch(err => console.error("PDF Generation Failed:", err.message));
-
-      return { message: "Offer and PDF sent successfully" };
-    }
-
-    // 🔥 EXISTING EMPLOYEE
-    invite = await prisma.employeeInvite.create({
-      data: {
-        email: normalizedEmail,
-        token: rawToken,
-        role: "EMPLOYEE",
-        companyId,
-        expiresAt
+          token: rawToken,
+          role: role,
+          companyId,
+          expiresAt
       }
-    });
+  });
 
-    sendEmail(
+  sendEmail(
       normalizedEmail,
-      "Employee Invite",
-      `<h3>You are invited to company</h3>
+      `${role === "HR" ? "HR" : "Employee"} Invitation`,
+      `<h3>You are invited to join as ${role === "HR" ? "HR" : "an Employee"}</h3>
        <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}">
-       Join Company</a>`
-    ).catch(err => console.error("Emp Invite Email Failed:", err.message));
-  }
+       Setup Account</a>`
+  ).catch(err => console.error("Invite Email Failed:", err.message));
 
   ////////////////////////
   // AUDIT LOG
