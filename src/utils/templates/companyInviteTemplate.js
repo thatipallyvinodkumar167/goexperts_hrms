@@ -2,7 +2,7 @@
 export const companyInviteTemplate = (name, inviteLink) => {
 
     return ` <div style="font-family: Arial; padding: 20px;">
-      <h2>Welcome to GoExperts HRMS 🚀</h2>  
+      <h2>Welcome to GoExperts HRMS </h2>  
        <p>Hello ${name},</p>
 
       <p>You have been invited to set up your company account.</p>

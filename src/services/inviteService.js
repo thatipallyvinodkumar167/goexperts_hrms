@@ -79,7 +79,7 @@ export const inviteService = async (data) => {
         return { user, employee };
       });
 
-      await sendEmail(
+      sendEmail(
         normalizedEmail,
         "Welcome to HRMS",
         `<h3>Welcome aboard!</h3>
@@ -102,7 +102,7 @@ export const inviteService = async (data) => {
       }
     });
 
-    await sendEmail(
+    sendEmail(
       normalizedEmail,
       "HR Invitation",
       `<h3>You are invited as HR</h3>
@@ -133,7 +133,7 @@ export const inviteService = async (data) => {
         }
       });
 
-      await sendEmail(
+      sendEmail(
         normalizedEmail,
         "Offer Letter",
         `<h2>Offer Letter</h2>
@@ -157,7 +157,7 @@ export const inviteService = async (data) => {
       }
     });
 
-    await sendEmail(
+    sendEmail(
       normalizedEmail,
       "Employee Invite",
       `<h3>You are invited to company</h3>
