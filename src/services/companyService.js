@@ -199,16 +199,52 @@ export const completeCompanyProfile = async (companyId, data) => {
 };
 
 export const updateCompanyProfile = async (companyId, data) => {
-  return prisma.company.update({
+  const updateData = {
+    name: data.name || undefined,
+    email: data.email || undefined,
+    location: data.location || undefined,
+    companyLogo: data.companyLogo || undefined,
+    ownerName: data.ownerName || undefined,
+    ownerEmail: data.ownerEmail || undefined,
+    domain: data.domain || undefined,
+    legalName: data.legalName || undefined,
+    phone: data.phone || undefined,
+    website: data.website || undefined,
+    industry: data.industry || undefined,
+    companySize: data.companySize || undefined,
+    foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
+    addressLine1: data.addressLine1 || undefined,
+    addressLine2: data.addressLine2 || undefined,
+    city: data.city || undefined,
+    state: data.state || undefined,
+    country: data.country || undefined,
+    pincode: data.pincode || undefined,
+    gstNumber: data.gstNumber || undefined,
+    panNumber: data.panNumber || undefined,
+    tanNumber: data.tanNumber || undefined,
+  };
+
+  const updatedCompany = await prisma.company.update({
     where: { id: companyId },
-    data: {
-      name: data.name || undefined,
-      location: data.location || undefined,
-      companyLogo: data.companyLogo || undefined,
-      // allow owner details update too
-      ownerName: data.ownerName || undefined,
-      ownerEmail: data.ownerEmail || undefined,
-    }
+    data: updateData,
+  });
+
+  const documentsPayload = Array.isArray(data.documents) ? data.documents : [];
+  if (documentsPayload.length) {
+    await prisma.companyDocument.createMany({
+      data: documentsPayload.map((doc) => ({
+        companyId,
+        name: doc.name,
+        fileUrl: doc.fileUrl,
+      })),
+    });
+  }
+
+  return prisma.company.findUnique({
+    where: { id: companyId },
+    include: {
+      documents: true,
+    },
   });
 };
 
@@ -265,6 +301,20 @@ export const getCompaniesForAdmin = async () => {
       }
     },
     orderBy: { createdAt: "desc" },
+  });
+};
+
+export const getCompanyProfile = async (companyId) => {
+  return prisma.company.findUnique({
+    where: { id: companyId },
+    include: {
+      documents: true,
+      subscriptions: {
+        include: { plan: true },
+        orderBy: { endDate: "desc" },
+        take: 1,
+      },
+    },
   });
 };
 

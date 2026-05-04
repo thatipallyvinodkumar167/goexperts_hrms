@@ -4,10 +4,13 @@ import {
   completeCompanyProfile,
   activateCompany,
   getCompaniesForAdmin,
+  getCompanyProfile,
   resendCompanyInvite,
   updateCompanyProfile,
   deleteCompany
 } from "../services/companyService.js";
+import prisma from "../config/db.js";
+import fs from "fs";
 
 //////////////////////////
 // GET ALL COMPANIES (SUPER ADMIN)
@@ -114,6 +117,81 @@ export const updateCompanyProfileController = async (req, res) => {
   }
 };
 
+export const getCompanyProfileController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const companyId = id || req.user.companyId;
+
+    if (!companyId) throw new Error("Company ID is required");
+    if (id && req.user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({ success: false, message: "Forbidden: You can only view your own company" });
+    }
+
+    const data = await getCompanyProfile(companyId);
+    if (!data) {
+      return res.status(404).json({ success: false, message: "Company not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const uploadCompanyDocumentsController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const companyId = id || req.user.companyId;
+
+    if (!companyId) throw new Error("Company ID is required");
+    if (id && req.user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({ success: false, message: "Forbidden: You can only upload for your own company" });
+    }
+
+    const files = req.files || {};
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+    const mappings = [
+      { field: "gstProof", type: "GST_CERTIFICATE" },
+      { field: "panProof", type: "PAN_CARD" },
+      { field: "tanProof", type: "TAN_CERTIFICATE" },
+    ];
+
+    const docsToInsert = [];
+    for (const m of mappings) {
+      const file = files[m.field]?.[0];
+      if (file) {
+        docsToInsert.push({
+          companyId,
+          name: m.type,
+          fileUrl: `${baseUrl}/uploads/company-docs/${file.filename}`,
+        });
+      }
+    }
+
+    if (!docsToInsert.length) {
+      return res.status(400).json({ success: false, message: "No document images provided" });
+    }
+
+    await prisma.companyDocument.createMany({ data: docsToInsert });
+
+    res.status(200).json({
+      success: true,
+      message: "Company documents uploaded successfully",
+      data: docsToInsert,
+    });
+  } catch (error) {
+    const files = req.files || {};
+    Object.values(files).flat().forEach((file) => {
+      if (file?.path && fs.existsSync(file.path)) fs.unlinkSync(file.path);
+    });
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 //////////////////////////
 // ACTIVATE COMPANY
 //////////////////////////
@@ -174,4 +252,3 @@ export const removeCompany = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
-

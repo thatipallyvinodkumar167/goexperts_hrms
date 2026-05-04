@@ -1,6 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
+import { uploadCompanyDocuments } from "../config/multer.js";
 
 import {
   createCompany,
@@ -10,7 +11,9 @@ import {
   getAllCompanies,
   resendInvitation,
   updateCompanyProfileController,
-  removeCompany
+  removeCompany,
+  uploadCompanyDocumentsController,
+  getCompanyProfileController
 } from "../controller/companyController.js";
 
 const router = express.Router();
@@ -32,6 +35,30 @@ router.put("/complete-profile", authMiddleware, allowRoles("OWNER"), completePro
 // - If ID is NOT provided: User updates their own associated company.
 router.put("/profile", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR"), updateCompanyProfileController);
 router.put("/profile/:id", authMiddleware, allowRoles("SUPER_ADMIN"), updateCompanyProfileController);
+router.get("/profile", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR"), getCompanyProfileController);
+router.get("/profile/:id", authMiddleware, allowRoles("SUPER_ADMIN"), getCompanyProfileController);
+router.post(
+  "/profile/upload-documents",
+  authMiddleware,
+  allowRoles("SUPER_ADMIN", "OWNER", "HR"),
+  uploadCompanyDocuments.fields([
+    { name: "gstProof", maxCount: 1 },
+    { name: "panProof", maxCount: 1 },
+    { name: "tanProof", maxCount: 1 },
+  ]),
+  uploadCompanyDocumentsController
+);
+router.post(
+  "/profile/:id/upload-documents",
+  authMiddleware,
+  allowRoles("SUPER_ADMIN"),
+  uploadCompanyDocuments.fields([
+    { name: "gstProof", maxCount: 1 },
+    { name: "panProof", maxCount: 1 },
+    { name: "tanProof", maxCount: 1 },
+  ]),
+  uploadCompanyDocumentsController
+);
 
 
 // SUPER ADMIN → approve/activate company
