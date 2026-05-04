@@ -11,6 +11,10 @@ const companyDocsDir = "uploads/company-docs";
 if (!fs.existsSync(companyDocsDir)) {
   fs.mkdirSync(companyDocsDir, { recursive: true });
 }
+const employeeDocsDir = "uploads/employee-docs";
+if (!fs.existsSync(employeeDocsDir)) {
+  fs.mkdirSync(employeeDocsDir, { recursive: true });
+}
 
 // Storage configuration
 const storage = multer.diskStorage({
@@ -55,6 +59,25 @@ const companyDocsStorage = multer.diskStorage({
 
 export const uploadCompanyDocuments = multer({
   storage: companyDocsStorage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+const employeeDocsStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, employeeDocsDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const userId = req.user?.id || "user";
+    const field = (file.fieldname || "doc").replace(/[^a-zA-Z0-9_-]/g, "");
+    const uniqueName = `${userId}_${field}_${Date.now()}${ext}`;
+    cb(null, uniqueName);
+  },
+});
+
+export const uploadEmployeeDocuments = multer({
+  storage: employeeDocsStorage,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });

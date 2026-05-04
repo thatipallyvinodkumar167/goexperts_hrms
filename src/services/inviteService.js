@@ -1,15 +1,21 @@
 import prisma from "../config/db.js";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
+import { hashPassword } from "../utils/hashPassword.js";
 
-export const inviteService = async ({
-  email,
-  role,
-  companyId,
-  isNewHire,
-  offerData,
-  createdById
-}) => {
+export const inviteService = async (data) => {
+  const {
+    email,
+    role,
+    companyId,
+    isNewHire,
+    offerData,
+    createdById,
+    name,
+    password,
+    departmentId,
+    designationId
+  } = data;
 
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -22,16 +28,70 @@ export const inviteService = async ({
   }
 
   const rawToken = crypto.randomBytes(32).toString("hex");
-
   const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
-
   let invite;
 
   ////////////////////////
   // HR FLOW
   ////////////////////////
   if (role === "HR") {
+    // 🔥 OPTION A: DIRECT CREATE (Existing HR / Migration)
+    if (!isNewHire && password) {
+      const hashedPassword = await hashPassword(password);
+      
+      const result = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            name: name || "HR Admin",
+            email: normalizedEmail,
+            password: hashedPassword,
+            role: "HR",
+            companyId,
+            status: "ACTIVE",
+            isEmailVerified: true
+          }
+        });
 
+        const employee = await tx.employee.create({
+          data: {
+            userId: user.id,
+            companyId,
+            employeeCode: `HR-${Date.now()}`,
+            departmentId,
+            designationId,
+            joiningDate: new Date(),
+            employmentType: "EXPERIENCED",
+          }
+        });
+
+        await tx.hR.create({
+          data: {
+            userId: user.id,
+            permissions: {
+              canManageEmployees: true,
+              canManageAttendance: true,
+              canManageLeaves: true,
+              canManagePayroll: true
+            }
+          }
+        });
+
+        return { user, employee };
+      });
+
+      await sendEmail(
+        normalizedEmail,
+        "Welcome to HRMS",
+        `<h3>Welcome aboard!</h3>
+         <p>Your HR account has been created.</p>
+         <p>Email: ${normalizedEmail}</p>
+         <p>You can login now at: ${process.env.FRONTEND_URL}/login</p>`
+      );
+
+      return { message: "Existing HR created successfully", userId: result.user.id };
+    }
+
+    // 🔥 OPTION B: INVITE FLOW (New HR)
     invite = await prisma.employeeInvite.create({
       data: {
         email: normalizedEmail,
@@ -46,8 +106,9 @@ export const inviteService = async ({
       normalizedEmail,
       "HR Invitation",
       `<h3>You are invited as HR</h3>
+       <p>Please click the link below to setup your account:</p>
        <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}">
-       Accept Invite</a>`
+       Setup HR Account</a>`
     );
   }
 
@@ -55,10 +116,8 @@ export const inviteService = async ({
   // EMPLOYEE FLOW
   ////////////////////////
   else if (role === "EMPLOYEE") {
-
     // 🔥 NEW EMPLOYEE (Offer Flow)
     if (isNewHire) {
-
       if (!offerData) {
         throw new Error("Offer data required");
       }
@@ -124,14 +183,7 @@ export const inviteService = async ({
   };
 };
 
-
-
-
-//acceptInviteService
-import { hashPassword } from "../utils/hashPassword.js";
-
 export const acceptInviteService = async ({ token, password, name }) => {
-
   const invite = await prisma.employeeInvite.findFirst({
     where: {
       token,
@@ -169,12 +221,7 @@ export const acceptInviteService = async ({ token, password, name }) => {
   };
 };
 
-
-
-
-//STAGE 3: VERIFY EMAIL
 export const verifyEmailService = async (userId) => {
-
   const user = await prisma.user.findUnique({
     where: { id: userId }
   });
@@ -189,18 +236,12 @@ export const verifyEmailService = async (userId) => {
   return { message: "Email verified" };
 };
 
-
-
-
-
-//STAGE 4: COMPLETE PROFILE
 export const completeProfileService = async ({
   userId,
   personal,
   departmentId,
   designationId
 }) => {
-
   const user = await prisma.user.findUnique({
     where: { id: userId }
   });
@@ -212,13 +253,10 @@ export const completeProfileService = async ({
       userId,
       companyId: user.companyId,
       employeeCode: `EMP-${Date.now()}`,
-
       departmentId,
       designationId,
-
       joiningDate: new Date(),
       employmentType: "FRESHER",
-
       personal: {
         create: personal
       }
@@ -228,14 +266,7 @@ export const completeProfileService = async ({
   return { message: "Profile completed", employee };
 };
 
-
-
-
-
-
-//STAGE 5: ACTIVATE USER
 export const activateUserService = async (userId) => {
-
   const user = await prisma.user.findUnique({
     where: { id: userId }
   });
@@ -253,8 +284,3 @@ export const activateUserService = async (userId) => {
 
   return { message: "User activated" };
 };
-
-
-
-
-

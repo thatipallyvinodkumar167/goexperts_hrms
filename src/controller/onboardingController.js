@@ -1,4 +1,4 @@
-import { acceptInviteService, activateUserService, completeProfileService, verifyEmailService } from "../services/onboardingService"
+import { acceptInviteService, activateUserService, completeProfileService, verifyEmailService, uploadEmployeeDocumentsService } from "../services/onboardingService.js"
 
 export const acceptInvite = async (req, res) => {
 
@@ -59,5 +59,18 @@ export const activateUser = async (req, res) => {
     } catch (error) {
         
         res.status(400).json({ success : false, message : error.message});
+    }
+};
+
+export const uploadDocuments = async (req, res) => {
+    try {
+        if (!req.files || Object.keys(req.files).length === 0) {
+            return res.status(400).json({ success: false, message: "No files uploaded" });
+        }
+
+        const data = await uploadEmployeeDocumentsService(req.user.id, req.files);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
     }
 };

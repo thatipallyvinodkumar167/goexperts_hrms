@@ -77,7 +77,7 @@ export const completeProfileService  = async ({
 }) => {
 
     const user = await prisma.user.findUnique({
-        where : {id : user.id}
+        where : {id : userId}
     });
 
 if(!user){
@@ -104,7 +104,22 @@ if(!user){
     }
   });
 
-  return {message : "profile compaleted", employee};
+  // If the user is an HR, also create the HR permissions record
+  if (user.role === "HR") {
+    await prisma.hR.create({
+      data: {
+        userId,
+        permissions: {
+          canManageEmployees: true,
+          canManageAttendance: true,
+          canManageLeaves: true,
+          canManagePayroll: false, // Defaulting some security
+        }
+      }
+    });
+  }
+
+  return {message : "Profile completed successfully", employee};
 };
 
 // ✅ STEP 5: Activate Employee
@@ -130,3 +145,30 @@ export const activateUserService  = async (userId) => {
 
     return { message: "Account activated successfully" };
 }
+
+export const uploadEmployeeDocumentsService = async (userId, files) => {
+    const employee = await prisma.employee.findUnique({
+        where: { userId }
+    });
+
+    if (!employee) throw new Error("Employee profile not found. Complete profile first.");
+
+    const documents = [];
+
+    for (const [fieldname, fileArray] of Object.entries(files)) {
+        const file = fileArray[0];
+        const docType = fieldname.toUpperCase(); // e.g., PAN, AADHAAR
+
+        const doc = await prisma.employeeDocument.create({
+            data: {
+                employeeId: employee.id,
+                documentType: docType,
+                documentUrl: `/uploads/employee-docs/${file.filename}`,
+                status: "PENDING"
+            }
+        });
+        documents.push(doc);
+    }
+
+    return { message: "Documents uploaded successfully", documents };
+};
