@@ -160,13 +160,13 @@ export const setupCompanyAccount = async (token, password) => {
       },
     });
 
-    // ✅ COMPANY EMAIL VERIFIED + ACTIVE
+    // ✅ COMPANY EMAIL VERIFIED + PENDING APPROVAL
     await tx.company.update({
       where: { id: invite.companyId },
       data: {
-        status: "ACTIVE",
-        activatedAt: new Date(),
-        lastActiveAt: new Date(), // ✅ ADDED
+        status: "PENDING_APPROVAL",
+        isEmailVerified: true,
+        lastActiveAt: new Date(), 
       },
     });
 
