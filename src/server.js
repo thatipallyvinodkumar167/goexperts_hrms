@@ -96,8 +96,9 @@ const startServer = async () => {
     companyStatusCron();
     inviteReminderCron();
 
+    console.log(`🚀 Starting server on port ${PORT}...`);
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server is running on port ${PORT} (0.0.0.0)`);
+      console.log(`✅ Server is successfully running on port ${PORT}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error.message);
