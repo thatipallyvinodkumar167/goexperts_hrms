@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
+import fs from "fs";
 
-export const sendEmail = async (to, subject, html) => {
+export const sendEmail = async (to, subject, html, dynamicAttachments = []) => {
     try {
         // SendGrid supports SMTP on Port 2525, which Render does NOT block!
         const transporter = nodemailer.createTransport({
@@ -19,18 +20,22 @@ export const sendEmail = async (to, subject, html) => {
         console.log(`📝 SUBJECT: ${subject}`);
         console.log("=============================================");
 
+        const defaultAttachments = [];
+        // Only add logo if it exists (prevents crash on Render if file missing)
+        if (fs.existsSync("./src/utils/templates/logo.png")) {
+            defaultAttachments.push({
+                filename: "logo.png",
+                path: "./src/utils/templates/logo.png",
+                cid: "companylogo"
+            });
+        }
+
         const info = await transporter.sendMail({
             from: `"GOExperts HRMS" <${process.env.FROM_EMAIL || "your-verified-sendgrid-email@example.com"}>`,
             to,
             subject,
             html,
-            attachments: [
-                {
-                    filename: "logo.png",
-                    path: "./src/utils/templates/logo.png",
-                    cid: "companylogo"
-                }
-            ]
+            attachments: [...defaultAttachments, ...dynamicAttachments]
         });
 
         console.log("Email sent successfully via SendGrid! Message ID:", info.messageId);

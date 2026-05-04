@@ -2,6 +2,7 @@ import prisma from "../config/db.js";
 import crypto from "crypto";
 import { sendEmail } from "../utils/sendEmail.js";
 import { hashPassword } from "../utils/hashPassword.js";
+import { generateOfferLetter } from "../utils/pdfGenerator.js";
 
 export const inviteService = async (data) => {
   const {
@@ -133,17 +134,29 @@ export const inviteService = async (data) => {
         }
       });
 
-      sendEmail(
-        normalizedEmail,
-        "Offer Letter",
-        `<h2>Offer Letter</h2>
-         <p>Salary: ${offerData.salary}</p>
-         <p>Joining: ${offerData.joiningDate}</p>
-         <a href="${process.env.FRONTEND_URL}/accept-offer?email=${normalizedEmail}">
-         Accept Offer</a>`
-      ).catch(err => console.error("Offer Email Failed:", err.message));
+      // Generate the Offer Letter PDF in the background
+      generateOfferLetter({
+          email: normalizedEmail,
+          position: offerData.position,
+          salary: offerData.salary,
+          joiningDate: offerData.joiningDate
+      }).then(({ filePath, fileName }) => {
+          sendEmail(
+            normalizedEmail,
+            "Offer Letter - GOExperts HRMS",
+            `<h2>Congratulations!</h2>
+             <p>We are pleased to offer you the position of <strong>${offerData.position}</strong>.</p>
+             <p>Please find your formal offer letter attached to this email.</p>
+             <br/>
+             <a href="${process.env.FRONTEND_URL}/accept-offer?email=${normalizedEmail}" 
+                style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                Accept Offer
+             </a>`,
+            [{ filename: fileName, path: filePath }]
+          ).catch(err => console.error("Offer Email Failed:", err.message));
+      }).catch(err => console.error("PDF Generation Failed:", err.message));
 
-      return { message: "Offer sent successfully" };
+      return { message: "Offer and PDF sent successfully" };
     }
 
     // 🔥 EXISTING EMPLOYEE

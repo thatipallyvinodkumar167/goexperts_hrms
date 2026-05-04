@@ -1,5 +1,7 @@
 import prisma from "../config/db.js";
 import { hashPassword } from "../utils/hashPassword.js";
+import { sendEmail } from "../utils/sendEmail.js";
+import { generateJoiningLetter } from "../utils/pdfGenerator.js";
 
 
 // ✅ STEP 1 + 2: Accept Invite + Set Password
@@ -125,26 +127,51 @@ if(!user){
 // ✅ STEP 5: Activate Employee
 export const activateUserService  = async (userId) => {
     const user = await prisma.user.findUnique({
-        where : { id : userId}
+        where: { id: userId },
+        include: {
+            employee: {
+                include: {
+                    designation: true
+                }
+            }
+        }
     });
 
-    if(!user){
-        throw Error("user not found");
-    }
-
-    if(!user.isEmailVerified){
-        throw Error("Verify email first");
-    }
+    if (!user) throw Error("User not found");
+    if (!user.isEmailVerified) throw Error("Verify email first");
 
     await prisma.user.update({
-        where : {id: userId},
-         data: {
-      status: "ACTIVE"
-    }
+        where: { id: userId },
+        data: { status: "ACTIVE" }
     });
 
-    return { message: "Account activated successfully" };
-}
+    // Generate Appointment/Joining Letter in background
+    if (user.employee) {
+        generateJoiningLetter({
+            email: user.email,
+            name: user.name,
+            position: user.employee.designation?.name || "Team Member",
+            joiningDate: user.employee.joiningDate.toLocaleDateString()
+        }).then(({ filePath, fileName }) => {
+            sendEmail(
+                user.email,
+                "Welcome Aboard! Appointment Letter - GOExperts HRMS",
+                `<h3>Welcome to the Team, ${user.name}!</h3>
+                 <p>Congratulations! Your account has been activated.</p>
+                 <p>Please find your formal <strong>Appointment Letter</strong> attached to this email.</p>
+                 <p>You can now log in to the dashboard using your credentials.</p>
+                 <br/>
+                 <a href="${process.env.FRONTEND_URL}/login" 
+                    style="background: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                    Login to Dashboard
+                 </a>`,
+                [{ filename: fileName, path: filePath }]
+            ).catch(err => console.error("Welcome Email Failed:", err.message));
+        }).catch(err => console.error("Joining PDF Generation Failed:", err.message));
+    }
+
+    return { message: "Account activated successfully and Welcome Letter sent" };
+};
 
 export const uploadEmployeeDocumentsService = async (userId, files) => {
     const employee = await prisma.employee.findUnique({
