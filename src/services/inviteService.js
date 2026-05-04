@@ -89,7 +89,7 @@ export const inviteService = async (data) => {
          <p>You can login now at: ${process.env.FRONTEND_URL}/login</p>`
       ).catch(err => console.error("Migration Email Failed:", err.message));
 
-      return { message: "Existing HR created successfully", userId: result.user.id };
+      return { message: "Account activated successfully and Welcome Letter sent" };
     }
 
     // 🔥 OPTION B: INVITE FLOW (New HR)
@@ -130,6 +130,7 @@ export const inviteService = async (data) => {
           salary: offerData.salary,
           joiningDate: new Date(offerData.joiningDate),
           position: offerData.position,
+          role: role, // Now stored in the DB
           status: "SENT"
         }
       });
@@ -148,9 +149,10 @@ export const inviteService = async (data) => {
              <p>We are pleased to offer you the position of <strong>${offerData.position}</strong>.</p>
              <p>Please find your formal offer letter attached to this email.</p>
              <br/>
-             <a href="${process.env.FRONTEND_URL}/accept-offer?email=${normalizedEmail}" 
+             <p>Click below to review and accept your offer:</p>
+             <a href="${process.env.FRONTEND_URL}/review-offer?email=${normalizedEmail}" 
                 style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
-                Accept Offer
+                Review & Accept Offer
              </a>`,
             [{ filename: fileName, path: filePath }]
           ).catch(err => console.error("Offer Email Failed:", err.message));
@@ -296,4 +298,54 @@ export const activateUserService = async (userId) => {
   });
 
   return { message: "User activated" };
+};
+
+// --- NEW: THE BRIDGE BETWEEN OFFER AND INVITE ---
+export const acceptOfferService = async (email) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 1. Find the SENT offer
+    const offer = await prisma.offerLetter.findFirst({
+        where: { employeeEmail: normalizedEmail, status: "SENT" },
+        orderBy: { createdAt: "desc" }
+    });
+
+    if (!offer) throw new Error("No active offer found for this email");
+
+    // 2. Mark as ACCEPTED
+    await prisma.offerLetter.update({
+        where: { id: offer.id },
+        data: { status: "ACCEPTED" }
+    });
+
+    // 3. Automatically trigger the Invitation (Phase 2)
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+
+    await prisma.employeeInvite.create({
+        data: {
+            email: normalizedEmail,
+            token: rawToken,
+            role: offer.role, // Use the role stored during Phase 1
+            companyId: offer.companyId,
+            expiresAt
+        }
+    });
+
+    // 4. Send the "Setup Account" email (Only after acceptance)
+    sendEmail(
+        normalizedEmail,
+        "Welcome! Setup your HRMS Account",
+        `<h3>Offer Accepted!</h3>
+         <p>Thank you for accepting the offer to join us as <strong>${offer.position}</strong>.</p>
+         <p>We are excited to have you join the team.</p>
+         <p>The final step is to set up your password to begin your digital onboarding.</p>
+         <br/>
+         <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}" 
+            style="background: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+            Set Password & Join
+         </a>`
+    ).catch(err => console.error("Setup Account Email Failed:", err.message));
+
+    return { message: "Offer accepted successfully. Setup email sent." };
 };

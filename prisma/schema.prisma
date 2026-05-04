@@ -69,11 +69,6 @@ model User {
   companyId   String?
   company     Company? @relation("CompanyUsers", fields: [companyId], references: [id])
 
-  createdCompanies Company[] @relation("CompanyCreator")
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-
   lastLoginAt DateTime?
   failedLoginAttempts Int @default(0)
   lockUntil   DateTime?
@@ -87,7 +82,10 @@ model User {
   passwordResetTokens PasswordResetToken[]
   companyInvites CompanyInvite[]
   employeeInvites EmployeeInvite[]
+  createdCompanies Company[] @relation("CompanyCreator")
 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
   deletedAt   DateTime?
 
   @@unique([email, companyId])
@@ -173,6 +171,7 @@ model Company {
   employeeInvites EmployeeInvite[]
   employees    Employee[]
   documents    CompanyDocument[]
+  offerLetters OfferLetter[]
 
   @@index([status])
   @@index([lastActiveAt])
@@ -251,10 +250,12 @@ model OfferLetter {
 
   employeeEmail String
   companyId     String
+  company       Company @relation(fields: [companyId], references: [id])
 
   salary        Float
   joiningDate   DateTime
   position      String
+  role          Role     @default(EMPLOYEE)
 
   status        OfferStatus @default(SENT)
 
@@ -264,7 +265,7 @@ model OfferLetter {
   employee      Employee? @relation(fields: [employeeId], references: [id])
 
   createdAt     DateTime @default(now())
-  acceptedAt    DateTime?
+  updatedAt     DateTime @updatedAt
 }
 
 //////////////////////////
