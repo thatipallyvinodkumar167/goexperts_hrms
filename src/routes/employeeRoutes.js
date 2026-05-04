@@ -2,19 +2,10 @@ import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { companyGuard } from "../middleware/companyGuard.js";
-import {createEmployee, getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee } from "../controller/employeeController.js";
+import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee } from "../controller/employeeController.js";
 
 const router = express.Router();
 
-
-//create emp
-router.post(
-  "/create",
-  authMiddleware,
-  allowRoles("OWNER", "HR"),
-  companyGuard,
-  createEmployee
-);
 
 //get emp
 router.get("/", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getAllEmployees);
