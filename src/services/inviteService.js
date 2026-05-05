@@ -50,12 +50,19 @@ export const inviteService = async (data) => {
           }
       });
 
+      const company = await prisma.company.findUnique({ where: { id: companyId } });
+
       // Generate the Offer Letter PDF in the background
       generateOfferLetter({
           email: normalizedEmail,
           position: offerData.position,
           salary: offerData.salary,
-          joiningDate: offerData.joiningDate
+          joiningDate: offerData.joiningDate,
+          company: {
+              name: company?.name || "Our Company",
+              address: company?.location || "India",
+              logo: company?.companyLogo || null
+          }
       }).then(({ filePath, fileName }) => {
           sendEmail(
             normalizedEmail,

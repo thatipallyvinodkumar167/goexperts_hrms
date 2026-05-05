@@ -72,11 +72,13 @@ export const generateOfferLetter = async (data) => {
     </head>
     <body>
         <div class="header">
-            <div class="company-name">GOExperts</div>
+            <div class="company-name">
+                ${data.company?.logo ? `<img src="${data.company.logo}" style="height: 40px; margin-right: 10px; vertical-align: middle;">` : ""}
+                ${data.company?.name || "Our Company"}
+            </div>
             <div class="company-info">
-                123 Business Hub, Tech City<br>
-                Hyderabad, India - 500081<br>
-                www.goexperts.com
+                ${data.company?.address || "Headquarters"}<br>
+                Official Corporate Document
             </div>
         </div>
         <div class="title">Offer Letter</div>
@@ -84,7 +86,7 @@ export const generateOfferLetter = async (data) => {
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
             <p>To,<br><strong>${data.email}</strong></p>
             <p>Dear Candidate,</p>
-            <p>We are delighted to extend this formal offer of employment to you for the position of <strong>${data.position}</strong> at <strong>GOExperts</strong>. We were highly impressed with your background and believe you will be an integral part of our continued success.</p>
+            <p>We are delighted to extend this formal offer of employment to you for the position of <strong>${data.position}</strong> at <strong>${data.company?.name || "Our Company"}</strong>. We were highly impressed with your background and believe you will be an integral part of our continued success.</p>
         </div>
         <div class="details-box">
             <div class="details-row">
@@ -112,7 +114,7 @@ export const generateOfferLetter = async (data) => {
             <p>Best Regards,</p>
             <br>
             <strong>Human Resources Team</strong><br>
-            GOExperts
+            ${data.company?.name || "GOExperts"}
             <div class="stamp">Electronically Verified Document</div>
         </div>
     </body>
@@ -143,21 +145,24 @@ export const generateJoiningLetter = async (data) => {
     </head>
     <body>
         <div class="header">
-            <div class="company-name">GOExperts</div>
+            <div class="company-name">
+                ${data.company?.logo ? `<img src="${data.company.logo}" style="height: 40px; margin-right: 10px; vertical-align: middle;">` : ""}
+                ${data.company?.name || "Our Company"}
+            </div>
             <p style="color: #6b7280; margin: 5px 0;">Official Appointment & Onboarding</p>
         </div>
         <div class="title">Letter of Appointment</div>
         <div class="content">
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
             <p>Dear <strong>${data.name}</strong>,</p>
-            <p>We are extremely pleased to formally appoint you as <strong>${data.position}</strong> at GOExperts. Your appointment is effective from your joining date of <strong>${new Date(data.joiningDate).toLocaleDateString()}</strong>.</p>
+            <p>We are extremely pleased to formally appoint you as <strong>${data.position}</strong> at ${data.company?.name || "Our Company"}. Your appointment is effective from your joining date of <strong>${new Date(data.joiningDate).toLocaleDateString()}</strong>.</p>
             <p>This document serves as your official record of joining. We are confident that your expertise will be a significant contribution to our organization's growth.</p>
         </div>
         <div class="welcome">Welcome to the Team! 🚀</div>
         <div class="signature">
             <strong>Authorized Signatory</strong><br>
             <span class="designation">Operations & HR Division</span><br>
-            GOExperts
+            ${data.company?.name || "Our Company"}
         </div>
     </body>
     </html>
