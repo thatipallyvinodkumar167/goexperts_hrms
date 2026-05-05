@@ -15,7 +15,7 @@ const generatePDFFromHTML = async (htmlContent, fileName) => {
 
     // Helper to find chrome in the local cache
     const findChromePath = () => {
-        const cacheBase = path.resolve("puppeteer-browser-cache/chrome");
+        const cacheBase = path.resolve("node_modules/puppeteer-cache/chrome");
         console.log("🔍 Checking for Chrome in:", cacheBase);
         
         if (!fs.existsSync(cacheBase)) {
