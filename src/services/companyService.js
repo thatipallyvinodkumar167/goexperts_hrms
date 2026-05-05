@@ -90,7 +90,7 @@ export const createCompanyWithInvite = async ({
   });
 
   // ✅ SEND EMAIL (OUTSIDE TRANSACTION TO AVOID TIMEOUTS)
-  const inviteLink = `${process.env.FRONTEND_URL}/setup-account?token=${rawToken}`;
+  const inviteLink = `${process.env.FRONTEND_URL}/setup-password?token=${rawToken}`;
   
   // Fire-and-forget email so API responds immediately even if SMTP is slow/unreachable.
   sendEmail(
@@ -354,7 +354,7 @@ export const resendCompanyInvite = async (companyId) => {
     },
   });
 
-  const inviteLink = `${process.env.FRONTEND_URL}/setup-account?token=${rawToken}`;
+  const inviteLink = `${process.env.FRONTEND_URL}/setup-password?token=${rawToken}`;
   
   await sendEmail(
     company.email,

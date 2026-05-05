@@ -151,7 +151,7 @@ export const inviteService = async (data) => {
       normalizedEmail,
       `${role === "HR" ? "HR" : "Employee"} Invitation`,
       `<h3>You are invited to join as ${role === "HR" ? "HR" : "an Employee"}</h3>
-       <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}">
+       <a href="${process.env.FRONTEND_URL}/setup-password?token=${rawToken}">
        Setup Account</a>`
   ).catch(err => console.error("Invite Email Failed:", err.message));
 
@@ -315,7 +315,7 @@ export const acceptOfferService = async (email) => {
          <p>We are excited to have you join the team.</p>
          <p>The final step is to set up your password to begin your digital onboarding.</p>
          <br/>
-         <a href="${process.env.FRONTEND_URL}/accept-invite?token=${rawToken}" 
+         <a href="${process.env.FRONTEND_URL}/setup-password?token=${rawToken}" 
             style="background: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
             Set Password & Join
          </a>`

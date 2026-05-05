@@ -63,3 +63,38 @@ export const acceptOffer = async (req, res) => {
         });
     }
 };
+
+import prisma from "../config/db.js";
+import crypto from "crypto";
+import { setupCompanyAccount } from "../services/companyService.js";
+import { acceptInviteService } from "../services/onboardingService.js";
+
+export const unifiedSetupPassword = async (req, res) => {
+    try {
+        const { token, password, name } = req.body;
+        if (!token || !password) throw new Error("Token and password are required");
+
+        const safeToken = token.trim();
+        const hashedToken = crypto.createHash("sha256").update(safeToken).digest("hex");
+
+        // 1. Check if it's a Company Invite (These are stored as hashed tokens)
+        const companyInvite = await prisma.companyInvite.findUnique({ where: { token: hashedToken } });
+        if (companyInvite) {
+            // setupCompanyAccount expects the raw token, it hashes it internally again
+            const result = await setupCompanyAccount(safeToken, password);
+            return res.status(200).json({ success: true, type: "COMPANY", ...result });
+        }
+
+        // 2. Check if it's an Employee Invite (These are stored as raw tokens)
+        const employeeInvite = await prisma.employeeInvite.findUnique({ where: { token: safeToken } });
+        if (employeeInvite) {
+            const result = await acceptInviteService({ token: safeToken, password, name });
+            return res.status(200).json({ success: true, type: "EMPLOYEE", ...result });
+        }
+
+        // 3. Not found anywhere
+        throw new Error("Invalid or expired token");
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
