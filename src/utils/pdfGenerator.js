@@ -15,14 +15,22 @@ const generatePDFFromHTML = async (htmlContent, fileName) => {
 
     // Helper to find chrome in the local cache
     const findChromePath = () => {
-        const cacheBase = path.resolve(".puppeteer-cache/chrome");
-        if (!fs.existsSync(cacheBase)) return executablePath();
+        const cacheBase = path.resolve("puppeteer-browser-cache/chrome");
+        console.log("🔍 Checking for Chrome in:", cacheBase);
+        
+        if (!fs.existsSync(cacheBase)) {
+            console.log("❌ Local cache folder not found!");
+            return executablePath();
+        }
         
         const versions = fs.readdirSync(cacheBase);
+        console.log("📂 Found versions:", versions);
+        
         if (versions.length === 0) return executablePath();
         
-        // Return the first version's executable path
-        return path.join(cacheBase, versions[0], "chrome-linux64/chrome");
+        const fullPath = path.join(cacheBase, versions[0], "chrome-linux64/chrome");
+        console.log("🚀 Using Chrome at:", fullPath);
+        return fullPath;
     };
 
     const browser = await puppeteer.launch({
