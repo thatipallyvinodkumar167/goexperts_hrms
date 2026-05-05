@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer";
+import puppeteer, { executablePath } from "puppeteer";
 import fs from "fs";
 import path from "path";
 
@@ -15,7 +15,7 @@ const generatePDFFromHTML = async (htmlContent, fileName) => {
 
     const browser = await puppeteer.launch({
         headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        executablePath: executablePath(),
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
