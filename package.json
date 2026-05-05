@@ -5,9 +5,9 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "build": "npm install && npx puppeteer browsers install chrome --cache .cache && npx prisma generate && node scripts/build.mjs",
+    "build": "./render-build.sh",
     "start": "node --dns-result-order=ipv4first src/server.js",
-    "postinstall": "npx puppeteer browsers install chrome --cache .cache",
+    "postinstall": "npx puppeteer browsers install chrome --cache .puppeteer-cache",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

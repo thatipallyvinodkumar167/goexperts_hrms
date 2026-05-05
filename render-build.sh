@@ -3,7 +3,6 @@
 set -o errexit
 
 npm install
-npx puppeteer browsers install chrome
+# Install chrome into a local folder inside the project
+npx puppeteer browsers install chrome --cache .puppeteer-cache
 npx prisma generate
-# if you have a custom build script
-# node scripts/build.mjs

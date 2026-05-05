@@ -13,14 +13,25 @@ const generatePDFFromHTML = async (htmlContent, fileName) => {
         fs.mkdirSync("uploads/employee-docs", { recursive: true });
     }
 
+    // Helper to find chrome in the local cache
+    const findChromePath = () => {
+        const cacheBase = path.resolve(".puppeteer-cache/chrome");
+        if (!fs.existsSync(cacheBase)) return executablePath();
+        
+        const versions = fs.readdirSync(cacheBase);
+        if (versions.length === 0) return executablePath();
+        
+        // Return the first version's executable path
+        return path.join(cacheBase, versions[0], "chrome-linux64/chrome");
+    };
+
     const browser = await puppeteer.launch({
         headless: true,
-        executablePath: executablePath(),
+        executablePath: findChromePath(),
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
-            "--disable-accelerated-2d-canvas",
             "--disable-gpu"
         ]
     });
