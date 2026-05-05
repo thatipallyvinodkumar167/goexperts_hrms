@@ -1,9 +1,10 @@
-import puppeteer, { executablePath } from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import fs from "fs";
 import path from "path";
 
 /**
- * Shared function to generate PDF from HTML using Puppeteer
+ * Shared function to generate PDF from HTML using Cloud-Optimized Puppeteer
  */
 const generatePDFFromHTML = async (htmlContent, fileName) => {
     const filePath = path.join("uploads/employee-docs", fileName);
@@ -13,35 +14,11 @@ const generatePDFFromHTML = async (htmlContent, fileName) => {
         fs.mkdirSync("uploads/employee-docs", { recursive: true });
     }
 
-    // Helper to find chrome in the local cache
-    const findChromePath = () => {
-        const cacheBase = path.resolve("node_modules/puppeteer-cache/chrome");
-        console.log("🔍 Checking for Chrome in:", cacheBase);
-        
-        if (!fs.existsSync(cacheBase)) {
-            console.log("❌ Local cache folder not found!");
-            return executablePath();
-        }
-        
-        const versions = fs.readdirSync(cacheBase);
-        console.log("📂 Found versions:", versions);
-        
-        if (versions.length === 0) return executablePath();
-        
-        const fullPath = path.join(cacheBase, versions[0], "chrome-linux64/chrome");
-        console.log("🚀 Using Chrome at:", fullPath);
-        return fullPath;
-    };
-
     const browser = await puppeteer.launch({
-        headless: true,
-        executablePath: findChromePath(),
-        args: [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu"
-        ]
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
     });
 
     try {
@@ -61,6 +38,9 @@ const generatePDFFromHTML = async (htmlContent, fileName) => {
         });
 
         return { filePath, fileName };
+    } catch (error) {
+        console.error("❌ PDF Generation Error:", error.message);
+        throw error;
     } finally {
         await browser.close();
     }
@@ -75,86 +55,19 @@ export const generateOfferLetter = async (data) => {
     <head>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
         <style>
-            body { 
-                font-family: 'Inter', sans-serif; 
-                color: #1f2937; 
-                line-height: 1.6; 
-                margin: 0;
-                padding: 0;
-            }
-            .header { 
-                display: flex; 
-                justify-content: space-between; 
-                align-items: center; 
-                border-bottom: 2px solid #6366f1; 
-                padding-bottom: 30px; 
-            }
-            .company-name { 
-                font-size: 32px; 
-                font-weight: 700; 
-                color: #4f46e5; 
-                letter-spacing: -1px;
-            }
-            .company-info { 
-                text-align: right; 
-                font-size: 13px; 
-                color: #6b7280; 
-            }
-            .title { 
-                text-align: center; 
-                font-size: 36px; 
-                margin: 60px 0; 
-                color: #111827; 
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 4px;
-            }
-            .content { 
-                margin-bottom: 40px; 
-                font-size: 15px;
-            }
-            .details-box { 
-                background: #f8fafc; 
-                border: 1px solid #e2e8f0; 
-                padding: 30px; 
-                border-radius: 12px; 
-                margin: 30px 0; 
-            }
-            .details-row { 
-                display: flex; 
-                margin-bottom: 12px; 
-            }
-            .details-label { 
-                width: 180px; 
-                font-weight: 600; 
-                color: #4b5563; 
-            }
-            .details-value { 
-                color: #0f172a; 
-                font-weight: 700; 
-            }
-            .signature { 
-                margin-top: 60px; 
-            }
-            .stamp { 
-                color: #6366f1; 
-                font-weight: 600; 
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                margin-top: 15px; 
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .stamp::before {
-                content: '';
-                display: inline-block;
-                width: 12px;
-                height: 12px;
-                background: #6366f1;
-                border-radius: 50%;
-            }
+            body { font-family: 'Inter', sans-serif; color: #1f2937; line-height: 1.6; margin: 0; padding: 0; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #6366f1; padding-bottom: 30px; }
+            .company-name { font-size: 32px; font-weight: 700; color: #4f46e5; letter-spacing: -1px; }
+            .company-info { text-align: right; font-size: 13px; color: #6b7280; }
+            .title { text-align: center; font-size: 36px; margin: 60px 0; color: #111827; font-weight: 700; text-transform: uppercase; letter-spacing: 4px; }
+            .content { margin-bottom: 40px; font-size: 15px; }
+            .details-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 30px; border-radius: 12px; margin: 30px 0; }
+            .details-row { display: flex; margin-bottom: 12px; }
+            .details-label { width: 180px; font-weight: 600; color: #4b5563; }
+            .details-value { color: #0f172a; font-weight: 700; }
+            .signature { margin-top: 60px; }
+            .stamp { color: #6366f1; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-top: 15px; display: flex; align-items: center; gap: 8px; }
+            .stamp::before { content: ''; display: inline-block; width: 12px; height: 12px; background: #6366f1; border-radius: 50%; }
         </style>
     </head>
     <body>
@@ -166,17 +79,13 @@ export const generateOfferLetter = async (data) => {
                 www.goexperts.com
             </div>
         </div>
-
         <div class="title">Offer Letter</div>
-
         <div class="content">
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
             <p>To,<br><strong>${data.email}</strong></p>
-            
             <p>Dear Candidate,</p>
             <p>We are delighted to extend this formal offer of employment to you for the position of <strong>${data.position}</strong> at <strong>GOExperts</strong>. We were highly impressed with your background and believe you will be an integral part of our continued success.</p>
         </div>
-
         <div class="details-box">
             <div class="details-row">
                 <div class="details-label">Position:</div>
@@ -195,12 +104,10 @@ export const generateOfferLetter = async (data) => {
                 <div class="details-value">Remote / Hybrid</div>
             </div>
         </div>
-
         <div class="content">
             <p>This offer is contingent upon successful verification of your credentials. Please review the terms of employment. To accept this offer, please proceed with the link provided in the invitation email.</p>
             <p>We look forward to having you on board!</p>
         </div>
-
         <div class="signature">
             <p>Best Regards,</p>
             <br>
@@ -239,20 +146,14 @@ export const generateJoiningLetter = async (data) => {
             <div class="company-name">GOExperts</div>
             <p style="color: #6b7280; margin: 5px 0;">Official Appointment & Onboarding</p>
         </div>
-
         <div class="title">Letter of Appointment</div>
-
         <div class="content">
             <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
             <p>Dear <strong>${data.name}</strong>,</p>
-            
             <p>We are extremely pleased to formally appoint you as <strong>${data.position}</strong> at GOExperts. Your appointment is effective from your joining date of <strong>${new Date(data.joiningDate).toLocaleDateString()}</strong>.</p>
-            
             <p>This document serves as your official record of joining. We are confident that your expertise will be a significant contribution to our organization's growth.</p>
         </div>
-
         <div class="welcome">Welcome to the Team! 🚀</div>
-
         <div class="signature">
             <strong>Authorized Signatory</strong><br>
             <span class="designation">Operations & HR Division</span><br>
