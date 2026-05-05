@@ -300,6 +300,9 @@ model Employee {
 
   status        Status @default(INVITED)
 
+  bgvStatus     String @default("PENDING") // PENDING, APPROVED, REJECTED
+  bgvRemarks    String? @db.LongText
+
   personal      EmployeePersonal?
   experience    EmployeeExperience[]
 
@@ -378,6 +381,9 @@ model EmployeeDocument {
 
   name        String
   fileUrl     String
+
+  status      String @default("PENDING") // PENDING, APPROVED, REJECTED
+  remarks     String? @db.LongText
 
   createdAt   DateTime @default(now())
 }

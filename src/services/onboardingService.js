@@ -189,8 +189,8 @@ export const uploadEmployeeDocumentsService = async (userId, files) => {
         const doc = await prisma.employeeDocument.create({
             data: {
                 employeeId: employee.id,
-                documentType: docType,
-                documentUrl: `/uploads/employee-docs/${file.filename}`,
+                name: docType,
+                fileUrl: `/uploads/employee-docs/${file.filename}`,
                 status: "PENDING"
             }
         });
@@ -199,3 +199,84 @@ export const uploadEmployeeDocumentsService = async (userId, files) => {
 
     return { message: "Documents uploaded successfully", documents };
 };
+
+// ✅ STEP 3: Add Experience (If Experienced)
+export const addExperienceService = async (userId, experienceArray) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw new Error("Employee profile not found");
+
+    const experiences = await Promise.all(experienceArray.map(exp => 
+        prisma.employeeExperience.create({
+            data: {
+                employeeId: employee.id,
+                companyName: exp.companyName,
+                role: exp.role,
+                startDate: new Date(exp.startDate),
+                endDate: exp.endDate ? new Date(exp.endDate) : null,
+                totalYears: exp.totalYears
+            }
+        })
+    ));
+
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { employmentType: "EXPERIENCED" }
+    });
+
+    return { message: "Experience added successfully", experiences };
+};
+
+// ✅ STEP 5: HR Document Verification (BGV - Part 1)
+export const updateDocumentStatusService = async ({ documentId, status, remarks }) => {
+    const doc = await prisma.employeeDocument.update({
+        where: { id: documentId },
+        data: { status, remarks }
+    });
+    return { message: `Document marked as ${status}`, doc };
+};
+
+// ✅ STEP 5: Final BGV Approval/Rejection (BGV - Part 2)
+export const finalBGVApprovalService = async ({ employeeId, status, remarks }) => {
+    const employee = await prisma.employee.update({
+        where: { id: employeeId },
+        data: { 
+            bgvStatus: status, 
+            bgvRemarks: remarks,
+            // If rejected, keep status as PENDING_APPROVAL or move to SUSPENDED
+            status: status === "REJECTED" ? "SUSPENDED" : "PENDING_APPROVAL"
+        },
+        include: { user: true }
+    });
+
+    if (status === "REJECTED") {
+        await sendEmail(
+            employee.user.email,
+            "Onboarding Update - BGV Verification",
+            `<h3>Background Verification Update</h3>
+             <p>Dear ${employee.user.name},</p>
+             <p>We regret to inform you that your background verification was not successful.</p>
+             <p><strong>Remarks:</strong> ${remarks}</p>`
+        );
+    }
+
+    return { message: `Employee BGV marked as ${status}`, employee };
+};
+
+// ✅ STEP 6: Assign Salary + Manager
+export const assignTermsService = async ({ employeeId, salaryDetails, managerId }) => {
+    const { basic, hra, allowances, bonus, deductions } = salaryDetails;
+
+    const [salary, employee] = await prisma.$transaction([
+        prisma.salaryStructure.upsert({
+            where: { employeeId },
+            create: { employeeId, basic, hra, allowances, bonus, deductions },
+            update: { basic, hra, allowances, bonus, deductions }
+        }),
+        prisma.employee.update({
+            where: { id: employeeId },
+            data: { managerId }
+        })
+    ]);
+
+    return { message: "Employment terms assigned successfully", salary, employee };
+};
