@@ -278,13 +278,23 @@ export const activateUserService = async (userId) => {
 export const acceptOfferService = async (email) => {
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 1. Find the SENT offer
+    // 1. Find the latest offer for this email
     const offer = await prisma.offerLetter.findFirst({
-        where: { employeeEmail: normalizedEmail, status: "SENT" },
+        where: { employeeEmail: normalizedEmail },
         orderBy: { createdAt: "desc" }
     });
 
-    if (!offer) throw new Error("No active offer found for this email");
+    if (!offer) {
+        throw new Error("No offer found for this email");
+    }
+
+    if (offer.status === "ACCEPTED") {
+        throw new Error("Offer already accepted. Please check your email for the password setup link.");
+    }
+
+    if (offer.status !== "SENT") {
+        throw new Error(`Offer cannot be accepted. Current status: ${offer.status}`);
+    }
 
     // 2. Mark as ACCEPTED
     await prisma.offerLetter.update({
