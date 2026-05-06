@@ -87,7 +87,9 @@ export const unifiedSetupPassword = async (req, res) => {
         // 2. Check if it's an Employee Invite (These are stored as raw tokens)
         const employeeInvite = await prisma.employeeInvite.findUnique({ where: { token: safeToken } });
         if (employeeInvite) {
-            const result = await acceptInviteService({ token: safeToken, password, name });
+            // Use name from body if provided, otherwise fallback to name in invite, or finally email prefix
+            const finalName = name || employeeInvite.name || employeeInvite.email.split('@')[0];
+            const result = await acceptInviteService({ token: safeToken, password, name: finalName });
             return res.status(200).json({ success: true, type: "EMPLOYEE", ...result });
         }
 

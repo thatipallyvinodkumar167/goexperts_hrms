@@ -87,7 +87,30 @@ export const updateCompanyProfileController = async (req, res) => {
         return res.status(403).json({ success: false, message: "Forbidden: You can only update your own company" });
     }
 
-    const data = await updateCompanyProfile(companyId, req.body);
+    const files = req.files || {};
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const documents = [];
+
+    const gstFile = files.gstProof?.[0];
+    const panFile = files.panProof?.[0];
+    const tanFile = files.tanProof?.[0];
+
+    if (gstFile) {
+      documents.push({ name: "GST_CERTIFICATE", fileUrl: `${baseUrl}/uploads/company-docs/${gstFile.filename}` });
+    }
+    if (panFile) {
+      documents.push({ name: "PAN_CARD", fileUrl: `${baseUrl}/uploads/company-docs/${panFile.filename}` });
+    }
+    if (tanFile) {
+      documents.push({ name: "TAN_CERTIFICATE", fileUrl: `${baseUrl}/uploads/company-docs/${tanFile.filename}` });
+    }
+
+    const payload = {
+      ...req.body,
+      documents: [...(Array.isArray(req.body.documents) ? req.body.documents : []), ...documents],
+    };
+
+    const data = await updateCompanyProfile(companyId, payload);
 
     res.status(200).json({
       success: true,

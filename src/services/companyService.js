@@ -65,7 +65,7 @@ export const createCompanyWithInvite = async ({
 
     const ownerUser = await tx.user.create({
       data: {
-        name: ownerName,
+        name: ownerName || (normalizedOwnerEmail || normalizedCompanyEmail).split('@')[0],
         email: normalizedOwnerEmail || normalizedCompanyEmail,
         password: "", // not set yet
         role: "OWNER",

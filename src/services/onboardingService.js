@@ -29,8 +29,8 @@ export const acceptInviteService = async ({token, password, name}) => {
 
      // create user
     const user = await prisma.user.create({
-        data : {
-            name,
+      data : {
+            name: name || invite.email.split('@')[0], // Strong fallback to email prefix
             email : invite.email,
             password : hashedPassword,
             role : invite.role,

@@ -231,6 +231,7 @@ model EmployeeInvite {
   company     Company  @relation(fields: [companyId], references: [id])
 
   role        Role
+  name        String?
 
   userId      String?
   user        User?    @relation(fields: [userId], references: [id])
@@ -248,6 +249,7 @@ model EmployeeInvite {
 model OfferLetter {
   id          String   @id @default(uuid())
 
+  name        String?
   employeeEmail String
   companyId     String
   company       Company @relation(fields: [companyId], references: [id])

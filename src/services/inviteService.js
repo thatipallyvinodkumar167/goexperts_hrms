@@ -40,6 +40,7 @@ export const inviteService = async (data) => {
 
       await prisma.offerLetter.create({
           data: {
+              name: name || normalizedEmail.split('@')[0], // Fallback if name missing
               employeeEmail: normalizedEmail,
               companyId,
               salary: offerData.salary,
@@ -147,6 +148,7 @@ export const inviteService = async (data) => {
   invite = await prisma.employeeInvite.create({
       data: {
           email: normalizedEmail,
+          name: name || normalizedEmail.split('@')[0],
           token: rawToken,
           role: role,
           companyId,
@@ -316,8 +318,9 @@ export const acceptOfferService = async (email) => {
     await prisma.employeeInvite.create({
         data: {
             email: normalizedEmail,
+            name: offer.name, // Transfer name from Offer record
             token: rawToken,
-            role: offer.role, // Use the role stored during Phase 1
+            role: offer.role, 
             companyId: offer.companyId,
             expiresAt
         }

@@ -35,12 +35,22 @@ router.put(
   "/profile",
   authMiddleware,
   allowRoles("SUPER_ADMIN", "OWNER", "HR"),
+  uploadCompanyDocuments.fields([
+    { name: "gstProof", maxCount: 1 },
+    { name: "panProof", maxCount: 1 },
+    { name: "tanProof", maxCount: 1 },
+  ]),
   updateCompanyProfileController
 );
 router.put(
   "/profile/:id",
   authMiddleware,
   allowRoles("SUPER_ADMIN"),
+  uploadCompanyDocuments.fields([
+    { name: "gstProof", maxCount: 1 },
+    { name: "panProof", maxCount: 1 },
+    { name: "tanProof", maxCount: 1 },
+  ]),
   updateCompanyProfileController
 );
 router.get("/profile", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR"), getCompanyProfileController);
