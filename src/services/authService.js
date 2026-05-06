@@ -51,20 +51,27 @@ export const loginUser = async ({ email, password } = {}) => {
 
   // Company user login path
   let users = await prisma.user.findMany({
-    where: { email: normalizedEmail, status: "ACTIVE" },
+    where: { 
+      email: normalizedEmail, 
+      status: { in: ["ACTIVE", "PENDING_APPROVAL"] } 
+    },
     include: { company: true }
   });
 
   // If no user found by direct email, check if they typed the Company Email instead
   if (users.length === 0) {
     const companyByEmail = await prisma.company.findFirst({
-      where: { email: normalizedEmail } // removed status: "ACTIVE" to allow unapproved logins
+      where: { email: normalizedEmail } 
     });
 
     if (companyByEmail) {
       // Find the OWNER of this company
       const owner = await prisma.user.findFirst({
-        where: { companyId: companyByEmail.id, role: "OWNER", status: "ACTIVE" },
+        where: { 
+          companyId: companyByEmail.id, 
+          role: "OWNER", 
+          status: { in: ["ACTIVE", "PENDING_APPROVAL"] } 
+        },
         include: { company: true }
       });
       if (owner) {
