@@ -252,3 +252,24 @@ export const removeCompany = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+export const uploadCompanyLogoController = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    if (!req.file) throw new Error("Logo image is required");
+
+    const data = await prisma.company.update({
+      where: { id: companyId },
+      data: { companyLogo: req.file.path } // Cloudinary URL is in req.file.path
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Company logo uploaded successfully",
+      logoUrl: req.file.path,
+      data
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};

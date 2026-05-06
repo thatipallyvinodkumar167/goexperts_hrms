@@ -1,6 +1,14 @@
-
-import express from "express";
-import { acceptInvite, activateUser, completeProfile, verifyEmail, uploadDocuments } from "../controller/onboardingController.js";
+import { 
+    acceptInvite, 
+    activateUser, 
+    completeProfile, 
+    verifyEmail, 
+    uploadDocuments,
+    addExperience,
+    updateDocumentStatus,
+    finalBGVApproval,
+    assignTerms
+} from "../controller/onboardingController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { uploadEmployeeDocuments } from "../config/multer.js";
@@ -11,8 +19,9 @@ const router = express.Router();
 router.post("/accept-invite", acceptInvite);
 router.post("/verify-email", verifyEmail);
 
-// Private onboarding steps
+// Private onboarding steps (Employee Side)
 router.post("/complete-profile", authMiddleware, completeProfile);
+router.post("/add-experience", authMiddleware, addExperience);
 
 router.post(
     "/upload-documents",
@@ -27,7 +36,10 @@ router.post(
     uploadDocuments
 );
 
-// Admin/Owner Approval Step
+// Admin/Owner Approval Step (HR/OWNER Side)
+router.post("/document-status", authMiddleware, allowRoles("OWNER", "HR"), updateDocumentStatus);
+router.post("/bgv-decision", authMiddleware, allowRoles("OWNER", "HR"), finalBGVApproval);
+router.post("/assign-terms", authMiddleware, allowRoles("OWNER", "HR"), assignTerms);
 router.post("/activate", authMiddleware, allowRoles("OWNER", "HR"), activateUser);
 
-export default router;
+export default router;

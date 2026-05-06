@@ -17,9 +17,7 @@ export const uploadProfileLogo = async (req, res) => {
             return res.status(400).json({ success: false, message: "No image file provided." });
         }
 
-        // Build the public URL for the uploaded file
-        const baseUrl = `${req.protocol}://${req.get("host")}`;
-        const fileUrl = `${baseUrl}/uploads/profiles/${req.file.filename}`;
+        const fileUrl = req.file.path; // Cloudinary URL
 
         // Save URL to user profile
         const data = await updateUserProfileService(req.user.id, { profileLogo: fileUrl });
@@ -31,11 +29,10 @@ export const uploadProfileLogo = async (req, res) => {
             user: data.user,
         });
     } catch (error) {
-        // Delete the uploaded file if DB update fails
-        if (req.file) fs.unlinkSync(req.file.path);
         res.status(400).json({ success: false, message: error.message });
     }
 };
+
 
 
 

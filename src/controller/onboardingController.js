@@ -1,4 +1,14 @@
-import { acceptInviteService, activateUserService, completeProfileService, verifyEmailService, uploadEmployeeDocumentsService } from "../services/onboardingService.js"
+import { 
+    acceptInviteService, 
+    activateUserService, 
+    completeProfileService, 
+    verifyEmailService, 
+    uploadEmployeeDocumentsService,
+    addExperienceService,
+    updateDocumentStatusService,
+    finalBGVApprovalService,
+    assignTermsService 
+} from "../services/onboardingService.js"
 
 export const acceptInvite = async (req, res) => {
 
@@ -74,3 +84,39 @@ export const uploadDocuments = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
+
+export const addExperience = async (req, res) => {
+    try {
+        const data = await addExperienceService(req.user.id, req.body.experience);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const updateDocumentStatus = async (req, res) => {
+    try {
+        const data = await updateDocumentStatusService(req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const finalBGVApproval = async (req, res) => {
+    try {
+        const data = await finalBGVApprovalService(req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const assignTerms = async (req, res) => {
+    try {
+        const data = await assignTermsService(req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
