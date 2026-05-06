@@ -54,24 +54,6 @@ export const createCompany = async (req, res) => {
 };
 
 //////////////////////////
-// SETUP ACCOUNT
-//////////////////////////
-
-export const setupAccount = async (req, res) => {
-  try {
-    const { token, password } = req.body;
-    console.log("🛠️ setupAccount Controller received token:", token);
-
-    const result = await setupCompanyAccount(token, password);
-
-    res.status(200).json({ success: true, ...result });
-
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
-  }
-};
-
-//////////////////////////
 // COMPLETE PROFILE
 //////////////////////////
 

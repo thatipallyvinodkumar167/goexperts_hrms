@@ -1,4 +1,8 @@
 import { inviteService, acceptOfferService } from "../services/inviteService.js";
+import prisma from "../config/db.js";
+import crypto from "crypto";
+import { setupCompanyAccount } from "../services/companyService.js";
+import { acceptInviteService } from "../services/onboardingService.js";
 
 export const inviteUser = async (req, res) => {
     try {
@@ -63,11 +67,6 @@ export const acceptOffer = async (req, res) => {
         });
     }
 };
-
-import prisma from "../config/db.js";
-import crypto from "crypto";
-import { setupCompanyAccount } from "../services/companyService.js";
-import { acceptInviteService } from "../services/onboardingService.js";
 
 export const unifiedSetupPassword = async (req, res) => {
     try {

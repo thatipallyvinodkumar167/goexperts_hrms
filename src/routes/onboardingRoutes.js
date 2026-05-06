@@ -1,5 +1,5 @@
+import express from "express";
 import { 
-    acceptInvite, 
     activateUser, 
     completeProfile, 
     verifyEmail, 
@@ -16,7 +16,6 @@ import { uploadEmployeeDocuments } from "../config/multer.js";
 const router = express.Router();
 
 // Public onboarding steps
-router.post("/accept-invite", acceptInvite);
 router.post("/verify-email", verifyEmail);
 
 // Private onboarding steps (Employee Side)
@@ -42,4 +41,4 @@ router.post("/bgv-decision", authMiddleware, allowRoles("OWNER", "HR"), finalBGV
 router.post("/assign-terms", authMiddleware, allowRoles("OWNER", "HR"), assignTerms);
 router.post("/activate", authMiddleware, allowRoles("OWNER", "HR"), activateUser);
 
-export default router;
+export default router;

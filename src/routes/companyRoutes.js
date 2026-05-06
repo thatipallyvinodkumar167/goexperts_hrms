@@ -5,7 +5,6 @@ import { uploadCompanyDocuments, uploadCompanyLogo } from "../config/multer.js";
 
 import {
   createCompany,
-  setupAccount,
   completeProfile,
   activateCompanyController,
   getAllCompanies,
@@ -25,9 +24,6 @@ router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), getAllCompanies);
 router.post("/logo", authMiddleware, allowRoles("OWNER", "HR"), uploadCompanyLogo.single("logo"), uploadCompanyLogoController);
 
 router.post("/create", authMiddleware, allowRoles("SUPER_ADMIN"), createCompany);
-
-// PUBLIC → setup account (API)
-router.post("/setup-account", setupAccount);
 
 // OWNER → complete profile
 router.put("/complete-profile", authMiddleware, allowRoles("OWNER"), completeProfile);

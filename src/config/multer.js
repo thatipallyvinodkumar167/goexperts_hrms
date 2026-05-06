@@ -49,30 +49,31 @@ export const uploadCompanyLogo = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-// ☁️ Cloudinary Storage for Company Documents (GST, PAN, TAN)
+// ☁️ Cloudinary Storage for Company Documents (GST / PAN / TAN proofs)
 const companyDocsStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
+  params: (req, file) => ({
     folder: "hrms/company_docs",
-    allowed_formats: ["jpg", "png", "webp", "pdf"],
+    allowed_formats: ["jpg", "jpeg", "png", "pdf"],
     resource_type: "auto",
-  },
+    public_id: `${file.fieldname}_${Date.now()}`,
+  }),
 });
 
 export const uploadCompanyDocuments = multer({
   storage: companyDocsStorage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 });
 
-
-// File filter for employee documents
+// Generic file filter for employee documents
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|pdf/;
-  const ext = path.extname(file.originalname).toLowerCase();
-  if (allowedTypes.test(ext)) {
+  const allowed = /jpeg|jpg|png|pdf/;
+  const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+  const mime = allowed.test(file.mimetype);
+  if (ext && mime) {
     cb(null, true);
   } else {
-    cb(new Error("Only image and PDF files are allowed"), false);
+    cb(new Error("Only images (jpg, png) and PDF files are allowed"), false);
   }
 };
 

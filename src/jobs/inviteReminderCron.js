@@ -49,7 +49,7 @@ export const inviteReminderCron = () => {
                     // Let's generate a new token for the reminder to be safe and functional.
                     const rawToken = crypto.randomBytes(32).toString("hex");
                     const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
-                    const inviteLink = `${process.env.FRONTEND_URL}/setup-password?token=${rawToken}`;
+                    const inviteLink = `${process.env.FRONTEND_URL}://setup-account?token=${rawToken}`;
 
                     await prisma.companyInvite.update({
                         where: { id: invite.id },

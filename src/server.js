@@ -15,6 +15,7 @@ import logger from "./middleware/loggerMiddleware.js";
 import { companyStatusCron } from "./jobs/companyStatusCron.js";
 import { inviteReminderCron } from "./jobs/inviteReminderCron.js";
 import inviteRoutes from "./routes/inviteRoutes.js";
+import onboardingRoutes from "./routes/onboardingRoutes.js";
 // import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +39,7 @@ app.use("/api/company", companyRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/invite", inviteRoutes);
+app.use("/api/onboarding", onboardingRoutes);
 
 // ✅ Serve uploaded files (profile logos, etc.) as static
 app.use("/uploads", express.static(join(__dirname, "../uploads")));
