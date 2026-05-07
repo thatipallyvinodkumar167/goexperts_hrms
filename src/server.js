@@ -37,7 +37,7 @@ app.use(logger);
 //routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
-app.use("/api/v1/super-admin/master", superAdminMasterRoutes);
+app.use("/api/super-admin", superAdminMasterRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/invite", inviteRoutes);

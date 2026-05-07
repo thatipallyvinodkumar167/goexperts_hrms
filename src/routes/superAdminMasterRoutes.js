@@ -8,7 +8,9 @@ import {
   addDepartmentTemplate,
   removeDepartmentTemplate,
   addDesignationTemplate,
-  removeDesignationTemplate
+  removeDesignationTemplate,
+  upsertSystemPolicy,
+  getSystemPolicies
 } from "../controller/superAdminMasterController.js";
 
 const router = express.Router();
@@ -17,16 +19,20 @@ const router = express.Router();
 router.use(authMiddleware, allowRoles("SUPER_ADMIN"));
 
 // Industry Types
-router.get("/industry-types", getAllIndustryTypes);
+router.get("/industry-types/", getAllIndustryTypes);
 router.get("/industry-types/:id", getIndustryTypeDetails);
-router.post("/industry-types", createIndustryType);
+router.post("/industry-types/create", createIndustryType);
 
 // Department Templates
-router.post("/templates/department", addDepartmentTemplate);
-router.delete("/templates/department/:id", removeDepartmentTemplate);
+router.post("/industry-types/department", addDepartmentTemplate);
+router.delete("/industry-types/department/:id", removeDepartmentTemplate);
 
 // Designation Templates
-router.post("/templates/designation", addDesignationTemplate);
-router.delete("/templates/designation/:id", removeDesignationTemplate);
+router.post("/industry-types/designation", addDesignationTemplate);
+router.delete("/industry-types/designation/:id", removeDesignationTemplate);
+
+// System Policies (Terms & Conditions, Privacy)
+router.post("/policies", upsertSystemPolicy);
+router.get("/policies", getSystemPolicies);
 
 export default router;

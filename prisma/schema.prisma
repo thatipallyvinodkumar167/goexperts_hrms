@@ -52,6 +52,13 @@ enum CompanyDocumentType {
   COMPANY_LOGO
 }
 
+enum PolicyType {
+  TERMS_AND_CONDITIONS
+  PRIVACY_POLICY
+  REFUND_POLICY
+  COOKIE_POLICY
+}
+
 //////////////////////////
 // USERS
 //////////////////////////
@@ -606,6 +613,21 @@ model DesignationTemplate {
   industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+//////////////////////////
+// SYSTEM POLICIES
+//////////////////////////
+
+model SystemPolicy {
+  id        String     @id @default(uuid())
+  type      PolicyType @unique
+  content   String     @db.LongText
+  version   String     @default("1.0.0")
+  isActive  Boolean    @default(true)
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 //////////////////////////

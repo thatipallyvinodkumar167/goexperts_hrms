@@ -97,3 +97,32 @@ export const removeDesignationTemplate = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+//////////////////////////
+// SYSTEM POLICIES
+//////////////////////////
+
+export const upsertSystemPolicy = async (req, res) => {
+  try {
+    const { type, content, version } = req.body;
+    
+    const data = await prisma.systemPolicy.upsert({
+      where: { type },
+      update: { content, version, updatedAt: new Date() },
+      create: { type, content, version }
+    });
+
+    res.status(200).json({ success: true, message: `${type} updated successfully`, data });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const getSystemPolicies = async (req, res) => {
+  try {
+    const data = await prisma.systemPolicy.findMany();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
