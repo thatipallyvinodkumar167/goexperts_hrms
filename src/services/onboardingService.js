@@ -36,7 +36,7 @@ export const acceptInviteService = async ({token, password, name}) => {
             role : invite.role,
             companyId : invite.companyId,
             status : "PENDING_APPROVAL",
-            isEmailVerified : false
+            isEmailVerified : true
         }
     });
 
@@ -47,7 +47,7 @@ export const acceptInviteService = async ({token, password, name}) => {
         data : {acceptedAt : new Date()}
     });
 
-    return {message :  "Password set successfully. Please verify email", userId : user.id};
+    return {message :  "Password set successfully", userId : user.id};
 
 };
 
@@ -279,4 +279,4 @@ export const assignTermsService = async ({ employeeId, salaryDetails, managerId 
     ]);
 
     return { message: "Employment terms assigned successfully", salary, employee };
-};
+};

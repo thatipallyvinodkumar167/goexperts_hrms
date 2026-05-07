@@ -114,6 +114,8 @@ model Company {
   phone        String?
   website      String?
   industry     String?
+  industryTypeId String?
+  industryType   IndustryType? @relation(fields: [industryTypeId], references: [id])
   companySize  String?
   foundedYear  Int?
 
@@ -565,6 +567,43 @@ model AuditLog {
   action    String
   module    String
   metadata  Json?
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////////
+// MASTER TEMPLATES (GLOBAL)
+//////////////////////////
+
+model IndustryType {
+  id        String   @id @default(uuid())
+  name      String   @unique
+
+  departments DepartmentTemplate[]
+  designations DesignationTemplate[]
+  companies    Company[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DepartmentTemplate {
+  id             String @id @default(uuid())
+  name           String
+
+  industryTypeId String
+  industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model DesignationTemplate {
+  id             String @id @default(uuid())
+  title          String
+  level          Int    @default(1)
+
+  industryTypeId String
+  industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
 
   createdAt DateTime @default(now())
 }

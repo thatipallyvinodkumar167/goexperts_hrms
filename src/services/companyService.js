@@ -2,6 +2,7 @@ import prisma from "../config/db.js";
 import crypto from "crypto";
 import { hashPassword } from "../utils/hashPassword.js";
 import { assignTrialSubscription } from "./subscriptionService.js";
+import { seedCompanyMastersFromTemplate } from "./masterSeedService.js";
 
 // ✅ NEW IMPORTS (ADDED)
 import { sendEmail } from "../utils/sendEmail.js";
@@ -211,6 +212,7 @@ export const updateCompanyProfile = async (companyId, data) => {
     phone: data.phone || undefined,
     website: data.website || undefined,
     industry: data.industry || undefined,
+    industryTypeId: data.industryTypeId || undefined,
     companySize: data.companySize || undefined,
     foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
     addressLine1: data.addressLine1 || undefined,
@@ -272,6 +274,11 @@ export const activateCompany = async (companyId) => {
 
   if (!company.subscriptions.length) {
     await assignTrialSubscription(companyId);
+  }
+
+  // ✅ AUTO-SEED MASTER DATA (Departments/Designations)
+  if (company.industryTypeId) {
+    await seedCompanyMastersFromTemplate(companyId, company.industryTypeId);
   }
 
   return prisma.company.update({
