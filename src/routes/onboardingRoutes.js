@@ -13,7 +13,8 @@ import {
     finalizeJoining,
     verifyEmail, 
     updateDocumentStatus,
-    getEmployeeReview
+    getEmployeeReview,
+    getAllReviews
 } from "../controller/onboardingController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
