@@ -1,10 +1,17 @@
 import { 
     acceptInviteService, 
     activateUserService, 
-    completeProfileService, 
-    verifyEmailService, 
-    uploadEmployeeDocumentsService,
+    saveBasicInfoService,
+    saveContactInfoService,
+    saveEmergencyContactService,
+    saveEducationService,
     addExperienceService,
+    saveSkillsService,
+    uploadEmployeeDocumentsService,
+    saveBankDetailsService,
+    saveNomineeService,
+    saveComplianceAndFinalizeService,
+    verifyEmailService, 
     updateDocumentStatusService,
     finalBGVApprovalService,
     assignTermsService 
@@ -25,19 +32,75 @@ export const verifyEmail = async (req, res) => {
     }
 };
 
-export const completeProfile  = async (req, res) => {
-
+export const saveBasicInfo = async (req, res) => {
     try {
-        
-        const data = await completeProfileService({
-            ...req.body,
-            userId : req.user.id
-        });
-
-        res.status(200).json({success : true, ...data});
+        const data = await saveBasicInfoService(req.user.id, req.body);
+        res.status(200).json({ success: true, ...data });
     } catch (error) {
-        
-        res.status(400).json({ success : false, message : error.message});
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const saveContactInfo = async (req, res) => {
+    try {
+        const data = await saveContactInfoService(req.user.id, req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const saveEmergencyContact = async (req, res) => {
+    try {
+        const data = await saveEmergencyContactService(req.user.id, req.body.contacts);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const saveEducation = async (req, res) => {
+    try {
+        const data = await saveEducationService(req.user.id, req.body.education);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const saveSkills = async (req, res) => {
+    try {
+        const data = await saveSkillsService(req.user.id, req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const saveBankDetails = async (req, res) => {
+    try {
+        const data = await saveBankDetailsService(req.user.id, req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const saveNominee = async (req, res) => {
+    try {
+        const data = await saveNomineeService(req.user.id, req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const saveComplianceAndFinalize = async (req, res) => {
+    try {
+        const data = await saveComplianceAndFinalizeService(req.user.id, req.body);
+        res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 

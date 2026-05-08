@@ -66,32 +66,46 @@ export const uploadCompanyDocuments = multer({
 });
 
 // Generic file filter for employee documents
-const fileFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png|pdf/;
+const employeeDocsFilter = (req, file, cb) => {
+  const allowed = /jpeg|jpg|png|pdf|doc|docx/;
   const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-  const mime = allowed.test(file.mimetype);
-  if (ext && mime) {
+  const mimeMap = {
+    'image/jpeg': true,
+    'image/jpg': true,
+    'image/png': true,
+    'application/pdf': true,
+    'application/msword': true,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': true
+  };
+  
+  if (ext && mimeMap[file.mimetype]) {
     cb(null, true);
   } else {
-    cb(new Error("Only images (jpg, png) and PDF files are allowed"), false);
+    cb(new Error("Only images (jpg, png), PDF, and Word documents are allowed"), false);
   }
 };
 
-const employeeDocsStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, employeeDocsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const userId = req.user?.id || "user";
-    const field = (file.fieldname || "doc").replace(/[^a-zA-Z0-9_-]/g, "");
-    const uniqueName = `${userId}_${field}_${Date.now()}${ext}`;
-    cb(null, uniqueName);
+// ☁️ Cloudinary Storage for Employee Documents
+const employeeDocsCloudStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: (req, file) => {
+    // If it's a doc/docx/pdf, we must use raw or auto resource type
+    let resource_type = "auto";
+    if (file.mimetype.includes("word") || file.mimetype.includes("pdf")) {
+        resource_type = "raw";
+    }
+    
+    return {
+      folder: "hrms/employee_docs",
+      allowed_formats: ["jpg", "jpeg", "png", "pdf", "doc", "docx"],
+      resource_type: resource_type,
+      public_id: `${req.user?.id || "user"}_${file.fieldname}_${Date.now()}`,
+    };
   },
 });
 
 export const uploadEmployeeDocuments = multer({
-  storage: employeeDocsStorage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  storage: employeeDocsCloudStorage,
+  fileFilter: employeeDocsFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB Size Validation
 });

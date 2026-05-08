@@ -69,59 +69,233 @@ export const verifyEmailService  = async (userId) => {
     return { message : "email verified successfully"}
 };
 
-// ✅ STEP 4: Complete Profile
+// ✅ STEP 1: Basic Information
+export const saveBasicInfoService = async (userId, data) => {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw Error("User not found");
 
-export const completeProfileService  = async ({
-    userId,
-    personal,
-    departmentId,
-  designationId
-}) => {
-
-    const user = await prisma.user.findUnique({
-        where : {id : userId}
-    });
-
-if(!user){
-    throw Error("user not found");
-}
-
-  // create employee
-  const employee = await prisma.employee.create({
-
-    data : {
-        userId,
-        companyId : user.companyId,
-        employeeCode : `EMP-${Date.now()}`,
-
-        departmentId,
-        designationId,
-        joiningDate : new Date(),
-        employmentType : "FRESHER",
-
-        personal : {
-            create : personal
-        }
-
+    let employee = await prisma.employee.findUnique({ where: { userId } });
+    
+    if (!employee) {
+        employee = await prisma.employee.create({
+            data: {
+                userId,
+                companyId: user.companyId,
+                employeeCode: `EMP-${Date.now()}`,
+                departmentId: data.departmentId,
+                designationId: data.designationId,
+                joiningDate: new Date(),
+                employmentType: data.employmentType || "FRESHER",
+                firstName: data.firstName,
+                lastName: data.lastName,
+                middleName: data.middleName,
+                profilePhoto: data.profilePhoto,
+                onboardingStep: 2,
+                personal: {
+                    create: {
+                        gender: data.gender,
+                        dob: data.dob ? new Date(data.dob) : null,
+                        maritalStatus: data.maritalStatus,
+                        bloodGroup: data.bloodGroup,
+                        nationality: data.nationality
+                    }
+                }
+            }
+        });
+    } else {
+        employee = await prisma.employee.update({
+            where: { id: employee.id },
+            data: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                middleName: data.middleName,
+                profilePhoto: data.profilePhoto,
+                onboardingStep: Math.max(employee.onboardingStep, 2)
+            }
+        });
+        await prisma.employeePersonal.upsert({
+            where: { employeeId: employee.id },
+            update: {
+                gender: data.gender,
+                dob: data.dob ? new Date(data.dob) : null,
+                maritalStatus: data.maritalStatus,
+                bloodGroup: data.bloodGroup,
+                nationality: data.nationality
+            },
+            create: {
+                employeeId: employee.id,
+                gender: data.gender,
+                dob: data.dob ? new Date(data.dob) : null,
+                maritalStatus: data.maritalStatus,
+                bloodGroup: data.bloodGroup,
+                nationality: data.nationality
+            }
+        });
     }
-  });
+    return { message: "Basic information saved", employee };
+};
 
-  // If the user is an HR, also create the HR permissions record
-  if (user.role === "HR") {
-    await prisma.hR.create({
-      data: {
-        userId,
-        permissions: {
-          canManageEmployees: true,
-          canManageAttendance: true,
-          canManageLeaves: true,
-          canManagePayroll: false, // Defaulting some security
+// ✅ STEP 2: Contact Information
+export const saveContactInfoService = async (userId, data) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw Error("Employee profile not found");
+
+    await prisma.employeePersonal.upsert({
+        where: { employeeId: employee.id },
+        update: {
+            personalEmail: data.personalEmail,
+            phone: data.phone,
+            alternatePhone: data.alternatePhone,
+            addressLine1: data.addressLine1,
+            addressLine2: data.addressLine2,
+            city: data.city,
+            state: data.state,
+            country: data.country,
+            pincode: data.pincode
+        },
+        create: {
+            employeeId: employee.id,
+            personalEmail: data.personalEmail,
+            phone: data.phone,
+            alternatePhone: data.alternatePhone,
+            addressLine1: data.addressLine1,
+            addressLine2: data.addressLine2,
+            city: data.city,
+            state: data.state,
+            country: data.country,
+            pincode: data.pincode
         }
-      }
     });
-  }
 
-  return {message : "Profile completed successfully", employee};
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { onboardingStep: Math.max(employee.onboardingStep, 3) }
+    });
+
+    return { message: "Contact information saved" };
+};
+
+// ✅ STEP 3: Emergency Contact
+export const saveEmergencyContactService = async (userId, dataArray) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw Error("Employee profile not found");
+
+    // Clear existing to avoid duplicates on re-submission
+    await prisma.employeeEmergencyContact.deleteMany({ where: { employeeId: employee.id } });
+
+    await prisma.employeeEmergencyContact.createMany({
+        data: dataArray.map(data => ({
+            employeeId: employee.id,
+            contactPersonName: data.contactPersonName,
+            relationship: data.relationship,
+            contactNumber: data.contactNumber,
+            alternateContact: data.alternateContact,
+            address: data.address
+        }))
+    });
+
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { onboardingStep: Math.max(employee.onboardingStep, 4) }
+    });
+
+    return { message: "Emergency contacts saved" };
+};
+
+// ✅ STEP 4: Education Details
+export const saveEducationService = async (userId, dataArray) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw Error("Employee profile not found");
+
+    await prisma.employeeEducation.deleteMany({ where: { employeeId: employee.id } });
+
+    await prisma.employeeEducation.createMany({
+        data: dataArray.map(data => ({
+            employeeId: employee.id,
+            degree: data.degree,
+            specialization: data.specialization,
+            college: data.college,
+            university: data.university,
+            percentage: data.percentage,
+            cgpa: data.cgpa,
+            startYear: data.startYear,
+            endYear: data.endYear
+        }))
+    });
+
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { onboardingStep: Math.max(employee.onboardingStep, 5) }
+    });
+
+    return { message: "Education details saved" };
+};
+
+// ✅ STEP 5: Experience Details
+export const addExperienceService = async (userId, experienceArray) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw new Error("Employee profile not found");
+
+    await prisma.employeeExperience.deleteMany({ where: { employeeId: employee.id } });
+
+    const experiences = await prisma.employeeExperience.createMany({
+        data: experienceArray.map(exp => ({
+            employeeId: employee.id,
+            companyName: exp.companyName,
+            role: exp.designation || exp.role,
+            startDate: new Date(exp.startDate),
+            endDate: exp.endDate ? new Date(exp.endDate) : null,
+            totalYears: exp.totalExperience || exp.totalYears,
+            technologies: exp.technologies,
+            responsibilities: exp.responsibilities
+        }))
+    });
+
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { 
+            employmentType: experienceArray.length > 0 ? "EXPERIENCED" : employee.employmentType,
+            onboardingStep: Math.max(employee.onboardingStep, 6)
+        }
+    });
+
+    return { message: "Experience details saved", experiences };
+};
+
+// ✅ STEP 6: Skills & Certifications
+export const saveSkillsService = async (userId, data) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw Error("Employee profile not found");
+
+    await prisma.employeeSkill.upsert({
+        where: { employeeId: employee.id },
+        update: {
+            primarySkills: data.primarySkills,
+            secondarySkills: data.secondarySkills,
+            certifications: data.certifications,
+            languagesKnown: data.languagesKnown,
+            linkedinUrl: data.linkedinUrl,
+            githubUrl: data.githubUrl,
+            portfolioUrl: data.portfolioUrl
+        },
+        create: {
+            employeeId: employee.id,
+            primarySkills: data.primarySkills,
+            secondarySkills: data.secondarySkills,
+            certifications: data.certifications,
+            languagesKnown: data.languagesKnown,
+            linkedinUrl: data.linkedinUrl,
+            githubUrl: data.githubUrl,
+            portfolioUrl: data.portfolioUrl
+        }
+    });
+
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { onboardingStep: Math.max(employee.onboardingStep, 7) }
+    });
+
+    return { message: "Skills saved" };
 };
 
 // ✅ STEP 5: Activate Employee
@@ -173,6 +347,7 @@ export const activateUserService  = async (userId) => {
     return { message: "Account activated successfully and Welcome Letter sent" };
 };
 
+// ✅ STEP 7: Document Uploads
 export const uploadEmployeeDocumentsService = async (userId, files) => {
     const employee = await prisma.employee.findUnique({
         where: { userId }
@@ -196,34 +371,143 @@ export const uploadEmployeeDocumentsService = async (userId, files) => {
         });
         documents.push(doc);
     }
+    
+    // Also store profile photo locally if uploaded
+    if (files.profilePhoto) {
+        await prisma.employee.update({
+            where: { id: employee.id },
+            data: { profilePhoto: `/uploads/employee-docs/${files.profilePhoto[0].filename}` }
+        });
+    }
+
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { onboardingStep: Math.max(employee.onboardingStep, 8) }
+    });
 
     return { message: "Documents uploaded successfully", documents };
 };
 
-// ✅ STEP 3: Add Experience (If Experienced)
-export const addExperienceService = async (userId, experienceArray) => {
+// ✅ STEP 8: Bank Details
+export const saveBankDetailsService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
-    if (!employee) throw new Error("Employee profile not found");
+    if (!employee) throw Error("Employee profile not found");
 
-    const experiences = await Promise.all(experienceArray.map(exp => 
-        prisma.employeeExperience.create({
-            data: {
-                employeeId: employee.id,
-                companyName: exp.companyName,
-                role: exp.role,
-                startDate: new Date(exp.startDate),
-                endDate: exp.endDate ? new Date(exp.endDate) : null,
-                totalYears: exp.totalYears
-            }
-        })
-    ));
+    if (data.accountNumber !== data.confirmAccountNumber) {
+        throw Error("Account numbers do not match");
+    }
+
+    await prisma.employeeBank.upsert({
+        where: { employeeId: employee.id },
+        update: {
+            bankName: data.bankName,
+            accountHolderName: data.accountHolderName,
+            accountNumber: data.accountNumber,
+            ifscCode: data.ifscCode,
+            branchName: data.branchName,
+            upiId: data.upiId
+        },
+        create: {
+            employeeId: employee.id,
+            bankName: data.bankName,
+            accountHolderName: data.accountHolderName,
+            accountNumber: data.accountNumber,
+            ifscCode: data.ifscCode,
+            branchName: data.branchName,
+            upiId: data.upiId
+        }
+    });
 
     await prisma.employee.update({
         where: { id: employee.id },
-        data: { employmentType: "EXPERIENCED" }
+        data: { onboardingStep: Math.max(employee.onboardingStep, 9) }
     });
 
-    return { message: "Experience added successfully", experiences };
+    return { message: "Bank details saved" };
+};
+
+// ✅ STEP 9: Nominee Details
+export const saveNomineeService = async (userId, data) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw Error("Employee profile not found");
+
+    await prisma.employeeNominee.upsert({
+        where: { employeeId: employee.id },
+        update: {
+            nomineeName: data.nomineeName,
+            relationship: data.relationship,
+            dob: data.dob ? new Date(data.dob) : null,
+            gender: data.gender,
+            phone: data.phone,
+            email: data.email,
+            aadhaarNumber: data.aadhaarNumber,
+            panNumber: data.panNumber,
+            nomineePercentage: data.nomineePercentage,
+            address: data.address
+        },
+        create: {
+            employeeId: employee.id,
+            nomineeName: data.nomineeName,
+            relationship: data.relationship,
+            dob: data.dob ? new Date(data.dob) : null,
+            gender: data.gender,
+            phone: data.phone,
+            email: data.email,
+            aadhaarNumber: data.aadhaarNumber,
+            panNumber: data.panNumber,
+            nomineePercentage: data.nomineePercentage,
+            address: data.address
+        }
+    });
+
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { onboardingStep: Math.max(employee.onboardingStep, 10) }
+    });
+
+    return { message: "Nominee details saved" };
+};
+
+// ✅ STEP 10: Compliance / Insurance Details & Finalize
+export const saveComplianceAndFinalizeService = async (userId, data) => {
+    const employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw Error("Employee profile not found");
+
+    await prisma.employeeCompliance.upsert({
+        where: { employeeId: employee.id },
+        update: {
+            insuranceProvider: data.insuranceProvider,
+            policyNumber: data.policyNumber,
+            coverageAmount: data.coverageAmount,
+            policyStartDate: data.policyStartDate ? new Date(data.policyStartDate) : null,
+            policyEndDate: data.policyEndDate ? new Date(data.policyEndDate) : null,
+            uanNumber: data.uanNumber,
+            pfNumber: data.pfNumber,
+            esiNumber: data.esiNumber
+        },
+        create: {
+            employeeId: employee.id,
+            insuranceProvider: data.insuranceProvider,
+            policyNumber: data.policyNumber,
+            coverageAmount: data.coverageAmount,
+            policyStartDate: data.policyStartDate ? new Date(data.policyStartDate) : null,
+            policyEndDate: data.policyEndDate ? new Date(data.policyEndDate) : null,
+            uanNumber: data.uanNumber,
+            pfNumber: data.pfNumber,
+            esiNumber: data.esiNumber
+        }
+    });
+
+    // Finalize onboarding
+    await prisma.employee.update({
+        where: { id: employee.id },
+        data: { 
+            onboardingCompleted: true,
+            status: "PENDING_APPROVAL" // Moves to HR verification
+        }
+    });
+
+    return { message: "Onboarding completed successfully. Pending HR approval." };
 };
 
 // ✅ STEP 5: HR Document Verification (BGV - Part 1)
@@ -245,7 +529,8 @@ export const finalBGVApprovalService = async ({ employeeId, status, remarks }) =
             // If rejected, keep status as PENDING_APPROVAL or move to SUSPENDED
             status: status === "REJECTED" ? "SUSPENDED" : "PENDING_APPROVAL"
         },
-        include: { user: true }
+        include: {
+             user: true }
     });
 
     if (status === "REJECTED") {
