@@ -52,7 +52,6 @@ router.post(
         { name: "aadhaar", maxCount: 1 },
         { name: "pan", maxCount: 1 },
         { name: "passport", maxCount: 1 },
-        { name: "resume", maxCount: 1 },
         { name: "certificates", maxCount: 1 },
         { name: "experienceLetter", maxCount: 1 },
         { name: "profilePhoto", maxCount: 1 },
