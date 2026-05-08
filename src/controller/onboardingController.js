@@ -1,6 +1,5 @@
 import { 
     acceptInviteService, 
-    activateUserService, 
     saveBasicInfoService,
     saveContactInfoService,
     saveEmergencyContactService,
@@ -10,11 +9,9 @@ import {
     uploadEmployeeDocumentsService,
     saveBankDetailsService,
     saveNomineeService,
-    saveComplianceAndFinalizeService,
+    finalizeEmployeeJoiningService,
     verifyEmailService, 
-    updateDocumentStatusService,
-    finalBGVApprovalService,
-    assignTermsService 
+    updateDocumentStatusService 
 } from "../services/onboardingService.js"
 
 export const verifyEmail = async (req, res) => {
@@ -104,19 +101,12 @@ export const saveComplianceAndFinalize = async (req, res) => {
     }
 };
 
-export const activateUser = async (req, res) => {
-
+export const finalizeJoining = async (req, res) => {
     try {
-        
-        const { userId } = req.body;
-
-        const data = await activateUserService(userId);
-
-        res.status(200).json({ success : true, ...data});
-
+        const data = await finalizeEmployeeJoiningService(req.body);
+        res.status(200).json({ success: true, ...data });
     } catch (error) {
-        
-        res.status(400).json({ success : false, message : error.message});
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
@@ -150,21 +140,3 @@ export const updateDocumentStatus = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
-
-export const finalBGVApproval = async (req, res) => {
-    try {
-        const data = await finalBGVApprovalService(req.body);
-        res.status(200).json({ success: true, ...data });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-export const assignTerms = async (req, res) => {
-    try {
-        const data = await assignTermsService(req.body);
-        res.status(200).json({ success: true, ...data });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};

@@ -459,7 +459,7 @@ export const saveNomineeService = async (userId, data) => {
     return { message: "Nominee details saved" };
 };
 
-// ✅ STEP 10: Compliance / Insurance Details & Finalize
+// ✅ STEP 10: Compliance & Finalize
 export const saveComplianceAndFinalizeService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
@@ -467,22 +467,12 @@ export const saveComplianceAndFinalizeService = async (userId, data) => {
     await prisma.employeeCompliance.upsert({
         where: { employeeId: employee.id },
         update: {
-            insuranceProvider: data.insuranceProvider,
-            policyNumber: data.policyNumber,
-            coverageAmount: data.coverageAmount,
-            policyStartDate: data.policyStartDate ? new Date(data.policyStartDate) : null,
-            policyEndDate: data.policyEndDate ? new Date(data.policyEndDate) : null,
             uanNumber: data.uanNumber,
             pfNumber: data.pfNumber,
             esiNumber: data.esiNumber
         },
         create: {
             employeeId: employee.id,
-            insuranceProvider: data.insuranceProvider,
-            policyNumber: data.policyNumber,
-            coverageAmount: data.coverageAmount,
-            policyStartDate: data.policyStartDate ? new Date(data.policyStartDate) : null,
-            policyEndDate: data.policyEndDate ? new Date(data.policyEndDate) : null,
             uanNumber: data.uanNumber,
             pfNumber: data.pfNumber,
             esiNumber: data.esiNumber
@@ -494,11 +484,15 @@ export const saveComplianceAndFinalizeService = async (userId, data) => {
         where: { id: employee.id },
         data: { 
             onboardingCompleted: true,
+            onboardingStep: 10,
             status: "PENDING_APPROVAL" // Moves to HR verification
         }
     });
 
-    return { message: "Onboarding completed successfully. Pending HR approval." };
+    return { 
+        message: "Onboarding completed successfully! Your profile is now under review by HR.",
+        onboardingCompleted: true 
+    };
 };
 
 // ✅ STEP 5: HR Document Verification (BGV - Part 1)
@@ -555,4 +549,131 @@ export const assignTermsService = async ({ employeeId, salaryDetails, managerId 
     ]);
 
     return { message: "Employment terms assigned successfully", salary, employee };
+};
+
+// ✅ CONSOLIDATED HR STEP: Finalize Joining (Industry Standard)
+// This one step handles BGV, Salary, Manager, and Activation.
+export const finalizeEmployeeJoiningService = async ({ 
+    employeeId, 
+    managerId, 
+    salaryBreakdown,
+    bgvStatus,
+    bgvRemarks 
+}) => {
+    const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        include: { 
+            user: true,
+            company: true
+        }
+    });
+
+    if (!employee) throw Error("Employee not found");
+
+    const result = await prisma.$transaction(async (tx) => {
+        // 1. Update BGV Status
+        await tx.employee.update({
+            where: { id: employeeId },
+            data: { 
+                bgvStatus: bgvStatus || "APPROVED",
+                bgvRemarks,
+                managerId,
+                status: bgvStatus === "REJECTED" ? "SUSPENDED" : "ACTIVE"
+            }
+        });
+
+        // 2. Map Salary Structure
+        // If HR doesn't provide a breakdown, we try to pull from the latest OfferLetter
+        let finalSalary = salaryBreakdown;
+        if (!finalSalary) {
+            const offer = await tx.offerLetter.findFirst({
+                where: { employeeEmail: employee.user.email },
+                orderBy: { createdAt: "desc" }
+            });
+            
+            if (offer) {
+                // Auto-calculation logic if breakdown isn't provided (Industry Standard: 50/40/10)
+                finalSalary = {
+                    basic: offer.salary * 0.5,
+                    hra: offer.salary * 0.4,
+                    allowances: offer.salary * 0.1,
+                    bonus: 0,
+                    deductions: 0
+                };
+            }
+        }
+
+        if (finalSalary) {
+            await tx.salaryStructure.upsert({
+                where: { employeeId },
+                create: { 
+                    employeeId, 
+                    basic: finalSalary.basic, 
+                    hra: finalSalary.hra, 
+                    allowances: finalSalary.allowances, 
+                    bonus: finalSalary.bonus, 
+                    deductions: finalSalary.deductions 
+                },
+                update: { 
+                    basic: finalSalary.basic, 
+                    hra: finalSalary.hra, 
+                    allowances: finalSalary.allowances, 
+                    bonus: finalSalary.bonus, 
+                    deductions: finalSalary.deductions 
+                }
+            });
+        }
+
+        // 3. Activate the User Account
+        if (bgvStatus !== "REJECTED") {
+            await tx.user.update({
+                where: { id: employee.userId },
+                data: { status: "ACTIVE" }
+            });
+        }
+
+        return { bgvStatus };
+    });
+
+    // 4. Send Appointment Letter and Welcome Email (Background)
+    if (bgvStatus === "APPROVED") {
+        const desig = await prisma.designation.findUnique({ where: { id: employee.designationId } });
+        
+        // Use default position if designation not found
+        const position = desig?.title || "Team Member";
+
+        const { generateJoiningLetter } = await import("../utils/pdfGenerator.js");
+
+        generateJoiningLetter({
+            email: employee.user.email,
+            name: employee.user.name,
+            position: position,
+            joiningDate: new Date().toLocaleDateString(),
+            company: {
+                name: employee.company.name,
+                logo: employee.company.companyLogo
+            }
+        }).then(({ filePath, fileName }) => {
+            sendEmail(
+                employee.user.email,
+                "Welcome Aboard! Appointment Letter - GOExperts HRMS",
+                `<h3>Welcome to the Team, ${employee.user.name}!</h3>
+                 <p>Congratulations! Your onboarding is complete and your account is now <strong>ACTIVE</strong>.</p>
+                 <p>Please find your formal <strong>Appointment Letter</strong> attached.</p>
+                 <br/>
+                 <a href="${process.env.FRONTEND_URL}/login" 
+                    style="background: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
+                    Login to Dashboard
+                 </a>`,
+                [{ filename: fileName, path: filePath }]
+            ).catch(err => console.error("Welcome Email Failed:", err.message));
+        }).catch(err => console.error("Joining PDF Generation Failed:", err.message));
+    }
+
+    return { 
+        success: true, 
+        message: bgvStatus === "APPROVED" 
+            ? "Employee finalized, salary mapped, and activation email sent!" 
+            : "Employee rejected and account suspended." 
+    };
 };

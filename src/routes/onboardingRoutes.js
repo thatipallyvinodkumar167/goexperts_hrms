@@ -11,10 +11,9 @@ import {
     saveBankDetails,
     saveNominee,
     saveComplianceAndFinalize,
+    finalizeJoining,
     verifyEmail, 
-    updateDocumentStatus,
-    finalBGVApproval,
-    assignTerms
+    updateDocumentStatus
 } from "../controller/onboardingController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
@@ -73,8 +72,6 @@ router.post("/finalize", authMiddleware, saveComplianceAndFinalize);
 
 // Admin/Owner Approval Step (HR/OWNER Side)
 router.post("/document-status", authMiddleware, allowRoles("OWNER", "HR"), updateDocumentStatus);
-router.post("/bgv-decision", authMiddleware, allowRoles("OWNER", "HR"), finalBGVApproval);
-router.post("/assign-terms", authMiddleware, allowRoles("OWNER", "HR"), assignTerms);
-router.post("/activate", authMiddleware, allowRoles("OWNER", "HR"), activateUser);
+router.post("/finalize-joining", authMiddleware, allowRoles("OWNER", "HR"), finalizeJoining);
 
 export default router;
