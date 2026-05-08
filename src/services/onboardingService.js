@@ -40,6 +40,21 @@ export const acceptInviteService = async ({token, password, name}) => {
         }
     });
 
+    // Create the core employee record immediately using the HR's invite data
+    await prisma.employee.create({
+      data: {
+          userId: user.id,
+          companyId: invite.companyId,
+          employeeCode: `EMP-${Date.now()}`,
+          departmentId: invite.departmentId || "UNKNOWN", // Should be provided by HR
+          designationId: invite.designationId || "UNKNOWN",
+          joiningDate: new Date(),
+          employmentType: "FRESHER",
+          onboardingStep: 1,
+          status: "INVITED"
+      }
+    });
+
     //mark invite accepted
     await prisma.employeeInvite.update({
 
@@ -75,63 +90,39 @@ export const saveBasicInfoService = async (userId, data) => {
     if (!user) throw Error("User not found");
 
     let employee = await prisma.employee.findUnique({ where: { userId } });
+    if (!employee) throw Error("Employee record missing. Please contact HR.");
     
-    if (!employee) {
-        employee = await prisma.employee.create({
-            data: {
-                userId,
-                companyId: user.companyId,
-                employeeCode: `EMP-${Date.now()}`,
-                departmentId: data.departmentId,
-                designationId: data.designationId,
-                joiningDate: new Date(),
-                employmentType: data.employmentType || "FRESHER",
-                firstName: data.firstName,
-                lastName: data.lastName,
-                middleName: data.middleName,
-                profilePhoto: data.profilePhoto,
-                onboardingStep: 2,
-                personal: {
-                    create: {
-                        gender: data.gender,
-                        dob: data.dob ? new Date(data.dob) : null,
-                        maritalStatus: data.maritalStatus,
-                        bloodGroup: data.bloodGroup,
-                        nationality: data.nationality
-                    }
-                }
-            }
-        });
-    } else {
-        employee = await prisma.employee.update({
-            where: { id: employee.id },
-            data: {
-                firstName: data.firstName,
-                lastName: data.lastName,
-                middleName: data.middleName,
-                profilePhoto: data.profilePhoto,
-                onboardingStep: Math.max(employee.onboardingStep, 2)
-            }
-        });
-        await prisma.employeePersonal.upsert({
-            where: { employeeId: employee.id },
-            update: {
-                gender: data.gender,
-                dob: data.dob ? new Date(data.dob) : null,
-                maritalStatus: data.maritalStatus,
-                bloodGroup: data.bloodGroup,
-                nationality: data.nationality
-            },
-            create: {
-                employeeId: employee.id,
-                gender: data.gender,
-                dob: data.dob ? new Date(data.dob) : null,
-                maritalStatus: data.maritalStatus,
-                bloodGroup: data.bloodGroup,
-                nationality: data.nationality
-            }
-        });
-    }
+    // Update the existing employee record
+    employee = await prisma.employee.update({
+        where: { id: employee.id },
+        data: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            middleName: data.middleName,
+            profilePhoto: data.profilePhoto,
+            onboardingStep: Math.max(employee.onboardingStep, 2)
+        }
+    });
+    
+    await prisma.employeePersonal.upsert({
+        where: { employeeId: employee.id },
+        update: {
+            gender: data.gender,
+            dob: data.dob ? new Date(data.dob) : null,
+            maritalStatus: data.maritalStatus,
+            bloodGroup: data.bloodGroup,
+            nationality: data.nationality
+        },
+        create: {
+            employeeId: employee.id,
+            gender: data.gender,
+            dob: data.dob ? new Date(data.dob) : null,
+            maritalStatus: data.maritalStatus,
+            bloodGroup: data.bloodGroup,
+            nationality: data.nationality
+        }
+    });
+
     return { message: "Basic information saved", employee };
 };
 

@@ -47,6 +47,8 @@ export const inviteService = async (data) => {
               joiningDate: new Date(offerData.joiningDate),
               position: offerData.position,
               role: role, // HR or EMPLOYEE
+              departmentId,
+              designationId,
               status: "SENT"
           }
       });
@@ -152,6 +154,8 @@ export const inviteService = async (data) => {
           token: rawToken,
           role: role,
           companyId,
+          departmentId,
+          designationId,
           expiresAt
       }
   });
@@ -322,6 +326,8 @@ export const acceptOfferService = async (email) => {
             token: rawToken,
             role: offer.role, 
             companyId: offer.companyId,
+            departmentId: offer.departmentId,
+            designationId: offer.designationId,
             expiresAt
         }
     });

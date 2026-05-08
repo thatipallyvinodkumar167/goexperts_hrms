@@ -248,6 +248,9 @@ model EmployeeInvite {
   expiresAt  DateTime
   acceptedAt DateTime?
 
+  departmentId String?
+  designationId String?
+
   createdAt DateTime @default(now())
 }
 
@@ -267,6 +270,9 @@ model OfferLetter {
   joiningDate DateTime
   position    String
   role        Role     @default(EMPLOYEE)
+
+  departmentId String?
+  designationId String?
 
   status OfferStatus @default(SENT)
 
