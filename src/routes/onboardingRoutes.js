@@ -12,7 +12,8 @@ import {
     saveComplianceAndFinalize,
     finalizeJoining,
     verifyEmail, 
-    updateDocumentStatus
+    updateDocumentStatus,
+    getEmployeeReview
 } from "../controller/onboardingController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
@@ -70,6 +71,7 @@ router.post("/nominee", authMiddleware, saveNominee);
 router.post("/finalize", authMiddleware, saveComplianceAndFinalize);
 
 // Admin/Owner Approval Step (HR/OWNER Side)
+router.get("/review/:employeeId", authMiddleware, allowRoles("OWNER", "HR"), getEmployeeReview);
 router.post("/document-status", authMiddleware, allowRoles("OWNER", "HR"), updateDocumentStatus);
 router.post("/finalize-joining", authMiddleware, allowRoles("OWNER", "HR"), finalizeJoining);
 

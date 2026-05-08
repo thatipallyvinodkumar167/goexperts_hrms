@@ -677,3 +677,26 @@ export const finalizeEmployeeJoiningService = async ({
             : "Employee rejected and account suspended." 
     };
 };
+
+// ✅ HR STEP: Get all onboarding details for review
+export const getEmployeeOnboardingDetailsService = async (employeeId) => {
+    const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        include: {
+            user: { select: { name: true, email: true, status: true } },
+            department: true,
+            designation: true,
+            education: true,
+            experience: true,
+            skills: true,
+            documents: true,
+            bankDetails: true,
+            nominee: true,
+            compliance: true
+        }
+    });
+
+    if (!employee) throw Error("Employee not found");
+
+    return employee;
+};
