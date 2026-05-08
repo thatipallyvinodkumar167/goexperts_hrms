@@ -11,6 +11,7 @@ import {
     saveNomineeService,
     finalizeEmployeeJoiningService,
     getEmployeeOnboardingDetailsService,
+    getAllEmployeeReviewsService,
     verifyEmailService, 
     updateDocumentStatusService 
 } from "../services/onboardingService.js"
@@ -128,6 +129,15 @@ export const addExperience = async (req, res) => {
     try {
         const data = await addExperienceService(req.user.id, req.body.experience);
         res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getAllReviews = async (req, res) => {
+    try {
+        const data = await getAllEmployeeReviewsService(req.user.companyId);
+        res.status(200).json({ success: true, data });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }

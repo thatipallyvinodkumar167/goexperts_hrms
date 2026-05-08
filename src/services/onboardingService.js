@@ -700,3 +700,16 @@ export const getEmployeeOnboardingDetailsService = async (employeeId) => {
 
     return employee;
 };
+
+// ✅ HR STEP: Get all employees' onboarding status for a company
+export const getAllEmployeeReviewsService = async (companyId) => {
+    return await prisma.employee.findMany({
+        where: { companyId },
+        include: {
+            user: { select: { name: true, email: true, status: true } },
+            department: { select: { name: true } },
+            designation: { select: { title: true } }
+        },
+        orderBy: { createdAt: "desc" }
+    });
+};
