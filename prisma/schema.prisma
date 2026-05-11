@@ -376,8 +376,18 @@ model SalaryStructure {
   basic      Float
   hra        Float
   allowances Float
-  bonus      Float
-  deductions Float
+  bonus      Float @default(0)
+  
+  // Statutory Components (Employee)
+  pfEmployee   Float @default(0)
+  esiEmployee  Float @default(0)
+
+  // Statutory Components (Employer - Cost to Company)
+  pfEmployer   Float @default(0)
+  esiEmployer  Float @default(0)
+
+  deductions Float @default(0)
+  netSalary  Float @default(0)
 
   createdAt DateTime @default(now())
 }
@@ -723,6 +733,26 @@ model IndustryType {
   departments  DepartmentTemplate[]
   designations DesignationTemplate[]
   companies    Company[]
+  salaryTemplate SalaryTemplate?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SalaryTemplate {
+  id    String @id @default(uuid())
+  name  String 
+  
+  basicPercentage      Float @default(50)
+  hraPercentageOfBasic Float @default(40) // HRA as % of Basic
+  
+  pfPercentage         Float @default(12)   // % of Basic
+  esiPercentage        Float @default(0.75) // % of Gross
+  employerPfPercentage Float @default(12)   // % of Basic
+  employerEsiPercentage Float @default(3.25) // % of Gross
+  
+  industryTypeId String @unique
+  industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
