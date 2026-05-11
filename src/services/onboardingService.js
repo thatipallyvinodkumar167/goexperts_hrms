@@ -289,7 +289,7 @@ export const saveSkillsService = async (userId, data) => {
     return { message: "Skills saved" };
 };
 
-// ✅ STEP 5: Activate Employee
+// ✅ STEP 5: Activate Employee (Legacy Single Action)
 export const activateUserService  = async (userId) => {
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -301,162 +301,30 @@ export const activateUserService  = async (userId) => {
             }
         }
     });
-// ✅ CONSOLIDATED HR STEP: Finalize Joining (Industry Standard)
-export const finalizeEmployeeJoiningService = async ({ 
-    employeeId, 
-    managerId, 
-    salaryBreakdown,
-    bgvStatus,
-    bgvRemarks 
-}) => {
-    const employee = await prisma.employee.findUnique({
-        where: { id: employeeId },
-        include: { 
-            user: true,
-            company: true
-        }
+
+    if (!user) throw Error("User not found");
+    if (!user.isEmailVerified) throw Error("Verify email first");
+
+    await prisma.user.update({
+        where: { id: userId },
+        data: { status: "ACTIVE" }
     });
 
-    if (!employee) throw Error("Employee not found");
-
-    const result = await prisma.$transaction(async (tx) => {
-        // 1. Update BGV Status & Manager
-        await tx.employee.update({
-            where: { id: employeeId },
-            data: { 
-                bgvStatus: bgvStatus || "APPROVED",
-                bgvRemarks,
-                managerId,
-                status: bgvStatus === "REJECTED" ? "SUSPENDED" : "ACTIVE"
-            }
-        });
-
-        // 2. Map Salary Structure (Industry Standard Calculation)
-        let finalSalary = salaryBreakdown;
-
-        if (!finalSalary) {
-            const offer = await tx.offerLetter.findFirst({
-                where: { employeeEmail: employee.user.email },
-                orderBy: { createdAt: "desc" }
-            });
-
-            if (offer) {
-                // Fetch Company Industry Template
-                const company = await tx.company.findUnique({
-                    where: { id: employee.companyId },
-                    include: { industryType: { include: { salaryTemplate: true } } }
-                });
-
-                const template = company.industryType?.salaryTemplate;
-                const gross = offer.salary;
-
-                if (template) {
-                    // ✅ ADVANCED INDUSTRY CALCULATION
-                    const basic = gross * (template.basicPercentage / 100);
-                    const hra = basic * (template.hraPercentageOfBasic / 100);
-                    const allowances = gross - (basic + hra); // Balance goes to allowances
-
-                    // Statutory Components
-                    const pfEmployee = basic * (template.pfPercentage / 100);
-                    const esiEmployee = gross < 21000 ? gross * (template.esiPercentage / 100) : 0;
-                    
-                    const pfEmployer = basic * (template.employerPfPercentage / 100);
-                    const esiEmployer = gross < 21000 ? gross * (template.employerEsiPercentage / 100) : 0;
-
-                    const deductions = pfEmployee + esiEmployee;
-                    const netSalary = gross - deductions;
-
-                    finalSalary = {
-                        basic,
-                        hra,
-                        allowances,
-                        bonus: 0,
-                        pfEmployee,
-                        esiEmployee,
-                        pfEmployer,
-                        esiEmployer,
-                        deductions,
-                        netSalary
-                    };
-                } else {
-                    // Fallback to basic 50/40/10 if no template found
-                    finalSalary = {
-                        basic: gross * 0.5,
-                        hra: gross * 0.4,
-                        allowances: gross * 0.1,
-                        bonus: 0,
-                        deductions: 0,
-                        netSalary: gross
-                    };
-                }
-            }
-        }
-
-        if (finalSalary) {
-            await tx.salaryStructure.upsert({
-                where: { employeeId },
-                create: { 
-                    employeeId, 
-                    basic: finalSalary.basic, 
-                    hra: finalSalary.hra, 
-                    allowances: finalSalary.allowances, 
-                    bonus: finalSalary.bonus || 0, 
-                    pfEmployee: finalSalary.pfEmployee || 0,
-                    esiEmployee: finalSalary.esiEmployee || 0,
-                    pfEmployer: finalSalary.pfEmployer || 0,
-                    esiEmployer: finalSalary.esiEmployer || 0,
-                    deductions: finalSalary.deductions || 0,
-                    netSalary: finalSalary.netSalary || finalSalary.basic + finalSalary.hra + finalSalary.allowances
-                },
-                update: { 
-                    basic: finalSalary.basic, 
-                    hra: finalSalary.hra, 
-                    allowances: finalSalary.allowances, 
-                    bonus: finalSalary.bonus || 0,
-                    pfEmployee: finalSalary.pfEmployee || 0,
-                    esiEmployee: finalSalary.esiEmployee || 0,
-                    pfEmployer: finalSalary.pfEmployer || 0,
-                    esiEmployer: finalSalary.esiEmployer || 0,
-                    deductions: finalSalary.deductions || 0,
-                    netSalary: finalSalary.netSalary || finalSalary.basic + finalSalary.hra + finalSalary.allowances
-                }
-            });
-        }
-
-        // 3. Activate the User Account
-        if (bgvStatus !== "REJECTED") {
-            await tx.user.update({
-                where: { id: employee.userId },
-                data: { status: "ACTIVE" }
-            });
-        }
-
-        return { bgvStatus };
-    });
-
-    // 4. Send Appointment Letter and Welcome Email (Background)
-    if (bgvStatus === "APPROVED") {
-        const desig = await prisma.designation.findUnique({ where: { id: employee.designationId } });
-        const position = desig?.title || "Team Member";
-
-        const { generateJoiningLetter } = await import("../utils/pdfGenerator.js");
-
+    // Generate Appointment/Joining Letter in background
+    if (user.employee) {
         generateJoiningLetter({
-            email: employee.user.email,
-            name: employee.user.name,
-            position: position,
-            joiningDate: new Date().toLocaleDateString(),
-            company: {
-                name: employee.company.name,
-                logo: employee.company.companyLogo
-            }
+            email: user.email,
+            name: user.name,
+            position: user.employee.designation?.title || "Team Member",
+            joiningDate: user.employee.joiningDate.toLocaleDateString()
         }).then(({ filePath, fileName }) => {
             sendEmail(
-                employee.user.email,
+                user.email,
                 "Welcome Aboard! Appointment Letter - GOExperts HRMS",
-                `<h3>Welcome to the Team, ${employee.user.name}!</h3>
-                 <p>Congratulations! Your onboarding is complete and your account is now <strong>ACTIVE</strong>.</p>
-                 <p>Please find your formal <strong>Appointment Letter</strong> attached.</p>
+                `<h3>Welcome to the Team, ${user.name}!</h3>
+                 <p>Congratulations! Your account has been activated.</p>
+                 <p>Please find your formal <strong>Appointment Letter</strong> attached to this email.</p>
+                 <p>You can now log in to the dashboard using your credentials.</p>
                  <br/>
                  <a href="${process.env.FRONTEND_URL}/login" 
                     style="background: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">
@@ -467,12 +335,7 @@ export const finalizeEmployeeJoiningService = async ({
         }).catch(err => console.error("Joining PDF Generation Failed:", err.message));
     }
 
-    return { 
-        success: true, 
-        message: bgvStatus === "APPROVED" 
-            ? "Employee finalized, salary mapped, and activation email sent!" 
-            : "Employee rejected and account suspended." 
-    };
+    return { message: "Account activated successfully and Welcome Letter sent" };
 };
 
 // ✅ STEP 7: Document Uploads
@@ -689,7 +552,6 @@ export const assignTermsService = async ({ employeeId, salaryDetails, managerId 
 };
 
 // ✅ CONSOLIDATED HR STEP: Finalize Joining (Industry Standard)
-// This one step handles BGV, Salary, Manager, and Activation.
 export const finalizeEmployeeJoiningService = async ({ 
     employeeId, 
     managerId, 
@@ -708,8 +570,112 @@ export const finalizeEmployeeJoiningService = async ({
     if (!employee) throw Error("Employee not found");
 
     const result = await prisma.$transaction(async (tx) => {
-        // 1. Update BGV Status
+        // 1. Update BGV Status & Manager
         await tx.employee.update({
+            where: { id: employeeId },
+            data: { 
+                bgvStatus: bgvStatus || "APPROVED",
+                bgvRemarks,
+                managerId,
+                status: bgvStatus === "REJECTED" ? "SUSPENDED" : "ACTIVE"
+            }
+        });
+
+        // 2. Map Salary Structure (Industry Standard Calculation)
+        let finalSalary = salaryBreakdown;
+
+        if (!finalSalary) {
+            const offer = await tx.offerLetter.findFirst({
+                where: { employeeEmail: employee.user.email },
+                orderBy: { createdAt: "desc" }
+            });
+
+            if (offer) {
+                // Fetch Company Industry Template
+                const company = await tx.company.findUnique({
+                    where: { id: employee.companyId },
+                    include: { industryType: { include: { salaryTemplate: true } } }
+                });
+
+                const template = company.industryType?.salaryTemplate;
+                const gross = offer.salary;
+
+                if (template) {
+                    // ✅ ADVANCED INDUSTRY CALCULATION
+                    const basic = gross * (template.basicPercentage / 100);
+                    const hra = basic * (template.hraPercentageOfBasic / 100);
+                    const allowances = gross - (basic + hra); // Balance goes to allowances
+
+                    // Statutory Components
+                    const pfEmployee = basic * (template.pfPercentage / 100);
+                    const esiEmployee = gross < 21000 ? gross * (template.esiPercentage / 100) : 0;
+                    
+                    const pfEmployer = basic * (template.employerPfPercentage / 100);
+                    const esiEmployer = gross < 21000 ? gross * (template.employerEsiPercentage / 100) : 0;
+
+                    const deductions = pfEmployee + esiEmployee;
+                    const netSalary = gross - deductions;
+
+                    finalSalary = {
+                        basic,
+                        hra,
+                        allowances,
+                        bonus: 0,
+                        pfEmployee,
+                        esiEmployee,
+                        pfEmployer,
+                        esiEmployer,
+                        deductions,
+                        netSalary
+                    };
+                } else {
+                    // Fallback to basic 50/40/10 if no template found
+                    finalSalary = {
+                        basic: gross * 0.5,
+                        hra: gross * 0.4,
+                        allowances: gross * 0.1,
+                        bonus: 0,
+                        deductions: 0,
+                        netSalary: gross
+                    };
+                }
+            }
+        }
+
+        if (finalSalary) {
+            await tx.salaryStructure.upsert({
+                where: { employeeId },
+                create: { 
+                    employeeId, 
+                    basic: finalSalary.basic, 
+                    hra: finalSalary.hra, 
+                    allowances: finalSalary.allowances, 
+                    bonus: finalSalary.bonus || 0, 
+                    pfEmployee: finalSalary.pfEmployee || 0,
+                    esiEmployee: finalSalary.esiEmployee || 0,
+                    pfEmployer: finalSalary.pfEmployer || 0,
+                    esiEmployer: finalSalary.esiEmployer || 0,
+                    deductions: finalSalary.deductions || 0,
+                    netSalary: finalSalary.netSalary || finalSalary.basic + finalSalary.hra + finalSalary.allowances
+                },
+                update: { 
+                    basic: finalSalary.basic, 
+                    hra: finalSalary.hra, 
+                    allowances: finalSalary.allowances, 
+                    bonus: finalSalary.bonus || 0,
+                    pfEmployee: finalSalary.pfEmployee || 0,
+                    esiEmployee: finalSalary.esiEmployee || 0,
+                    pfEmployer: finalSalary.pfEmployer || 0,
+                    esiEmployer: finalSalary.esiEmployer || 0,
+                    deductions: finalSalary.deductions || 0,
+                    netSalary: finalSalary.netSalary || finalSalary.basic + finalSalary.hra + finalSalary.allowances
+                }
+            });
+        }
+
+        // 3. Activate the User Account
+        if (bgvStatus !== "REJECTED") {
+            await tx.user.update({
                 where: { id: employee.userId },
                 data: { status: "ACTIVE" }
             });
@@ -721,8 +687,6 @@ export const finalizeEmployeeJoiningService = async ({
     // 4. Send Appointment Letter and Welcome Email (Background)
     if (bgvStatus === "APPROVED") {
         const desig = await prisma.designation.findUnique({ where: { id: employee.designationId } });
-        
-        // Use default position if designation not found
         const position = desig?.title || "Team Member";
 
         const { generateJoiningLetter } = await import("../utils/pdfGenerator.js");
