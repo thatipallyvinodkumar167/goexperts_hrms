@@ -370,7 +370,7 @@ export const uploadEmployeeDocumentsService = async (userId, files) => {
             data: { profilePhoto: `/uploads/employee-docs/${files.profilePhoto[0].filename}` }
         });
     }
-
+    
     await prisma.employee.update({
         where: { id: employee.id },
         data: { onboardingStep: Math.max(employee.onboardingStep, 8) }
@@ -701,19 +701,20 @@ export const getEmployeeOnboardingDetailsService = async (employeeId) => {
     return employee;
 };
 
-// ✅ HR STEP: Get all employees' onboarding status for a company
+// HR STEP: Get all employee onboarding reviews for a company
 export const getAllEmployeeReviewsService = async (companyId) => {
-    return await prisma.employee.findMany({
-        where: { 
-            company: {
-                id: companyId
-            }
-        },
+    if (!companyId) throw Error("Company id is required");
+
+    const employees = await prisma.employee.findMany({
+        where: { companyId },
         include: {
-            user: { select: { name: true, email: true, status: true } },
-            department: { select: { name: true } },
-            designation: { select: { title: true } }
+            user: { select: { id: true, name: true, email: true, status: true } },
+            department: { select: { id: true, name: true } },
+            designation: { select: { id: true, title: true } },
+            documents: { select: { id: true, name: true, status: true, createdAt: true } }
         },
         orderBy: { createdAt: "desc" }
     });
+
+    return employees;
 };
