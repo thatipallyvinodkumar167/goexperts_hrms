@@ -9,39 +9,56 @@ try {
   const plainPassword = "goexperts";
   const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
-  const user = await prisma.user.upsert({
-    where: {
-      email_companyId: {
-        email,
-        companyId: null
-      }
-    },
-    create: {
-      name: "GoExperts Super Admin",
-      email,
-      password: hashedPassword,
-      role: "SUPER_ADMIN",
-      status: "ACTIVE",
-      companyId: null,
-      isEmailVerified: true
-    },
-    update: {
-      name: "GoExperts Super Admin",
-      password: hashedPassword,
-      role: "SUPER_ADMIN",
-      status: "ACTIVE",
-      isEmailVerified: true
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      companyId: true,
-      status: true,
-      isEmailVerified: true
-    }
+  const existing = await prisma.user.findFirst({
+    where: { email, role: "SUPER_ADMIN" },
+    select: { id: true }
   });
+
+  let user;
+
+  if (existing) {
+    user = await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        name: "GoExperts Super Admin",
+        password: hashedPassword,
+        role: "SUPER_ADMIN",
+        status: "ACTIVE",
+        isEmailVerified: true,
+        companyId: null
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        companyId: true,
+        status: true,
+        isEmailVerified: true
+      }
+    });
+  } else {
+    user = await prisma.user.create({
+      data: {
+        name: "GoExperts Super Admin",
+        email,
+        password: hashedPassword,
+        role: "SUPER_ADMIN",
+        status: "ACTIVE",
+        companyId: null,
+        isEmailVerified: true
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        companyId: true,
+        status: true,
+        isEmailVerified: true
+      }
+    });
+  }
 
   console.log("Super admin ensured successfully:");
   console.log(JSON.stringify(user, null, 2));
