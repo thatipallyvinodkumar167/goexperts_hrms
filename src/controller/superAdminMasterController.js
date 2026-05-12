@@ -126,3 +126,69 @@ export const getSystemPolicies = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+export const seedSystemData = async (req, res) => {
+  try {
+    const industries = [
+      {
+        name: "IT / Software",
+        departments: ["Software Development", "DevOps", "QA", "HR", "Finance"],
+        designations: [
+          { title: "Junior Developer", level: 2 },
+          { title: "Software Engineer", level: 3 },
+          { title: "Senior Developer", level: 5 },
+          { title: "Tech Lead", level: 7 }
+        ],
+        template: {
+          name: "IT Standard (50/40/12/0.75)",
+          basic: 50, hra: 40, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25
+        }
+      },
+      {
+        name: "Healthcare",
+        departments: ["Nursing", "Surgery", "Pharmacy", "Admin"],
+        designations: [
+          { title: "Nurse", level: 3 },
+          { title: "Physician", level: 5 },
+          { title: "Surgeon", level: 8 }
+        ],
+        template: {
+          name: "Healthcare Standard (55/35/12/0.75)",
+          basic: 55, hra: 35, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25
+        }
+      }
+    ];
+
+    for (const ind of industries) {
+      const industry = await prisma.industryType.upsert({
+        where: { name: ind.name },
+        update: {},
+        create: {
+          name: ind.name,
+          departments: { create: ind.departments.map(d => ({ name: d })) },
+          designations: { create: ind.designations.map(d => ({ title: d.title, level: d.level })) }
+        }
+      });
+
+      if (ind.template) {
+        await prisma.salaryTemplate.upsert({
+          where: { industryTypeId: industry.id },
+          update: {},
+          create: {
+            name: ind.template.name,
+            basicPercentage: ind.template.basic,
+            hraPercentageOfBasic: ind.template.hra,
+            pfPercentage: ind.template.pf,
+            esiPercentage: ind.template.esi,
+            employerPfPercentage: ind.template.empPf,
+            employerEsiPercentage: ind.template.empEsi,
+            industryTypeId: industry.id
+          }
+        });
+      }
+    }
+
+    res.status(200).json({ success: true, message: "System master data seeded successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

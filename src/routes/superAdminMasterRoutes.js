@@ -10,7 +10,8 @@ import {
   addDesignationTemplate,
   removeDesignationTemplate,
   upsertSystemPolicy,
-  getSystemPolicies
+  getSystemPolicies,
+  seedSystemData
 } from "../controller/superAdminMasterController.js";
 
 const router = express.Router();
@@ -34,5 +35,6 @@ router.delete("/industry-types/designation/:id", removeDesignationTemplate);
 // System Policies (Terms & Conditions, Privacy)
 router.post("/policies", upsertSystemPolicy);
 router.get("/policies", getSystemPolicies);
+router.post("/seed-data", seedSystemData);
 
 export default router;
