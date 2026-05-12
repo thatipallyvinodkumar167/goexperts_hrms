@@ -224,6 +224,9 @@ export const updateCompanyProfile = async (companyId, data) => {
     gstNumber: data.gstNumber || undefined,
     panNumber: data.panNumber || undefined,
     tanNumber: data.tanNumber || undefined,
+    workingHours: data.workingHours || undefined,
+    workingDays: data.workingDays || undefined,
+    defaultProbationPeriod: data.defaultProbationPeriod || undefined,
   };
 
   const updatedCompany = await prisma.company.update({

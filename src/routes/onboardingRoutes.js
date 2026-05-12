@@ -14,7 +14,8 @@ import {
     verifyEmail, 
     updateDocumentStatus,
     getEmployeeReview,
-    getAllReviews
+    getAllReviews,
+    getSalaryPreview
 } from "../controller/onboardingController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
@@ -76,5 +77,6 @@ router.get("/all-reviews", authMiddleware, allowRoles("OWNER", "HR"), getAllRevi
 router.get("/review/:employeeId", authMiddleware, allowRoles("OWNER", "HR"), getEmployeeReview);
 router.post("/document-status", authMiddleware, allowRoles("OWNER", "HR"), updateDocumentStatus);
 router.post("/finalize-joining", authMiddleware, allowRoles("OWNER", "HR"), finalizeJoining);
+router.get("/salary-preview/:employeeId", authMiddleware, allowRoles("OWNER", "HR"), getSalaryPreview);
 
 export default router;

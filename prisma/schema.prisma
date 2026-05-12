@@ -121,6 +121,12 @@ model Company {
   phone          String?
   website        String?
   industry       String?
+
+  // Professional Details
+  workingHours String? @default("9:00 AM - 6:00 PM")
+  workingDays  String? @default("Monday - Friday")
+  defaultProbationPeriod String? @default("6 Months")
+
   industryTypeId String?
   industryType   IndustryType? @relation(fields: [industryTypeId], references: [id])
   companySize    String?
@@ -137,8 +143,6 @@ model Company {
   panNumber String?
   tanNumber String?
 
-  workingDays     String?
-  workingHours    Int?
   probationPeriod Int?
   noticePeriod    Int?
 
@@ -307,6 +311,10 @@ model Employee {
 
   onboardingStep      Int     @default(1)
   onboardingCompleted Boolean @default(false)
+
+  // Contract Details
+  probationPeriod     String? @default("6 Months")
+  noticePeriod        String? @default("90 Days")
 
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id])

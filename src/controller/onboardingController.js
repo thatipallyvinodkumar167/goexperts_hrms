@@ -13,19 +13,16 @@ import {
     getEmployeeOnboardingDetailsService,
     getAllEmployeeReviewsService,
     verifyEmailService, 
-    updateDocumentStatusService 
+    updateDocumentStatusService,
+    getSalaryPreviewService,
+    saveComplianceAndFinalizeService
 } from "../services/onboardingService.js"
 
 export const verifyEmail = async (req, res) => {
-
     try {
-        
         const { userId } = req.body;
-
         const data = await verifyEmailService(userId);
-
         res.status(200).json({success : true, ...data});
-
     } catch (error) {
         res.status(400).json({ success : false, message : error.message});
     }
@@ -117,7 +114,6 @@ export const uploadDocuments = async (req, res) => {
         if (!req.files || Object.keys(req.files).length === 0) {
             return res.status(400).json({ success: false, message: "No files uploaded" });
         }
-
         const data = await uploadEmployeeDocumentsService(req.user.id, req.files);
         res.status(200).json({ success: true, ...data });
     } catch (error) {
@@ -157,6 +153,16 @@ export const updateDocumentStatus = async (req, res) => {
     try {
         const data = await updateDocumentStatusService(req.body);
         res.status(200).json({ success: true, ...data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const getSalaryPreview = async (req, res) => {
+    try {
+        const { employeeId } = req.params;
+        const data = await getSalaryPreviewService(employeeId);
+        res.status(200).json({ success: true, data });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }

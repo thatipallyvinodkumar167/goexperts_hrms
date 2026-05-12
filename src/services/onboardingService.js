@@ -557,26 +557,38 @@ export const finalizeEmployeeJoiningService = async ({
     managerId, 
     salaryBreakdown,
     bgvStatus,
-    bgvRemarks 
+    bgvRemarks,
+    probationPeriod,
+    noticePeriod
 }) => {
     const employee = await prisma.employee.findUnique({
         where: { id: employeeId },
         include: { 
             user: true,
-            company: true
+            company: true,
+            designation: true
         }
     });
 
     if (!employee) throw Error("Employee not found");
 
+    // 🚀 SMART LOGIC: Auto-calculate Notice Period if not provided
+    let finalNoticePeriod = noticePeriod;
+    if (!finalNoticePeriod) {
+        const level = employee.designation?.level || 1;
+        finalNoticePeriod = level >= 3 ? "90 Days" : "30 Days";
+    }
+
     const result = await prisma.$transaction(async (tx) => {
-        // 1. Update BGV Status & Manager
+        // 1. Update BGV Status, Manager, and Contract Terms
         await tx.employee.update({
             where: { id: employeeId },
             data: { 
                 bgvStatus: bgvStatus || "APPROVED",
                 bgvRemarks,
                 managerId,
+                probationPeriod: probationPeriod || employee.company.defaultProbationPeriod || "6 Months",
+                noticePeriod: finalNoticePeriod,
                 status: bgvStatus === "REJECTED" ? "SUSPENDED" : "ACTIVE"
             }
         });
@@ -764,4 +776,70 @@ export const getAllEmployeeReviewsService = async (companyId) => {
     });
 
     return employees;
+};
+
+
+// ? HR STEP: Get Salary Preview (Auto-Calculation for UI)
+export const getSalaryPreviewService = async (employeeId) => {
+    const employee = await prisma.employee.findUnique({
+        where: { id: employeeId },
+        include: { company: true, user: true }
+    });
+
+    if (!employee) throw Error(" Employee not found\);
+
+ const offer = await prisma.offerLetter.findFirst({
+ where: { employeeEmail: employee.user.email },
+ orderBy: { createdAt: \desc\ }
+ });
+
+ if (!offer) throw Error(\No offer letter found for this employee to calculate salary.\);
+
+ const company = await prisma.company.findUnique({
+ where: { id: employee.companyId },
+ include: { industryType: { include: { salaryTemplate: true } } }
+ });
+
+ const template = company.industryType?.salaryTemplate;
+ const gross = offer.salary;
+
+ if (!template) {
+ // Fallback if no template exists
+ return {
+ gross,
+ basic: gross * 0.5,
+ hra: gross * 0.2, // 40% of 50%
+ allowances: gross * 0.3,
+ pfEmployee: 0,
+ esiEmployee: 0,
+ netSalary: gross,
+ isStandard: false
+ };
+ }
+
+ const basic = gross * (template.basicPercentage / 100);
+ const hra = basic * (template.hraPercentageOfBasic / 100);
+ const allowances = gross - (basic + hra);
+
+ const pfEmployee = basic * (template.pfPercentage / 100);
+ const esiEmployee = gross < 21000 ? gross * (template.esiPercentage / 100) : 0;
+ const deductions = pfEmployee + esiEmployee;
+ 
+ const pfEmployer = basic * (template.employerPfPercentage / 100);
+ const esiEmployer = gross < 21000 ? gross * (template.employerEsiPercentage / 100) : 0;
+
+ return {
+ gross,
+ basic,
+ hra,
+ allowances,
+ pfEmployee,
+ esiEmployee,
+ pfEmployer,
+ esiEmployer,
+ deductions,
+ netSalary: gross - deductions,
+ templateName: template.name,
+ isStandard: true
+ };
 };
