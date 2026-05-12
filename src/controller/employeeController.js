@@ -21,12 +21,38 @@ export const createEmployee = async (req, res) => {
 export const getAllEmployees = async (req, res) => {
   try {
     const companyId = req.user?.companyId;
+    const roleQuery = req.query?.role;
     if (!companyId) {
       return res.status(400).json({ success: false, message: "Invalid company context" });
     }
 
+    const allowedRoles = ["HR", "EMPLOYEE", "MANAGER"];
+    let roleFilter = undefined;
+
+    if (roleQuery) {
+      const requestedRoles = String(roleQuery)
+        .split(",")
+        .map((role) => role.trim().toUpperCase())
+        .filter(Boolean);
+
+      const invalidRoles = requestedRoles.filter((role) => !allowedRoles.includes(role));
+      if (invalidRoles.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid role filter: ${invalidRoles.join(", ")}. Allowed roles: ${allowedRoles.join(", ")}`
+        });
+      }
+
+      roleFilter = requestedRoles;
+    }
+
     const employees = await prisma.employee.findMany({
-      where: { user: { companyId } },
+      where: {
+        user: {
+          companyId,
+          ...(roleFilter ? { role: { in: roleFilter } } : {})
+        }
+      },
       include: { user: true, department: true, designation: true },
       orderBy: { user: { createdAt: "desc" } },
     });

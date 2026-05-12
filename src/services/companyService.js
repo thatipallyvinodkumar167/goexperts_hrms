@@ -211,6 +211,7 @@ export const updateCompanyProfile = async (companyId, data) => {
     legalName: data.legalName || undefined,
     phone: data.phone || undefined,
     website: data.website || undefined,
+    companyLogo: data.companyLogo || undefined,
     industry: data.industry || undefined,
     industryTypeId: data.industryTypeId || undefined,
     companySize: data.companySize || undefined,
