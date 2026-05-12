@@ -576,7 +576,9 @@ export const finalizeEmployeeJoiningService = async ({
     let finalNoticePeriod = noticePeriod;
     if (!finalNoticePeriod) {
         const level = employee.designation?.level || 1;
-        finalNoticePeriod = level >= 3 ? "90 Days" : "30 Days";
+        // Primary fallback: Industry standard based on level
+        // Secondary fallback: Company default setting
+        finalNoticePeriod = level >= 3 ? "90 Days" : (employee.company.defaultNoticePeriod || "30 Days");
     }
 
     const result = await prisma.$transaction(async (tx) => {

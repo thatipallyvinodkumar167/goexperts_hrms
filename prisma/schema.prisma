@@ -126,6 +126,7 @@ model Company {
   workingHours String? @default("9:00 AM - 6:00 PM")
   workingDays  String? @default("Monday - Friday")
   defaultProbationPeriod String? @default("6 Months")
+  defaultNoticePeriod    String? @default("90 Days")
 
   industryTypeId String?
   industryType   IndustryType? @relation(fields: [industryTypeId], references: [id])
@@ -142,6 +143,7 @@ model Company {
   gstNumber String?
   panNumber String?
   tanNumber String?
+  companyPolicy String? @db.Text
 
   probationPeriod Int?
   noticePeriod    Int?

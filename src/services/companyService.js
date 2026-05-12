@@ -224,9 +224,28 @@ export const updateCompanyProfile = async (companyId, data) => {
     gstNumber: data.gstNumber || undefined,
     panNumber: data.panNumber || undefined,
     tanNumber: data.tanNumber || undefined,
+    companyPolicy: data.companyPolicy || undefined,
     workingHours: data.workingHours || undefined,
     workingDays: data.workingDays || undefined,
     defaultProbationPeriod: data.defaultProbationPeriod || undefined,
+    defaultNoticePeriod: data.defaultNoticePeriod || undefined,
+    
+    // Payroll Settings
+    currency: data.currency || undefined,
+    salaryCycle: data.salaryCycle || undefined,
+    payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : undefined,
+    payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : undefined,
+    pfEnabled: data.pfEnabled !== undefined ? data.pfEnabled : undefined,
+    pfPercentage: data.pfPercentage ? Number(data.pfPercentage) : undefined,
+    esiEnabled: data.esiEnabled !== undefined ? data.esiEnabled : undefined,
+    
+    // Localization
+    timezone: data.timezone || undefined,
+    dateFormat: data.dateFormat || undefined,
+    language: data.language || undefined,
+
+    isProfileCompleted: true,
+    status: "PENDING_APPROVAL",
   };
 
   const updatedCompany = await prisma.company.update({
