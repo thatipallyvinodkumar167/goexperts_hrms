@@ -50,6 +50,23 @@ export const createIndustryType = async (req, res) => {
 // DEPARTMENT TEMPLATES
 //////////////////////////
 
+export const getDesignations = async (req, res) => {
+  try {
+    const { industryTypeId, departmentId } = req.query;
+    const where = {};
+    if (industryTypeId) where.industryTypeId = industryTypeId;
+    if (departmentId) where.departmentId = departmentId;
+
+    const data = await prisma.designationTemplate.findMany({
+      where,
+      include: { department: true }
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const addDepartmentTemplate = async (req, res) => {
   try {
     const { industryTypeId, name } = req.body;

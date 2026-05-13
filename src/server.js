@@ -17,7 +17,7 @@ import { companyStatusCron } from "./jobs/companyStatusCron.js";
 import { inviteReminderCron } from "./jobs/inviteReminderCron.js";
 import inviteRoutes from "./routes/inviteRoutes.js";
 import onboardingRoutes from "./routes/onboardingRoutes.js";
-// import { ensureSuperAdmin } from "./bootstrap/ensureSuperAdmin.js";
+import masterRoutes from "./routes/masterRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,6 +42,7 @@ app.use("/api/employee", employeeRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/invite", inviteRoutes);
 app.use("/api/onboarding", onboardingRoutes);
+app.use("/api/master", masterRoutes);
 
 // ✅ Serve uploaded files (profile logos, etc.) as static
 app.use("/uploads", express.static(join(__dirname, "../uploads")));

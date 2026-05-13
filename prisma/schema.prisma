@@ -987,7 +987,7 @@ model Payroll {
 model SubscriptionPlan {
   id String @id @default(uuid())
 
-  name String
+  name String @unique
 
   price Float
 
@@ -1093,6 +1093,8 @@ model DepartmentTemplate {
   industryTypeId String
   industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
 
+  designations DesignationTemplate[]
+
   createdAt DateTime @default(now())
 }
 
@@ -1109,6 +1111,9 @@ model DesignationTemplate {
 
   industryTypeId String
   industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
+
+  departmentId String?
+  department   DepartmentTemplate? @relation(fields: [departmentId], references: [id])
 
   createdAt DateTime @default(now())
 }
