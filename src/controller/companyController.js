@@ -205,12 +205,12 @@ export const activateCompanyController = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const data = await activateCompany(id);
+    const company = await activateCompany(id);
 
     res.status(200).json({
       success: true,
       message: "Company approved and activated successfully",
-      data,
+      status: company.status
     });
 
   } catch (error) {

@@ -4,11 +4,12 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🚀 Starting Direct Master Seeding (Full Refresh)...");
 
-  // 1. Wipe old templates to prevent duplicates (since no unique constraint exists)
+  // 1. Wipe old templates to prevent duplicates
   console.log("🧹 Cleaning up old templates...");
   await prisma.designationTemplate.deleteMany({});
   await prisma.departmentTemplate.deleteMany({});
   await prisma.salaryTemplate.deleteMany({});
+  await prisma.subscriptionPlan.deleteMany({}); // Wipe old plans too
 
   const industriesData = [
     {
@@ -59,29 +60,25 @@ async function main() {
 
   for (const ind of industriesData) {
     console.log(`📦 Seeding Industry: ${ind.name}...`);
-    
-    // Create or Update Industry
     const industry = await prisma.industryType.upsert({
       where: { id: ind.id },
       update: { name: ind.name },
       create: { id: ind.id, name: ind.name }
     });
+    await Promise.all(ind.departments.map(name => prisma.departmentTemplate.create({ data: { name, industryTypeId: industry.id } })));
+    await Promise.all(ind.designations.map(des => prisma.designationTemplate.create({ data: { title: des.title, level: des.level, industryTypeId: industry.id } })));
+  }
 
-    // Create Departments
-    const deptPromises = ind.departments.map(name => 
-      prisma.departmentTemplate.create({
-        data: { name, industryTypeId: industry.id }
-      })
-    );
-    await Promise.all(deptPromises);
+  // 4. Create Subscription Plans
+  console.log("💳 Seeding Subscription Plans...");
+  const plans = [
+    { name: "BASIC", price: 0, duration: 365, features: { employees: 50, modules: ["Core HR", "Attendance"] } },
+    { name: "PRO", price: 99, duration: 365, features: { employees: 200, modules: ["Payroll", "Performance"] } },
+    { name: "ENTERPRISE", price: 499, duration: 365, features: { employees: 10000, modules: ["All"] } }
+  ];
 
-    // Create Designations
-    const desPromises = ind.designations.map(des => 
-      prisma.designationTemplate.create({
-        data: { title: des.title, level: des.level, industryTypeId: industry.id }
-      })
-    );
-    await Promise.all(desPromises);
+  for (const plan of plans) {
+    await prisma.subscriptionPlan.create({ data: plan });
   }
 
   console.log("✅ Database Master Seeding Completed Successfully!");
