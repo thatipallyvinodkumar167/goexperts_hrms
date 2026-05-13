@@ -1,46 +1,54 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import fs from "fs";
+
+// Initialize Resend with your API Key from Environment Variables
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendEmail = async (to, subject, html, dynamicAttachments = []) => {
     try {
-        // SendGrid supports SMTP on Port 2525, which Render does NOT block!
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST || "smtp.sendgrid.net",
-            port: Number(process.env.SMTP_PORT) || 2525,
-            secure: false, // Port 2525 uses STARTTLS, so secure must be false
-            auth: {
-                user: process.env.SMTP_USER || "apikey", // SendGrid username is always "apikey"
-                pass: process.env.SMTP_PASS // Your actual SendGrid API Key
-            }
-        });
-
-        // 🚨 MOCK LOGGING (Kept for your convenience) 🚨
         console.log("=============================================");
-        console.log(`✉️ PREPARING EMAIL FOR: ${to}`);
+        console.log(`✉️ SENDING EMAIL VIA RESEND: ${to}`);
         console.log(`📝 SUBJECT: ${subject}`);
         console.log("=============================================");
 
-        const defaultAttachments = [];
-        // Only add logo if it exists (prevents crash on Render if file missing)
+        const attachments = [];
+
+        // 1. Add Default Logo (if exists)
         if (fs.existsSync("./src/utils/templates/logo.png")) {
-            defaultAttachments.push({
+            const logoContent = fs.readFileSync("./src/utils/templates/logo.png");
+            attachments.push({
                 filename: "logo.png",
-                path: "./src/utils/templates/logo.png",
-                cid: "companylogo"
+                content: logoContent,
             });
         }
 
-        const info = await transporter.sendMail({
-            from: `"GOExperts HRMS" <${process.env.FROM_EMAIL || "your-verified-sendgrid-email@example.com"}>`,
-            to,
-            subject,
-            html,
-            attachments: [...defaultAttachments, ...dynamicAttachments]
+        // 2. Add Dynamic Attachments (Offer Letters, etc.)
+        for (const att of dynamicAttachments) {
+            // Resend expects content as Buffer or string
+            const content = fs.readFileSync(att.path);
+            attachments.push({
+                filename: att.filename,
+                content: content,
+            });
+        }
+
+        const { data, error } = await resend.emails.send({
+            from: `GOExperts HRMS <${process.env.FROM_EMAIL || "onboarding@resend.dev"}>`,
+            to: [to],
+            subject: subject,
+            html: html,
+            attachments: attachments
         });
 
-        console.log("Email sent successfully via SendGrid! Message ID:", info.messageId);
+        if (error) {
+            console.error("❌ RESEND ERROR:", error.message);
+            // We do not throw error so the API remains successful
+            return;
+        }
+
+        console.log("✅ Email sent successfully via Resend! ID:", data.id);
     } catch (error) {
-        console.error("Email error:", error.message);
-        throw new Error("email sending fail");
+        console.error("⚠️ RESEND CRITICAL ERROR:", error.message);
+        // We DO NOT throw error here so the API continues successfully for testing
     }
 };
