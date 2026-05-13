@@ -212,11 +212,42 @@ export const updateCompanyProfile = async (companyId, data) => {
     industryType: data.industryTypeId ? { connect: { id: data.industryTypeId } } : undefined,
     companySize: data.companySize || undefined,
     foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
-    companyPolicy: data.companyPolicy || undefined,
-    workingHours: data.workingHours || undefined,
-    workingDays: data.workingDays || undefined,
-    defaultProbationPeriod: data.defaultProbationPeriod || undefined,
-    defaultNoticePeriod: data.defaultNoticePeriod || undefined,
+
+    // Nested Update: HR Settings (Policy, Hours, Probation)
+    hrSetting: (data.companyPolicy || data.workingHours || data.defaultProbationPeriod) ? {
+      upsert: {
+        create: {
+          companyPolicy: data.companyPolicy || null,
+          workingHours: data.workingHours || "9:00 AM - 6:00 PM",
+          workingDays: data.workingDays || "Monday - Friday",
+          probationPeriod: parseInt(data.defaultProbationPeriod) || null,
+          noticePeriod: parseInt(data.defaultNoticePeriod) || null,
+        },
+        update: {
+          companyPolicy: data.companyPolicy || undefined,
+          workingHours: data.workingHours || undefined,
+          workingDays: data.workingDays || undefined,
+          probationPeriod: data.defaultProbationPeriod ? parseInt(data.defaultProbationPeriod) : undefined,
+          noticePeriod: data.defaultNoticePeriod ? parseInt(data.defaultNoticePeriod) : undefined,
+        }
+      }
+    } : undefined,
+
+    // Nested Update: System Settings (Timezone, Language)
+    systemSetting: (data.timezone || data.language) ? {
+      upsert: {
+        create: {
+          timezone: data.timezone || "Asia/Kolkata",
+          dateFormat: data.dateFormat || "DD-MM-YYYY",
+          language: data.language || "English",
+        },
+        update: {
+          timezone: data.timezone || undefined,
+          dateFormat: data.dateFormat || undefined,
+          language: data.language || undefined,
+        }
+      }
+    } : undefined,
 
     // Nested Update: Address
     address: (data.city || data.addressLine1) ? {
@@ -240,18 +271,24 @@ export const updateCompanyProfile = async (companyId, data) => {
       }
     } : undefined,
 
-    // Nested Update: Compliance
-    compliance: (data.gstNumber || data.panNumber) ? {
+    // Nested Update: Compliance & Statutory (PF, ESI, GST)
+    compliance: (data.gstNumber || data.panNumber || data.pfEnabled !== undefined) ? {
       upsert: {
         create: {
           gstNumber: data.gstNumber || null,
           panNumber: data.panNumber || null,
           tanNumber: data.tanNumber || null,
+          pfEnabled: data.pfEnabled === "true" || data.pfEnabled === true,
+          pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : 12.0,
+          esiEnabled: data.esiEnabled === "true" || data.esiEnabled === true,
         },
         update: {
           gstNumber: data.gstNumber || undefined,
           panNumber: data.panNumber || undefined,
           tanNumber: data.tanNumber || undefined,
+          pfEnabled: data.pfEnabled !== undefined ? (data.pfEnabled === "true" || data.pfEnabled === true) : undefined,
+          pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : undefined,
+          esiEnabled: data.esiEnabled !== undefined ? (data.esiEnabled === "true" || data.esiEnabled === true) : undefined,
         }
       }
     } : undefined,
@@ -264,26 +301,15 @@ export const updateCompanyProfile = async (companyId, data) => {
           salaryCycle: data.salaryCycle || "Monthly",
           payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : 1,
           payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : 31,
-          pfEnabled: data.pfEnabled === "true" || data.pfEnabled === true,
-          pfPercentage: data.pfPercentage ? Number(data.pfPercentage) : 12,
-          esiEnabled: data.esiEnabled === "true" || data.esiEnabled === true,
         },
         update: {
           currency: data.currency || undefined,
           salaryCycle: data.salaryCycle || undefined,
           payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : undefined,
           payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : undefined,
-          pfEnabled: data.pfEnabled !== undefined ? (data.pfEnabled === "true" || data.pfEnabled === true) : undefined,
-          pfPercentage: data.pfPercentage ? Number(data.pfPercentage) : undefined,
-          esiEnabled: data.esiEnabled !== undefined ? (data.esiEnabled === "true" || data.esiEnabled === true) : undefined,
         }
       }
     } : undefined,
-
-    // Localization
-    timezone: data.timezone || undefined,
-    dateFormat: data.dateFormat || undefined,
-    language: data.language || undefined,
 
     isProfileCompleted: true,
     status: "PENDING_APPROVAL",
