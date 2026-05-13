@@ -130,24 +130,77 @@ export const seedSystemData = async (req, res) => {
   try {
     const industries = [
       {
+        id: "d0e987fe-f71e-4822-84c2-ad34cc0f69ad",
         name: "IT / Software",
-        departments: ["Software Development", "DevOps", "QA", "HR", "Finance"],
+        departments: ["Software Development", "DevOps", "QA", "HR", "Finance", "Product", "Design"],
         designations: [
           { title: "Junior Developer", level: 2 },
           { title: "Software Engineer", level: 3 },
           { title: "Senior Developer", level: 5 },
-          { title: "Tech Lead", level: 7 }
+          { title: "Tech Lead", level: 7 },
+          { title: "Architect", level: 9 }
         ],
-        template: {
-          name: "IT Standard (50/40/12/0.75)",
-          basic: 50, hra: 40, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25
-        }
+        template: { name: "IT Standard", basic: 50, hra: 40, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
       },
       {
-        name: "Healthcare",
-        departments: ["Nursing", "Surgery", "Pharmacy", "Admin"],
+        id: "405d6b2d-bdf8-48a6-b3d6-7862b32e7d41",
+        name: "Healthcare / Medical",
+        departments: ["Nursing", "Surgery", "Pharmacy", "Admin", "Radiology", "OPD"],
         designations: [
-          { title: "Nurse", level: 3 },
+          { title: "Resident Doctor", level: 4 },
+          { title: "Staff Nurse", level: 2 },
+          { title: "Medical Officer", level: 5 }
+        ],
+        template: { name: "Medical Standard", basic: 45, hra: 35, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
+      },
+      {
+        id: "6c4c6b5d-ad25-4a74-bc29-502d9e16cdeb",
+        name: "Finance / Banking",
+        departments: ["Investment", "Compliance", "Retail Banking", "Risk", "Operations"],
+        designations: [
+          { title: "Relationship Manager", level: 3 },
+          { title: "Branch Manager", level: 6 },
+          { title: "Analyst", level: 2 }
+        ],
+        template: { name: "Finance Standard", basic: 50, hra: 40, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
+      },
+      {
+        id: "00d56702-549f-41a4-a8ba-d5e1ced74d88",
+        name: "Legal / Consulting",
+        departments: ["Corporate Law", "Litigation", "Compliance", "Consultancy"],
+        designations: [{ title: "Legal Associate", level: 3 }, { title: "Senior Consultant", level: 5 }],
+        template: { name: "Consulting Standard", basic: 50, hra: 40, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
+      },
+      {
+        id: "37d1515f-5f17-43ba-84e5-06bcf37e5429",
+        name: "Manufacturing / Automotive",
+        departments: ["Production", "Quality Control", "Logistics", "R&D"],
+        designations: [{ title: "Plant Head", level: 8 }, { title: "Production Engineer", level: 3 }],
+        template: { name: "Industrial Standard", basic: 40, hra: 30, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
+      },
+      {
+        id: "94cbb301-0edd-4f53-8a19-7fdd00142f5f",
+        name: "Education / EdTech",
+        departments: ["Academic", "Admissions", "Course Content", "Marketing"],
+        designations: [{ title: "Educator", level: 3 }, { title: "Academic Dean", level: 8 }],
+        template: { name: "EdTech Standard", basic: 50, hra: 40, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
+      },
+      {
+        id: "b48ace5f-fcc2-4e87-b54b-7f6aac7232c5",
+        name: "Telecommunications",
+        departments: ["Network Operations", "Broadband", "Support", "Engineering"],
+        designations: [{ title: "Network Engineer", level: 3 }, { title: "Telecom Specialist", level: 4 }],
+        template: { name: "Telecom Standard", basic: 45, hra: 35, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
+      },
+      {
+        id: "453ea47a-d2b5-46f9-b62a-99f3abd9c37f",
+        name: "Retail / E-commerce",
+        departments: ["Inventory", "Delivery", "Sourcing", "Digital Marketing"],
+        designations: [{ title: "Store Manager", level: 4 }, { title: "Logistics Head", level: 6 }],
+        template: { name: "Retail Standard", basic: 40, hra: 30, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25 }
+      }
+      // ... and more can be added here with the same pattern
+    ];
           { title: "Physician", level: 5 },
           { title: "Surgeon", level: 8 }
         ],
