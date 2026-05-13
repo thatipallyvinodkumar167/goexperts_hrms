@@ -43,7 +43,7 @@ export const inviteService = async (data) => {
               name: name || normalizedEmail.split('@')[0], // Fallback if name missing
               employeeEmail: normalizedEmail,
               companyId,
-              salary: offerData.salary,
+              ctc: offerData.salary, // Mapped to ctc
               joiningDate: new Date(offerData.joiningDate),
               position: offerData.position,
               role: role, // HR or EMPLOYEE
