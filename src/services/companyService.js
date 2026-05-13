@@ -209,33 +209,77 @@ export const updateCompanyProfile = async (companyId, data) => {
     phone: data.phone || undefined,
     website: data.website || undefined,
     companyLogo: data.companyLogo || undefined,
-    // industryType: data.industryTypeId ? { connect: { id: data.industryTypeId } } : undefined,
+    industryType: data.industryTypeId ? { connect: { id: data.industryTypeId } } : undefined,
     companySize: data.companySize || undefined,
     foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
-    addressLine1: data.addressLine1 || undefined,
-    addressLine2: data.addressLine2 || undefined,
-    city: data.city || undefined,
-    state: data.state || undefined,
-    country: data.country || undefined,
-    pincode: data.pincode || undefined,
-    gstNumber: data.gstNumber || undefined,
-    panNumber: data.panNumber || undefined,
-    tanNumber: data.tanNumber || undefined,
     companyPolicy: data.companyPolicy || undefined,
     workingHours: data.workingHours || undefined,
     workingDays: data.workingDays || undefined,
     defaultProbationPeriod: data.defaultProbationPeriod || undefined,
     defaultNoticePeriod: data.defaultNoticePeriod || undefined,
-    
-    // Payroll Settings
-    currency: data.currency || undefined,
-    salaryCycle: data.salaryCycle || undefined,
-    payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : undefined,
-    payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : undefined,
-    pfEnabled: data.pfEnabled !== undefined ? data.pfEnabled : undefined,
-    pfPercentage: data.pfPercentage ? Number(data.pfPercentage) : undefined,
-    esiEnabled: data.esiEnabled !== undefined ? data.esiEnabled : undefined,
-    
+
+    // Nested Update: Address
+    address: (data.city || data.addressLine1) ? {
+      upsert: {
+        create: {
+          addressLine1: data.addressLine1 || "N/A",
+          addressLine2: data.addressLine2 || null,
+          city: data.city || "N/A",
+          state: data.state || "N/A",
+          country: data.country || "N/A",
+          pincode: data.pincode || "N/A",
+        },
+        update: {
+          addressLine1: data.addressLine1 || undefined,
+          addressLine2: data.addressLine2 || undefined,
+          city: data.city || undefined,
+          state: data.state || undefined,
+          country: data.country || undefined,
+          pincode: data.pincode || undefined,
+        }
+      }
+    } : undefined,
+
+    // Nested Update: Compliance
+    compliance: (data.gstNumber || data.panNumber) ? {
+      upsert: {
+        create: {
+          gstNumber: data.gstNumber || null,
+          panNumber: data.panNumber || null,
+          tanNumber: data.tanNumber || null,
+        },
+        update: {
+          gstNumber: data.gstNumber || undefined,
+          panNumber: data.panNumber || undefined,
+          tanNumber: data.tanNumber || undefined,
+        }
+      }
+    } : undefined,
+
+    // Nested Update: Payroll Settings
+    payrollSetting: (data.currency || data.salaryCycle) ? {
+      upsert: {
+        create: {
+          currency: data.currency || "INR",
+          salaryCycle: data.salaryCycle || "Monthly",
+          payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : 1,
+          payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : 31,
+          pfEnabled: data.pfEnabled === "true" || data.pfEnabled === true,
+          pfPercentage: data.pfPercentage ? Number(data.pfPercentage) : 12,
+          esiEnabled: data.esiEnabled === "true" || data.esiEnabled === true,
+        },
+        update: {
+          currency: data.currency || undefined,
+          salaryCycle: data.salaryCycle || undefined,
+          payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : undefined,
+          payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : undefined,
+          pfEnabled: data.pfEnabled !== undefined ? (data.pfEnabled === "true" || data.pfEnabled === true) : undefined,
+          pfPercentage: data.pfPercentage ? Number(data.pfPercentage) : undefined,
+          esiEnabled: data.esiEnabled !== undefined ? (data.esiEnabled === "true" || data.esiEnabled === true) : undefined,
+        }
+      }
+    } : undefined,
+
     // Localization
     timezone: data.timezone || undefined,
     dateFormat: data.dateFormat || undefined,
