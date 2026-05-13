@@ -54,7 +54,6 @@ export const createCompanyWithInvite = async ({
         domain: null,
         ownerName,
         ownerEmail: normalizedOwnerEmail,
-        location,
 
         // ✅ STATUS FLOW (IMPROVED)
         status: "INVITED",
