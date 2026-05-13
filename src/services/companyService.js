@@ -202,8 +202,6 @@ export const updateCompanyProfile = async (companyId, data) => {
   const updateData = {
     name: data.name || undefined,
     email: data.email || undefined,
-    location: data.location || undefined,
-    companyLogo: data.companyLogo || undefined,
     ownerName: data.ownerName || undefined,
     ownerEmail: data.ownerEmail || undefined,
     domain: data.domain || undefined,
