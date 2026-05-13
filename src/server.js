@@ -9,7 +9,6 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import authRoutes from "./routes/authRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
-import superAdminMasterRoutes from "./routes/superAdminMasterRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js"
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import logger from "./middleware/loggerMiddleware.js";
@@ -37,7 +36,6 @@ app.use(logger);
 //routes
 app.use("/api/auth", authRoutes);
 app.use("/api/company", companyRoutes);
-app.use("/api/super-admin", superAdminMasterRoutes);
 app.use("/api/employee", employeeRoutes);
 app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/invite", inviteRoutes);
