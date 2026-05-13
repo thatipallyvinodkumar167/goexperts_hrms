@@ -65,8 +65,8 @@ export const completeProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Profile completed",
-      data,
+      message: "Profile completed successfully",
+      isprofilecompleted: true
     });
 
   } catch (error) {
@@ -115,7 +115,7 @@ export const updateCompanyProfileController = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Company profile updated successfully",
-      data,
+      isprofilecompleted: data.isProfileCompleted
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
