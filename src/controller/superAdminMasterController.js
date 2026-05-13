@@ -201,15 +201,6 @@ export const seedSystemData = async (req, res) => {
       }
       // ... and more can be added here with the same pattern
     ];
-          { title: "Physician", level: 5 },
-          { title: "Surgeon", level: 8 }
-        ],
-        template: {
-          name: "Healthcare Standard (55/35/12/0.75)",
-          basic: 55, hra: 35, pf: 12, esi: 0.75, empPf: 12, empEsi: 3.25
-        }
-      }
-    ];
 
     for (const ind of industries) {
       const industry = await prisma.industryType.upsert({
