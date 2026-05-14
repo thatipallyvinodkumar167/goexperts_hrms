@@ -190,7 +190,8 @@ export const finalizeFullOnboarding = async (req, res) => {
             skills: parseJson(body.skills),
             bank: parseJson(body.bank),
             nominee: parseJson(body.nominee),
-            compliance: parseJson(body.compliance)
+            compliance: parseJson(body.compliance),
+            isDeclaredTrue: parseJson(body.isDeclaredTrue) === true || body.isDeclaredTrue === 'true'
         };
 
         const result = await finalizeFullOnboardingService(req.user.id, data, req.files);
