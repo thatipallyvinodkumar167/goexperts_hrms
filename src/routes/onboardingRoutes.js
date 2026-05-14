@@ -19,7 +19,7 @@ router.post("/verify-email", verifyEmail);
 
 
 // 🔥 UNIFIED ONBOARDING: ONE API FOR ALL STEPS
-router.post(
+router.put(
     "/finish",
     authMiddleware,
     uploadEmployeeDocuments.fields([
