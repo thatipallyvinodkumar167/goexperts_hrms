@@ -5,7 +5,7 @@ export const sendEmail = async (to, subject, html, dynamicAttachments = []) => {
     try {
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST || "smtp.sendgrid.net",
-            port: Number(process.env.SMTP_PORT) || 587,
+            port: Number(process.env.SMTP_PORT) || 2525,
             secure: false, // true for 465, false for other ports
             auth: {
                 user: process.env.SMTP_USER || "apikey",

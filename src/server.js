@@ -58,6 +58,9 @@ app.get("/", (req, res) => {
   res.send("Go experts HRMS..");
 });
 
+// Ignore favicon requests to keep logs clean
+app.get("/favicon.ico", (req, res) => res.status(204).end());
+
 // ✅ Serve Android Asset Links for Deep Linking
 app.get("/.well-known/assetlinks.json", (req, res) => {
   res.json([

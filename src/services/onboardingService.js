@@ -40,14 +40,34 @@ export const acceptInviteService = async ({token, password, name}) => {
         }
     });
 
-    // Create the core employee record immediately using the HR's invite data
+    // Check if the provided department and designation actually exist in this company (handles legacy template ID invites)
+    const validDept = await prisma.department.findUnique({ where: { id: invite.departmentId || "" } });
+    const validDesig = await prisma.designation.findUnique({ where: { id: invite.designationId || "" } });
+
+    // Fallbacks just in case the HR used the wrong ID during invite
+    let finalDeptId = invite.departmentId;
+    let finalDesigId = invite.designationId;
+
+    if (!validDept) {
+        const firstDept = await prisma.department.findFirst({ where: { companyId: invite.companyId } });
+        if (!firstDept) throw new Error("Company has no departments setup yet.");
+        finalDeptId = firstDept.id;
+    }
+
+    if (!validDesig) {
+        const firstDesig = await prisma.designation.findFirst({ where: { companyId: invite.companyId } });
+        if (!firstDesig) throw new Error("Company has no designations setup yet.");
+        finalDesigId = firstDesig.id;
+    }
+
+    // Create the core employee record immediately using the validated data
     await prisma.employee.create({
       data: {
           userId: user.id,
           companyId: invite.companyId,
           employeeCode: `EMP-${Date.now()}`,
-          departmentId: invite.departmentId || "UNKNOWN", // Should be provided by HR
-          designationId: invite.designationId || "UNKNOWN",
+          departmentId: finalDeptId,
+          designationId: finalDesigId,
           joiningDate: new Date(),
           employmentType: "FRESHER",
           onboardingStep: 1,
