@@ -100,7 +100,7 @@ export const acceptInviteService = async ({token, password, name}) => {
             where: { id: invite.id },
             data: { acceptedAt: new Date() }
         });
-    });
+    }, { timeout: 20000 }); // Increase timeout to 20 seconds for slow free tier DB
 
     // We must return the user ID for the next steps, so fetch it outside transaction
     const finalUser = await prisma.user.findFirst({
