@@ -636,7 +636,7 @@ model EmployeeEducation {
   employeeId String
   employee   Employee @relation(fields: [employeeId], references: [id])
 
-  degree DegreeType
+  degree String
 
   specialization String?
 
