@@ -27,64 +27,92 @@ export const acceptInviteService = async ({token, password, name}) => {
 
     const hashedPassword  = await hashPassword(password);
 
-     // create user
-    const user = await prisma.user.create({
-      data : {
-            name: name || invite.email.split('@')[0], // Strong fallback to email prefix
-            email : invite.email,
-            password : hashedPassword,
-            role : invite.role,
-            companyId : invite.companyId,
-            status : "PENDING_APPROVAL",
-            isEmailVerified : true
+    // ✅ FIX: Use a transaction to prevent partial creation, and handle orphaned records
+    await prisma.$transaction(async (tx) => {
+        
+        // 1. Check if user already exists from a previous failed attempt
+        let user = await tx.user.findFirst({
+            where: { email: invite.email, companyId: invite.companyId }
+        });
+
+        if (user) {
+            user = await tx.user.update({
+                where: { id: user.id },
+                data: { password: hashedPassword, name: name || user.name }
+            });
+        } else {
+            user = await tx.user.create({
+              data : {
+                    name: name || invite.email.split('@')[0],
+                    email : invite.email,
+                    password : hashedPassword,
+                    role : invite.role,
+                    companyId : invite.companyId,
+                    status : "PENDING_APPROVAL",
+                    isEmailVerified : true
+                }
+            });
         }
+
+        // Check if the provided department and designation actually exist in this company
+        const validDept = await tx.department.findUnique({ where: { id: invite.departmentId || "" } });
+        const validDesig = await tx.designation.findUnique({ where: { id: invite.designationId || "" } });
+
+        // Fallbacks just in case the HR used the wrong ID during invite
+        let finalDeptId = invite.departmentId;
+        let finalDesigId = invite.designationId;
+
+        if (!validDept) {
+            const firstDept = await tx.department.findFirst({ where: { companyId: invite.companyId } });
+            if (!firstDept) throw new Error("Company has no departments setup yet.");
+            finalDeptId = firstDept.id;
+        }
+
+        if (!validDesig) {
+            const firstDesig = await tx.designation.findFirst({ where: { companyId: invite.companyId } });
+            if (!firstDesig) throw new Error("Company has no designations setup yet.");
+            finalDesigId = firstDesig.id;
+        }
+
+        // 2. Check if employee record already exists
+        const existingEmployee = await tx.employee.findFirst({
+            where: { userId: user.id }
+        });
+
+        if (!existingEmployee) {
+            await tx.employee.create({
+              data: {
+                  userId: user.id,
+                  companyId: invite.companyId,
+                  employeeCode: `EMP-${Date.now()}`,
+                  departmentId: finalDeptId,
+                  designationId: finalDesigId,
+                  joiningDate: new Date(),
+                  employmentType: "FRESHER",
+                  onboardingStep: 1,
+                  status: "INVITED"
+              }
+            });
+        }
+
+        // 3. Mark invite accepted
+        await tx.employeeInvite.update({
+            where: { id: invite.id },
+            data: { acceptedAt: new Date() }
+        });
     });
 
-    // Check if the provided department and designation actually exist in this company (handles legacy template ID invites)
-    const validDept = await prisma.department.findUnique({ where: { id: invite.departmentId || "" } });
-    const validDesig = await prisma.designation.findUnique({ where: { id: invite.designationId || "" } });
-
-    // Fallbacks just in case the HR used the wrong ID during invite
-    let finalDeptId = invite.departmentId;
-    let finalDesigId = invite.designationId;
-
-    if (!validDept) {
-        const firstDept = await prisma.department.findFirst({ where: { companyId: invite.companyId } });
-        if (!firstDept) throw new Error("Company has no departments setup yet.");
-        finalDeptId = firstDept.id;
-    }
-
-    if (!validDesig) {
-        const firstDesig = await prisma.designation.findFirst({ where: { companyId: invite.companyId } });
-        if (!firstDesig) throw new Error("Company has no designations setup yet.");
-        finalDesigId = firstDesig.id;
-    }
-
-    // Create the core employee record immediately using the validated data
-    await prisma.employee.create({
-      data: {
-          userId: user.id,
-          companyId: invite.companyId,
-          employeeCode: `EMP-${Date.now()}`,
-          departmentId: finalDeptId,
-          designationId: finalDesigId,
-          joiningDate: new Date(),
-          employmentType: "FRESHER",
-          onboardingStep: 1,
-          status: "INVITED"
-      }
+    // We must return the user ID for the next steps, so fetch it outside transaction
+    const finalUser = await prisma.user.findFirst({
+        where: { email: invite.email, companyId: invite.companyId }
     });
 
-    //mark invite accepted
-    await prisma.employeeInvite.update({
-
-        where : { id : invite.id},
-        data : {acceptedAt : new Date()}
-    });
-
-    return {message :  "Password set successfully", userId : user.id};
-
+    return {
+        message: "Password set. Verify email next",
+        userId: finalUser.id
+    };
 };
+
 
 // step 2 verify email
 export const verifyEmailService  = async (userId) => {
