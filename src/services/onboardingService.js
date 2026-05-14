@@ -893,3 +893,248 @@ export const getSalaryPreviewService = async (employeeId) => {
         isStandard: true
     };
 };
+
+/**
+ * ✅ UNIFIED ONBOARDING: ONE API FOR EVERYTHING
+ * Accepts all fields and files in a single massive payload.
+ */
+export const finalizeFullOnboardingService = async (userId, data, files = {}) => {
+    const employee = await prisma.employee.findUnique({ 
+        where: { userId },
+        include: { user: true }
+    });
+    if (!employee) throw Error("Employee profile not found");
+
+    const result = await prisma.$transaction(async (tx) => {
+        // 1. Personal & Identity
+        if (data.personal) {
+            await tx.employeePersonal.upsert({
+                where: { employeeId: employee.id },
+                update: {
+                    gender: data.personal.gender,
+                    dob: data.personal.dob ? new Date(data.personal.dob) : undefined,
+                    maritalStatus: data.personal.maritalStatus,
+                    bloodGroup: data.personal.bloodGroup,
+                    nationality: data.personal.nationality,
+                    personalEmail: data.contact?.personalEmail,
+                    phone: data.contact?.phone,
+                    alternatePhone: data.contact?.alternatePhone,
+                    addressLine1: data.contact?.addressLine1,
+                    addressLine2: data.contact?.addressLine2,
+                    city: data.contact?.city,
+                    state: data.contact?.state,
+                    country: data.contact?.country,
+                    pincode: data.contact?.pincode
+                },
+                create: {
+                    employeeId: employee.id,
+                    gender: data.personal.gender,
+                    dob: data.personal.dob ? new Date(data.personal.dob) : null,
+                    maritalStatus: data.personal.maritalStatus,
+                    bloodGroup: data.personal.bloodGroup,
+                    nationality: data.personal.nationality,
+                    personalEmail: data.contact?.personalEmail,
+                    phone: data.contact?.phone,
+                    alternatePhone: data.contact?.alternatePhone,
+                    addressLine1: data.contact?.addressLine1,
+                    addressLine2: data.contact?.addressLine2,
+                    city: data.contact?.city,
+                    state: data.contact?.state,
+                    country: data.contact?.country,
+                    pincode: data.contact?.pincode
+                }
+            });
+        }
+
+        // 2. Emergency Contacts
+        if (data.emergency && Array.isArray(data.emergency)) {
+            await tx.employeeEmergencyContact.deleteMany({ where: { employeeId: employee.id } });
+            await tx.employeeEmergencyContact.createMany({
+                data: data.emergency.map(ec => ({
+                    employeeId: employee.id,
+                    contactPersonName: ec.contactPersonName,
+                    relationship: ec.relationship,
+                    contactNumber: ec.contactNumber,
+                    alternateContact: ec.alternateContact,
+                    address: ec.address
+                }))
+            });
+        }
+
+        // 3. Education
+        if (data.education && Array.isArray(data.education)) {
+            await tx.employeeEducation.deleteMany({ where: { employeeId: employee.id } });
+            await tx.employeeEducation.createMany({
+                data: data.education.map(edu => ({
+                    employeeId: employee.id,
+                    degree: edu.degree,
+                    specialization: edu.specialization,
+                    college: edu.college,
+                    university: edu.university,
+                    percentage: edu.percentage,
+                    cgpa: edu.cgpa,
+                    startYear: edu.startYear,
+                    endYear: edu.endYear
+                }))
+            });
+        }
+
+        // 4. Experience
+        if (data.experience && Array.isArray(data.experience)) {
+            await tx.employeeExperience.deleteMany({ where: { employeeId: employee.id } });
+            await tx.employeeExperience.createMany({
+                data: data.experience.map(exp => ({
+                    employeeId: employee.id,
+                    companyName: exp.companyName,
+                    role: exp.designation || exp.role,
+                    startDate: new Date(exp.startDate),
+                    endDate: exp.endDate ? new Date(exp.endDate) : null,
+                    totalYears: exp.totalExperience || exp.totalYears,
+                    technologies: exp.technologies,
+                    responsibilities: exp.responsibilities
+                }))
+            });
+        }
+
+        // 5. Skills
+        if (data.skills) {
+            await tx.employeeSkill.upsert({
+                where: { employeeId: employee.id },
+                update: {
+                    primarySkills: data.skills.primarySkills,
+                    secondarySkills: data.skills.secondarySkills,
+                    certifications: data.skills.certifications,
+                    languagesKnown: data.skills.languagesKnown,
+                    linkedinUrl: data.skills.linkedinUrl,
+                    githubUrl: data.skills.githubUrl,
+                    portfolioUrl: data.skills.portfolioUrl
+                },
+                create: {
+                    employeeId: employee.id,
+                    primarySkills: data.skills.primarySkills,
+                    secondarySkills: data.skills.secondarySkills,
+                    certifications: data.skills.certifications,
+                    languagesKnown: data.skills.languagesKnown,
+                    linkedinUrl: data.skills.linkedinUrl,
+                    githubUrl: data.skills.githubUrl,
+                    portfolioUrl: data.skills.portfolioUrl
+                }
+            });
+        }
+
+        // 6. Bank Details
+        if (data.bank) {
+            await tx.employeeBank.upsert({
+                where: { employeeId: employee.id },
+                update: {
+                    bankName: data.bank.bankName,
+                    accountHolderName: data.bank.accountHolderName,
+                    accountNumber: data.bank.accountNumber,
+                    ifscCode: data.bank.ifscCode,
+                    branchName: data.bank.branchName,
+                    upiId: data.bank.upiId
+                },
+                create: {
+                    employeeId: employee.id,
+                    bankName: data.bank.bankName,
+                    accountHolderName: data.bank.accountHolderName,
+                    accountNumber: data.bank.accountNumber,
+                    ifscCode: data.bank.ifscCode,
+                    branchName: data.bank.branchName,
+                    upiId: data.bank.upiId
+                }
+            });
+        }
+
+        // 7. Nominee Details
+        if (data.nominee) {
+            await tx.employeeNominee.upsert({
+                where: { employeeId: employee.id },
+                update: {
+                    nomineeName: data.nominee.nomineeName,
+                    relationship: data.nominee.relationship,
+                    dob: data.nominee.dob ? new Date(data.nominee.dob) : undefined,
+                    gender: data.nominee.gender,
+                    phone: data.nominee.phone,
+                    email: data.nominee.email,
+                    aadhaarNumber: data.nominee.aadhaarNumber,
+                    panNumber: data.nominee.panNumber,
+                    nomineePercentage: data.nominee.nomineePercentage,
+                    address: data.nominee.address
+                },
+                create: {
+                    employeeId: employee.id,
+                    nomineeName: data.nominee.nomineeName,
+                    relationship: data.nominee.relationship,
+                    dob: data.nominee.dob ? new Date(data.nominee.dob) : null,
+                    gender: data.nominee.gender,
+                    phone: data.nominee.phone,
+                    email: data.nominee.email,
+                    aadhaarNumber: data.nominee.aadhaarNumber,
+                    panNumber: data.nominee.panNumber,
+                    nomineePercentage: data.nominee.nomineePercentage,
+                    address: data.nominee.address
+                }
+            });
+        }
+
+        // 8. Compliance
+        if (data.compliance) {
+            await tx.employeeCompliance.upsert({
+                where: { employeeId: employee.id },
+                update: {
+                    uanNumber: data.compliance.uanNumber,
+                    pfNumber: data.compliance.pfNumber,
+                    esiNumber: data.compliance.esiNumber
+                },
+                create: {
+                    employeeId: employee.id,
+                    uanNumber: data.compliance.uanNumber,
+                    pfNumber: data.compliance.pfNumber,
+                    esiNumber: data.compliance.esiNumber
+                }
+            });
+        }
+
+        // 9. Process File Uploads (if any)
+        if (files && Object.keys(files).length > 0) {
+            for (const [fieldname, fileArray] of Object.entries(files)) {
+                const file = fileArray[0];
+                const docType = fieldname.toUpperCase();
+
+                if (fieldname === "profilePhoto") {
+                    await tx.employee.update({
+                        where: { id: employee.id },
+                        data: { profilePhoto: `/uploads/employee-docs/${file.filename}` }
+                    });
+                } else {
+                    await tx.employeeDocument.create({
+                        data: {
+                            employeeId: employee.id,
+                            name: docType,
+                            fileUrl: `/uploads/employee-docs/${file.filename}`,
+                            status: "PENDING"
+                        }
+                    });
+                }
+            }
+        }
+
+        // 10. Finalize Employee State
+        return await tx.employee.update({
+            where: { id: employee.id },
+            data: { 
+                onboardingCompleted: true,
+                onboardingStep: 10,
+                status: "PENDING_APPROVAL"
+            }
+        });
+    });
+
+    return { 
+        success: true,
+        message: "Onboarding finalized successfully! Your profile is now under review by HR.",
+        employeeId: result.id,
+        onboardingCompleted: true 
+    };
+};

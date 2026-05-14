@@ -15,7 +15,8 @@ import {
     verifyEmailService, 
     updateDocumentStatusService,
     getSalaryPreviewService,
-    saveComplianceAndFinalizeService
+    saveComplianceAndFinalizeService,
+    finalizeFullOnboardingService
 } from "../services/onboardingService.js"
 
 export const verifyEmail = async (req, res) => {
@@ -163,6 +164,37 @@ export const getSalaryPreview = async (req, res) => {
         const { employeeId } = req.params;
         const data = await getSalaryPreviewService(employeeId);
         res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+export const finalizeFullOnboarding = async (req, res) => {
+    try {
+        const body = req.body;
+        
+        // Helper to parse JSON strings if they come from a multipart request
+        const parseJson = (val) => {
+            if (typeof val === 'string') {
+                try { return JSON.parse(val); } catch (e) { return val; }
+            }
+            return val;
+        };
+
+        const data = {
+            personal: parseJson(body.personal),
+            contact: parseJson(body.contact),
+            emergency: parseJson(body.emergency),
+            education: parseJson(body.education),
+            experience: parseJson(body.experience),
+            skills: parseJson(body.skills),
+            bank: parseJson(body.bank),
+            nominee: parseJson(body.nominee),
+            compliance: parseJson(body.compliance)
+        };
+
+        const result = await finalizeFullOnboardingService(req.user.id, data, req.files);
+        res.status(200).json(result);
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
