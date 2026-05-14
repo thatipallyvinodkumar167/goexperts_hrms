@@ -31,6 +31,10 @@ router.post(
         { name: "profilePhoto", maxCount: 1 },
         { name: "bankPassbook", maxCount: 1 },
         { name: "cancelledCheque", maxCount: 1 },
+        { name: "signature", maxCount: 1 },
+        { name: "education_proof", maxCount: 1 },
+        { name: "relieving_letter", maxCount: 1 },
+        { name: "payslips", maxCount: 1 },
         { name: "other", maxCount: 1 },
     ]),
     finalizeFullOnboarding

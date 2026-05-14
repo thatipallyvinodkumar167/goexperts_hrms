@@ -901,9 +901,28 @@ export const getSalaryPreviewService = async (employeeId) => {
 export const finalizeFullOnboardingService = async (userId, data, files = {}) => {
     const employee = await prisma.employee.findUnique({ 
         where: { userId },
-        include: { user: true }
+        include: { user: true, company: true }
     });
     if (!employee) throw Error("Employee profile not found");
+
+    // 🏆 Industry Level Polish: Smart Validation
+    // 1. Legal Declaration Check
+    if (!data.isDeclaredTrue) {
+        throw Error("You must accept the legal declaration to complete onboarding.");
+    }
+
+    // 2. Experienced Professional Check
+    if (employee.employmentType === "EXPERIENCED") {
+        if (!data.experience || !Array.isArray(data.experience) || data.experience.length === 0) {
+            throw Error("Previous work experience is mandatory for experienced professionals.");
+        }
+        if (!files.relieving_letter) {
+            throw Error("Relieving letter from the previous employer is mandatory.");
+        }
+        if (!files.payslips) {
+            throw Error("Recent payslips are mandatory for salary verification.");
+        }
+    }
 
     const result = await prisma.$transaction(async (tx) => {
         // 1. Personal & Identity
@@ -1107,6 +1126,11 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
                         where: { id: employee.id },
                         data: { profilePhoto: `/uploads/employee-docs/${file.filename}` }
                     });
+                } else if (fieldname === "signature") {
+                    await tx.employee.update({
+                        where: { id: employee.id },
+                        data: { signature: `/uploads/employee-docs/${file.filename}` }
+                    });
                 } else {
                     await tx.employeeDocument.create({
                         data: {
@@ -1125,11 +1149,38 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
             where: { id: employee.id },
             data: { 
                 onboardingCompleted: true,
+                isDeclaredTrue: true,
                 onboardingStep: 10,
                 status: "PENDING_APPROVAL"
             }
         });
     });
+
+    // 🏆 Industry Level Polish: Automated Email Notifications
+    // 1. Send confirmation to Employee
+    sendEmail(
+        employee.user.email,
+        "Onboarding Received - Pending Verification",
+        `<h3>Onboarding Submission Successful</h3>
+         <p>Dear ${employee.user.name},</p>
+         <p>Your profile has been submitted successfully! Our HR team is now verifying your documents.</p>
+         <p>This process usually takes 24-48 hours. We will notify you once the verification is complete.</p>`
+    ).catch(err => console.error("Employee Submission Email Failed:", err.message));
+
+    // 2. Send notification to HR/Owner
+    if (employee.company.email) {
+        sendEmail(
+            employee.company.email,
+            "Action Required: New Onboarding Submission",
+            `<h3>New Employee Onboarding Submission</h3>
+             <p>A new employee, <strong>${employee.user.name}</strong>, has submitted their profile for review.</p>
+             <p>Please log in to your dashboard to review their documents and finalize the joining.</p>
+             <br/>
+             <a href="${process.env.FRONTEND_URL}/login" style="background: #10B981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                Review Submission
+             </a>`
+        ).catch(err => console.error("HR Notification Email Failed:", err.message));
+    }
 
     return { 
         success: true,
