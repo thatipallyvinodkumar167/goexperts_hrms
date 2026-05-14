@@ -54,7 +54,7 @@ export const loginUser = async ({ email, password } = {}) => {
       email: normalizedEmail, 
       status: { in: ["ACTIVE", "PENDING_APPROVAL"] } 
     },
-    include: { company: true }
+    include: { company: true, employee: true }
   });
 
   // If no user found by direct email, check if they typed the Company Email instead
@@ -107,7 +107,9 @@ export const loginUser = async ({ email, password } = {}) => {
       profileLogo: user.profileLogo,
       companyId: user.companyId,
       // Pass these to the frontend so it knows which screen to show!
-      isProfileCompleted: user.company ? user.company.isProfileCompleted : true,
+      isProfileCompleted: user.company ? user.company.isProfileCompleted : true, // Indicates if Company Setup is done
+      onboardingStep: user.employee ? user.employee.onboardingStep : null,        // Indicates HR/Employee personal setup step
+      onboardingCompleted: user.employee ? user.employee.onboardingCompleted : null,
       companyStatus: user.company ? user.company.status : "ACTIVE"
     },
     token: generateToken(user),
