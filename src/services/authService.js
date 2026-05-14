@@ -107,7 +107,6 @@ export const loginUser = async ({ email, password } = {}) => {
       profileLogo: user.profileLogo,
       companyId: user.companyId,
       // Pass these to the frontend so it knows which screen to show!
-      industryTypeId: user.company ? user.company.industryTypeId : null,
       isProfileCompleted: user.company ? user.company.isProfileCompleted : true,
       companyStatus: user.company ? user.company.status : "ACTIVE"
     },
@@ -310,7 +309,7 @@ export const updateUserProfileService = async (userId, data = {}) => {
       email: updatedUser.email,
       role: updatedUser.role,
       profileLogo: updatedUser.profileLogo,
-      companyId: updatedUser.companyId
+      ...(updatedUser.companyId && { companyId: updatedUser.companyId })
     }
   };
 };

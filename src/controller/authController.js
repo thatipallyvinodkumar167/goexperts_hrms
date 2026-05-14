@@ -3,31 +3,15 @@ import fs from "fs";
 
 export const updateProfile = async (req, res) => {
     try {
-        const data = await updateUserProfileService(req.user.id, req.body);
-        res.status(200).json({ success: true, ...data });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
+        const updateData = { ...req.body };
 
-// Upload profile logo via multipart/form-data
-export const uploadProfileLogo = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: "No image file provided." });
+        // If a file is uploaded, add the Cloudinary URL to the update payload
+        if (req.file) {
+            updateData.profileLogo = req.file.path;
         }
 
-        const fileUrl = req.file.path; // Cloudinary URL
-
-        // Save URL to user profile
-        const data = await updateUserProfileService(req.user.id, { profileLogo: fileUrl });
-
-        res.status(200).json({
-            success: true,
-            message: "Profile logo uploaded successfully.",
-            profileLogo: fileUrl,
-            user: data.user,
-        });
+        const data = await updateUserProfileService(req.user.id, updateData);
+        res.status(200).json({ success: true, ...data });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }

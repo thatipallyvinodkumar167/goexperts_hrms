@@ -46,7 +46,22 @@ router.get("/departments", async (req, res) => {
 // 3. Get designations (Optional filter: departmentId)
 router.get("/designations", getDesignations);
 
-// 4. Get System Policies
+// 4. Get departments for a SPECIFIC Company (Used by HR)
+router.get("/company-departments", async (req, res) => {
+  try {
+    const { companyId } = req.query;
+    if (!companyId) throw new Error("companyId is required");
+    
+    const data = await prisma.department.findMany({
+      where: { companyId }
+    });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// 5. Get System Policies
 router.get("/policies", getSystemPolicies);
 
 
