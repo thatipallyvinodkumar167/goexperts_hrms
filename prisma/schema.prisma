@@ -681,14 +681,17 @@ model EmployeeEmergencyContact {
 model EmployeeSkill {
   id String @id @default(uuid())
 
-  employeeId String
+  employeeId String @unique
   employee   Employee @relation(fields: [employeeId], references: [id])
 
-  skillName String
+  primarySkills   Json?
+  secondarySkills Json?
+  certifications  Json?
+  languagesKnown  Json?
 
-  level String?
-
-  yearsOfExperience Float?
+  linkedinUrl  String?
+  githubUrl    String?
+  portfolioUrl String?
 
   createdAt DateTime @default(now())
 }

@@ -1017,26 +1017,17 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
 
         // 5. Skills
         if (data.skills) {
-            await tx.employeeSkill.upsert({
-                where: { employeeId: employee.id },
-                update: {
-                    primarySkills: data.skills.primarySkills,
-                    secondarySkills: data.skills.secondarySkills,
-                    certifications: data.skills.certifications,
-                    languagesKnown: data.skills.languagesKnown,
-                    linkedinUrl: data.skills.linkedinUrl,
-                    githubUrl: data.skills.githubUrl,
-                    portfolioUrl: data.skills.portfolioUrl
-                },
-                create: {
+            await tx.employeeSkill.deleteMany({ where: { employeeId: employee.id } });
+            await tx.employeeSkill.create({
+                data: {
                     employeeId: employee.id,
-                    primarySkills: data.skills.primarySkills,
-                    secondarySkills: data.skills.secondarySkills,
-                    certifications: data.skills.certifications,
-                    languagesKnown: data.skills.languagesKnown,
-                    linkedinUrl: data.skills.linkedinUrl,
-                    githubUrl: data.skills.githubUrl,
-                    portfolioUrl: data.skills.portfolioUrl
+                    primarySkills: Array.isArray(data.skills.primarySkills) ? data.skills.primarySkills : [],
+                    secondarySkills: Array.isArray(data.skills.secondarySkills) ? data.skills.secondarySkills : [],
+                    certifications: Array.isArray(data.skills.certifications) ? data.skills.certifications : [],
+                    languagesKnown: Array.isArray(data.skills.languagesKnown) ? data.skills.languagesKnown : [],
+                    linkedinUrl: data.skills.linkedinUrl || null,
+                    githubUrl: data.skills.githubUrl || null,
+                    portfolioUrl: data.skills.portfolioUrl || null
                 }
             });
         }
