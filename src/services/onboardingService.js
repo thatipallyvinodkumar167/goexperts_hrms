@@ -819,7 +819,11 @@ export const getAllEmployeeReviewsService = async (companyId) => {
         include: {
             user: { select: { id: true, name: true, email: true, status: true } },
             department: { select: { id: true, name: true } },
-            designation: { select: { id: true, title: true } },
+            personal: { select: { gender: true, dob: true, maritalStatus: true, bloodGroup: true, nationality: true } },
+            educations: true,
+            experiences: true,
+            bank: true,
+            skills: true,
             documents: { select: { id: true, name: true, status: true, createdAt: true } }
         },
         orderBy: { createdAt: "desc" }
