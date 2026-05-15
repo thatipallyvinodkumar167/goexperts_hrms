@@ -1145,7 +1145,7 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
                 status: "PENDING_APPROVAL"
             }
         });
-    });
+    }, { timeout: 30000 });
 
     // 🏆 Industry Level Polish: Automated Email Notifications
     // 1. Send confirmation to Employee
