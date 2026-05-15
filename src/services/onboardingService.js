@@ -826,7 +826,7 @@ export const getAllEmployeeReviewsService = async (companyId) => {
             skills: true,
             documents: { select: { id: true, name: true, status: true, createdAt: true } }
         },
-        orderBy: { createdAt: "desc" }
+        orderBy: { joiningDate: "desc" }
     });
 
     return employees;
