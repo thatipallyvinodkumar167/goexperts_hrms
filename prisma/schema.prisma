@@ -98,6 +98,16 @@ enum PolicyType {
   COOKIE_POLICY
 }
 
+enum NotificationType {
+  INFO
+  WARNING
+  SUCCESS
+  ERROR
+  MAINTENANCE
+  COMPLIANCE
+  FEATURE
+}
+
 enum DegreeType {
   SSC
   INTERMEDIATE
@@ -148,6 +158,7 @@ model User {
 
   companyInvites  CompanyInvite[]
   employeeInvites EmployeeInvite[]
+  notificationsSent Notification[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -221,6 +232,7 @@ model Company {
   invites         CompanyInvite[]
   employeeInvites EmployeeInvite[]
   offerLetters    OfferLetter[]
+  notifications   CompanyNotification[]
 
   @@index([status])
   @@index([lastActiveAt])
@@ -1051,6 +1063,7 @@ model IndustryType {
   designations DesignationTemplate[]
 
   companies Company[]
+  notifications NotificationIndustry[]
 
   salaryTemplate SalaryTemplate?
 
@@ -1157,4 +1170,53 @@ model PasswordResetToken {
   expiresAt DateTime
 
   createdAt DateTime @default(now())
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  title   String
+  message String @db.LongText
+
+  type NotificationType @default(INFO)
+
+  sentById String
+  sentBy   User   @relation(fields: [sentById], references: [id])
+
+  isGlobal Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  industries NotificationIndustry[]
+  companies  CompanyNotification[]
+}
+
+model NotificationIndustry {
+  id String @id @default(uuid())
+
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id])
+
+  industryTypeId String
+  industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
+
+  @@unique([notificationId, industryTypeId])
+}
+
+model CompanyNotification {
+  id String @id @default(uuid())
+
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id])
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  isRead Boolean @default(false)
+  readAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([notificationId, companyId])
 }
