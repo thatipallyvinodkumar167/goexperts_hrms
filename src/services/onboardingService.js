@@ -822,9 +822,9 @@ export const getAllEmployeeReviewsService = async (companyId) => {
             personal: { select: { gender: true, dob: true, maritalStatus: true, bloodGroup: true, nationality: true } },
             educations: true,
             experiences: true,
-            bank: true,
+            bankDetails: true,
             skills: true,
-            documents: { select: { id: true, name: true, status: true, createdAt: true } }
+            documents: { select: { id: true, name: true, status: true } }
         },
         orderBy: { joiningDate: "desc" }
     });
