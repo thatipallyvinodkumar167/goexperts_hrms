@@ -604,6 +604,7 @@ export const finalizeEmployeeJoiningService = async ({
     employeeId, 
     managerId, 
     salaryBreakdown,
+    salary,          // Accept plain gross salary number from HR
     bgvStatus,
     bgvRemarks,
     probationPeriod,
@@ -644,7 +645,25 @@ export const finalizeEmployeeJoiningService = async ({
         });
 
         // 2. Map Salary Structure (Industry Standard Calculation)
+        // Priority: salaryBreakdown object > plain salary number > offer letter auto-calc
         let finalSalary = salaryBreakdown;
+
+        // If HR sent a plain gross salary number, build a standard breakdown
+        if (!finalSalary && salary) {
+            const gross = Number(salary);
+            const basic = gross * 0.5;
+            const hra = gross * 0.2;
+            const allowances = gross * 0.3;
+            finalSalary = {
+                basic, hra, allowances,
+                bonus: 0, pfEmployee: basic * 0.12,
+                esiEmployee: gross < 21000 ? gross * 0.0075 : 0,
+                pfEmployer: basic * 0.12,
+                esiEmployer: gross < 21000 ? gross * 0.0325 : 0,
+                deductions: basic * 0.12 + (gross < 21000 ? gross * 0.0075 : 0),
+                netSalary: gross - (basic * 0.12 + (gross < 21000 ? gross * 0.0075 : 0))
+            };
+        }
 
         if (!finalSalary) {
             const offer = await tx.offerLetter.findFirst({
