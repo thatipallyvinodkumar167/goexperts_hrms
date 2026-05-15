@@ -55,16 +55,17 @@ export const getDesignations = async (req, res) => {
     let { industryTypeId, departmentId } = req.query;
     const where = {};
 
-    // 🏆 Industry Level Polish: If departmentId is a company-specific ID, resolve its template
+    // 🏆 Industry Level Polish: Resolve company department ID to Template by Name
     if (departmentId) {
       const companyDept = await prisma.department.findUnique({
-        where: { id: departmentId },
-        select: { templateId: true }
+        where: { id: departmentId }
       });
       
-      // If it's a company department, use its templateId instead
-      if (companyDept && companyDept.templateId) {
-        departmentId = companyDept.templateId;
+      if (companyDept) {
+        const template = await prisma.departmentTemplate.findFirst({
+          where: { name: companyDept.name }
+        });
+        if (template) departmentId = template.id;
       }
     }
 
