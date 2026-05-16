@@ -97,16 +97,16 @@ export const updateCompanyProfileController = async (req, res) => {
     const logoFile = files.logo?.[0];
     const regFile = files.regCertificate?.[0];
 
-    if (gstFile) {
+    if (gstFile?.path) {
       documents.push({ name: "GST_CERTIFICATE", fileUrl: gstFile.path });
     }
-    if (panFile) {
+    if (panFile?.path) {
       documents.push({ name: "PAN_CARD", fileUrl: panFile.path });
     }
-    if (tanFile) {
+    if (tanFile?.path) {
       documents.push({ name: "TAN_CERTIFICATE", fileUrl: tanFile.path });
     }
-    if (regFile) {
+    if (regFile?.path) {
       documents.push({ name: "REGISTRATION_CERTIFICATE", fileUrl: regFile.path });
     }
 
