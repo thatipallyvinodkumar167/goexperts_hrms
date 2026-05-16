@@ -1141,23 +1141,31 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
             for (const [fieldname, fileArray] of Object.entries(files)) {
                 const file = fileArray[0];
                 const docType = fieldname.toUpperCase();
+                
+                // 💡 SMART LOGIC: Use file.path for Cloudinary URLs, fallback to filename for local
+                const fileUrl = file.path || `/uploads/employee-docs/${file.filename}`;
 
                 if (fieldname === "profilePhoto") {
                     await tx.employee.update({
                         where: { id: employee.id },
-                        data: { profilePhoto: `/uploads/employee-docs/${file.filename}` }
+                        data: { profilePhoto: fileUrl }
+                    });
+                    // Also sync to User record
+                    await tx.user.update({
+                        where: { id: employee.userId },
+                        data: { profileLogo: fileUrl }
                     });
                 } else if (fieldname === "signature") {
                     await tx.employee.update({
                         where: { id: employee.id },
-                        data: { signature: `/uploads/employee-docs/${file.filename}` }
+                        data: { signature: fileUrl }
                     });
                 } else {
                     await tx.employeeDocument.create({
                         data: {
                             employeeId: employee.id,
                             name: docType,
-                            fileUrl: `/uploads/employee-docs/${file.filename}`,
+                            fileUrl: fileUrl,
                             status: "PENDING"
                         }
                     });
