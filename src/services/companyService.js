@@ -218,11 +218,12 @@ export const updateCompanyProfile = async (companyId, data) => {
     termsAndConditions: data.termsAndConditions || undefined,
     signature: data.signature || undefined,
 
-    // Nested Update: HR Settings (Policy, Hours, Probation, Leave Cycle, Work Model)
-    hrSetting: (data.companyPolicy || data.workingHours || data.defaultProbationPeriod || data.workingDays || data.leaveCycle || data.workModel || data.shiftType) ? {
+    // Nested Update: HR Settings (Policy, Hours, Probation, Leave Cycle, Work Model, Employee Terms)
+    hrSetting: (data.companyPolicy || data.workingHours || data.defaultProbationPeriod || data.workingDays || data.leaveCycle || data.workModel || data.shiftType || data.employeeTerms) ? {
       upsert: {
         create: {
           companyPolicy: data.companyPolicy || null,
+          employeeTerms: data.employeeTerms || null,
           workingHours: data.workingHours || "9:00 AM - 6:00 PM",
           workingDays: data.workingDays || "Monday - Friday",
           probationPeriod: parseInt(data.defaultProbationPeriod) || null,
@@ -233,6 +234,7 @@ export const updateCompanyProfile = async (companyId, data) => {
         },
         update: {
           companyPolicy: data.companyPolicy || undefined,
+          employeeTerms: data.employeeTerms || undefined,
           workingHours: data.workingHours || undefined,
           workingDays: data.workingDays || undefined,
           probationPeriod: data.defaultProbationPeriod ? parseInt(data.defaultProbationPeriod) : undefined,

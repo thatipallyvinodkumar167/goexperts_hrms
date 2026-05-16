@@ -337,6 +337,7 @@ model CompanyHRSetting {
   shiftType  String? // e.g. "General", "Rotational"
 
   companyPolicy String? @db.LongText
+  employeeTerms String? @db.LongText
 
   createdAt DateTime @default(now())
 }
