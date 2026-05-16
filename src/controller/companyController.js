@@ -94,19 +94,25 @@ export const updateCompanyProfileController = async (req, res) => {
     const gstFile = files.gstProof?.[0];
     const panFile = files.panProof?.[0];
     const tanFile = files.tanProof?.[0];
+    const logoFile = files.logo?.[0];
+    const regFile = files.regCertificate?.[0];
 
     if (gstFile) {
-      documents.push({ name: "GST_CERTIFICATE", fileUrl: `${baseUrl}/uploads/company-docs/${gstFile.filename}` });
+      documents.push({ name: "GST_CERTIFICATE", fileUrl: gstFile.path });
     }
     if (panFile) {
-      documents.push({ name: "PAN_CARD", fileUrl: `${baseUrl}/uploads/company-docs/${panFile.filename}` });
+      documents.push({ name: "PAN_CARD", fileUrl: panFile.path });
     }
     if (tanFile) {
-      documents.push({ name: "TAN_CERTIFICATE", fileUrl: `${baseUrl}/uploads/company-docs/${tanFile.filename}` });
+      documents.push({ name: "TAN_CERTIFICATE", fileUrl: tanFile.path });
+    }
+    if (regFile) {
+      documents.push({ name: "REGISTRATION_CERTIFICATE", fileUrl: regFile.path });
     }
 
     const payload = {
       ...req.body,
+      companyLogo: logoFile ? logoFile.path : undefined,
       documents: [...(Array.isArray(req.body.documents) ? req.body.documents : []), ...documents],
     };
 

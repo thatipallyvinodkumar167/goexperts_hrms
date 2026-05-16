@@ -36,6 +36,9 @@ router.put(
   authMiddleware,
   allowRoles("SUPER_ADMIN", "OWNER", "HR"),
   uploadCompanyDocuments.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "signature", maxCount: 1 },
+    { name: "regCertificate", maxCount: 1 },
     { name: "gstProof", maxCount: 1 },
     { name: "panProof", maxCount: 1 },
     { name: "tanProof", maxCount: 1 },
@@ -47,6 +50,9 @@ router.put(
   authMiddleware,
   allowRoles("SUPER_ADMIN"),
   uploadCompanyDocuments.fields([
+    { name: "logo", maxCount: 1 },
+    { name: "signature", maxCount: 1 },
+    { name: "regCertificate", maxCount: 1 },
     { name: "gstProof", maxCount: 1 },
     { name: "panProof", maxCount: 1 },
     { name: "tanProof", maxCount: 1 },

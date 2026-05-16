@@ -173,7 +173,7 @@ model User {
 
 model Company {
   id    String @id @default(uuid())
-  name  String
+  name  String? @unique
   email String @unique
 
   ownerName  String?
@@ -184,18 +184,22 @@ model Company {
   phone   String?
   website String?
 
-  domain String? @unique
-
+  domain      String? @unique
   companyLogo String? @db.LongText
+  linkedinUrl String?
 
   industryTypeId String?
   industryType   IndustryType? @relation(fields: [industryTypeId], references: [id])
 
   companySize String?
   foundedYear Int?
+  cinNumber   String?
 
   latitude  Float?
   longitude Float?
+
+  termsAndConditions String? @db.LongText
+  signature          String?
 
   status Status @default(INVITED)
 
@@ -278,10 +282,14 @@ model CompanyCompliance {
   cinNumber  String?
   msmeNumber String?
 
-  pfEnabled    Boolean @default(false)
-  pfPercentage Float?
+  pfEnabled             Boolean @default(false)
+  pfPercentage          Float?
+  pfRegistrationNumber  String?
 
-  esiEnabled Boolean @default(false)
+  esiEnabled            Boolean @default(false)
+  esiRegistrationNumber String?
+
+  ptRegistrationNumber  String?
 
   insuranceProvider String?
 
@@ -323,6 +331,10 @@ model CompanyHRSetting {
 
   probationPeriod Int?
   noticePeriod    Int?
+
+  leaveCycle String? // e.g. "Jan-Dec", "Apr-Mar"
+  workModel  String? // e.g. "Remote", "Hybrid", "On-site"
+  shiftType  String? // e.g. "General", "Rotational"
 
   companyPolicy String? @db.LongText
 

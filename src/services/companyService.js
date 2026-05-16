@@ -200,7 +200,6 @@ export const completeCompanyProfile = async (companyId, data) => {
 
 export const updateCompanyProfile = async (companyId, data) => {
   const updateData = {
-    name: data.name || undefined,
     email: data.email || undefined,
     ownerName: data.ownerName || undefined,
     ownerEmail: data.ownerEmail || undefined,
@@ -209,12 +208,18 @@ export const updateCompanyProfile = async (companyId, data) => {
     phone: data.phone || undefined,
     website: data.website || undefined,
     companyLogo: data.companyLogo || undefined,
+    linkedinUrl: data.linkedinUrl || undefined,
     industryType: data.industryTypeId ? { connect: { id: data.industryTypeId } } : undefined,
     companySize: data.companySize || undefined,
     foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
+    cinNumber: data.cinNumber || undefined,
+    latitude: data.latitude ? parseFloat(data.latitude) : undefined,
+    longitude: data.longitude ? parseFloat(data.longitude) : undefined,
+    termsAndConditions: data.termsAndConditions || undefined,
+    signature: data.signature || undefined,
 
-    // Nested Update: HR Settings (Policy, Hours, Probation)
-    hrSetting: (data.companyPolicy || data.workingHours || data.defaultProbationPeriod) ? {
+    // Nested Update: HR Settings (Policy, Hours, Probation, Leave Cycle, Work Model)
+    hrSetting: (data.companyPolicy || data.workingHours || data.defaultProbationPeriod || data.workingDays || data.leaveCycle || data.workModel || data.shiftType) ? {
       upsert: {
         create: {
           companyPolicy: data.companyPolicy || null,
@@ -222,6 +227,9 @@ export const updateCompanyProfile = async (companyId, data) => {
           workingDays: data.workingDays || "Monday - Friday",
           probationPeriod: parseInt(data.defaultProbationPeriod) || null,
           noticePeriod: parseInt(data.defaultNoticePeriod) || null,
+          leaveCycle: data.leaveCycle || "Jan-Dec",
+          workModel: data.workModel || "On-site",
+          shiftType: data.shiftType || "General",
         },
         update: {
           companyPolicy: data.companyPolicy || undefined,
@@ -229,72 +237,45 @@ export const updateCompanyProfile = async (companyId, data) => {
           workingDays: data.workingDays || undefined,
           probationPeriod: data.defaultProbationPeriod ? parseInt(data.defaultProbationPeriod) : undefined,
           noticePeriod: data.defaultNoticePeriod ? parseInt(data.defaultNoticePeriod) : undefined,
+          leaveCycle: data.leaveCycle || undefined,
+          workModel: data.workModel || undefined,
+          shiftType: data.shiftType || undefined,
         }
       }
     } : undefined,
 
-    // Nested Update: System Settings (Timezone, Language)
-    systemSetting: (data.timezone || data.language) ? {
-      upsert: {
-        create: {
-          timezone: data.timezone || "Asia/Kolkata",
-          dateFormat: data.dateFormat || "DD-MM-YYYY",
-          language: data.language || "English",
-        },
-        update: {
-          timezone: data.timezone || undefined,
-          dateFormat: data.dateFormat || undefined,
-          language: data.language || undefined,
-        }
-      }
-    } : undefined,
-
-    // Nested Update: Address
-    address: (data.city || data.addressLine1) ? {
-      upsert: {
-        create: {
-          addressLine1: data.addressLine1 || "N/A",
-          addressLine2: data.addressLine2 || null,
-          city: data.city || "N/A",
-          state: data.state || "N/A",
-          country: data.country || "N/A",
-          pincode: data.pincode || "N/A",
-        },
-        update: {
-          addressLine1: data.addressLine1 || undefined,
-          addressLine2: data.addressLine2 || undefined,
-          city: data.city || undefined,
-          state: data.state || undefined,
-          country: data.country || undefined,
-          pincode: data.pincode || undefined,
-        }
-      }
-    } : undefined,
-
-    // Nested Update: Compliance & Statutory (PF, ESI, GST)
-    compliance: (data.gstNumber || data.panNumber || data.pfEnabled !== undefined) ? {
+    // Nested Update: Compliance & Statutory (PF, ESI, GST, CIN, Registrations)
+    compliance: (data.gstNumber || data.panNumber || data.tanNumber || data.pfEnabled !== undefined || data.cinNumber || data.pfRegistrationNumber) ? {
       upsert: {
         create: {
           gstNumber: data.gstNumber || null,
           panNumber: data.panNumber || null,
           tanNumber: data.tanNumber || null,
+          cinNumber: data.cinNumber || null,
           pfEnabled: data.pfEnabled === "true" || data.pfEnabled === true,
           pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : 12.0,
+          pfRegistrationNumber: data.pfRegistrationNumber || null,
           esiEnabled: data.esiEnabled === "true" || data.esiEnabled === true,
+          esiRegistrationNumber: data.esiRegistrationNumber || null,
+          ptRegistrationNumber: data.ptRegistrationNumber || null,
         },
         update: {
           gstNumber: data.gstNumber || undefined,
           panNumber: data.panNumber || undefined,
           tanNumber: data.tanNumber || undefined,
+          cinNumber: data.cinNumber || undefined,
           pfEnabled: data.pfEnabled !== undefined ? (data.pfEnabled === "true" || data.pfEnabled === true) : undefined,
           pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : undefined,
+          pfRegistrationNumber: data.pfRegistrationNumber || undefined,
           esiEnabled: data.esiEnabled !== undefined ? (data.esiEnabled === "true" || data.esiEnabled === true) : undefined,
+          esiRegistrationNumber: data.esiRegistrationNumber || undefined,
+          ptRegistrationNumber: data.ptRegistrationNumber || undefined,
         }
       }
     } : undefined,
 
     // Nested Update: Payroll Settings
-    payrollSetting: (data.currency || data.salaryCycle) ? {
+    payrollSetting: (data.currency || data.salaryCycle || data.payrollStartDay) ? {
       upsert: {
         create: {
           currency: data.currency || "INR",
