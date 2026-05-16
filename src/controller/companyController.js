@@ -107,7 +107,7 @@ export const updateCompanyProfileController = async (req, res) => {
       documents.push({ name: "TAN_CERTIFICATE", fileUrl: tanFile.path });
     }
     if (regFile?.path) {
-      documents.push({ name: "REGISTRATION_CERTIFICATE", fileUrl: regFile.path });
+      documents.push({ name: "INCORPORATION_CERTIFICATE", fileUrl: regFile.path });
     }
 
     const payload = {
