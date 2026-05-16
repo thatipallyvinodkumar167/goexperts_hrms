@@ -104,11 +104,12 @@ export const loginUser = async ({ email, password } = {}) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      profileLogo: user.profileLogo,
+      // 💡 SMART FALLBACK: If OWNER has no personal logo, use the Company Logo!
+      profileLogo: user.profileLogo || (user.role === "OWNER" ? user.company?.companyLogo : null),
       companyId: user.companyId,
       // Pass these to the frontend so it knows which screen to show!
-      isProfileCompleted: user.company ? user.company.isProfileCompleted : true, // Indicates if Company Setup is done
-      onboardingStep: user.employee ? user.employee.onboardingStep : null,        // Indicates HR/Employee personal setup step
+      isProfileCompleted: user.company ? user.company.isProfileCompleted : true, 
+      onboardingStep: user.employee ? user.employee.onboardingStep : null,
       onboardingCompleted: user.employee ? user.employee.onboardingCompleted : null,
       companyStatus: user.company ? user.company.status : "ACTIVE"
     },
