@@ -141,16 +141,23 @@ export const saveBasicInfoService = async (userId, data) => {
     if (!employee) throw Error("Employee record missing. Please contact HR.");
     
     // Update the existing employee record
-    employee = await prisma.employee.update({
-        where: { id: employee.id },
-        data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            middleName: data.middleName,
-            profilePhoto: data.profilePhoto,
-            onboardingStep: Math.max(employee.onboardingStep, 2)
-        }
-    });
+    // Update both the existing employee record and the user record for visual consistency
+    await prisma.$transaction([
+        prisma.employee.update({
+            where: { id: employee.id },
+            data: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                middleName: data.middleName,
+                profilePhoto: data.profilePhoto,
+                onboardingStep: Math.max(employee.onboardingStep, 2)
+            }
+        }),
+        prisma.user.update({
+            where: { id: userId },
+            data: { profileLogo: data.profilePhoto }
+        })
+    ]);
     
     await prisma.employeePersonal.upsert({
         where: { employeeId: employee.id },
