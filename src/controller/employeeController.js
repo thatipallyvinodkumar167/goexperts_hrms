@@ -57,7 +57,17 @@ export const getAllEmployees = async (req, res) => {
       orderBy: { user: { createdAt: "desc" } },
     });
 
-    res.status(200).json({ success: true, data: employees });
+    // Smart Fallback: Map through and fix null names
+    const sanitizedEmployees = employees.map(emp => {
+      if (!emp.firstName && emp.user?.name) {
+        const parts = emp.user.name.trim().split(/\s+/);
+        emp.firstName = parts[0] || "";
+        emp.lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
+      }
+      return emp;
+    });
+
+    res.status(200).json({ success: true, data: sanitizedEmployees });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
@@ -80,6 +90,13 @@ export const getEmployeeById = async (req, res) => {
 
     if (!employee) {
       return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+
+    // Smart Fallback: Fix null names for single record
+    if (!employee.firstName && employee.user?.name) {
+      const parts = employee.user.name.trim().split(/\s+/);
+      employee.firstName = parts[0] || "";
+      employee.lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
     }
 
     res.status(200).json({ success: true, data: employee });
