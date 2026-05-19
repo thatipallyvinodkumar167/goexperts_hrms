@@ -233,8 +233,20 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     });
   }
 
+  // Calculate working hours dynamically in the backend
+  let workingHours = "0h 0m";
+  if (attendance.checkIn && attendance.checkOut) {
+    const durationMs = new Date(attendance.checkOut) - new Date(attendance.checkIn);
+    const totalMinutes = Math.floor(durationMs / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    workingHours = `${hours}h ${minutes}m`;
+  }
+
   return {
     message: `Clock-out Successful. Location validated within ${Math.round(distance)}m. Face matched at ${faceMatch.confidence}%.`,
-    checkOut: attendance.checkOut
+    checkIn: attendance.checkIn,
+    checkOut: attendance.checkOut,
+    workingHours
   };
 };
