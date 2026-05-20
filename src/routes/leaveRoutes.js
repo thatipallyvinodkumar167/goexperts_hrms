@@ -12,12 +12,12 @@ router.use(authMiddleware, companyGuard);
 // ==========================================
 // HR / ADMIN ROUTES
 // ==========================================
-router.post("/types", allowRoles(["OWNER", "HR", "SUPER_ADMIN"]), leaveController.createLeaveType);
-router.get("/types", allowRoles(["OWNER", "HR", "SUPER_ADMIN", "EMPLOYEE"]), leaveController.getCompanyLeaveTypes);
-router.patch("/types/:id", allowRoles(["OWNER", "HR", "SUPER_ADMIN"]), leaveController.updateLeaveType);
+router.post("/types", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.createLeaveType);
+router.get("/types", leaveController.getCompanyLeaveTypes);
+router.patch("/types/:id", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.updateLeaveType);
 
-router.get("/company", allowRoles(["OWNER", "HR", "SUPER_ADMIN"]), leaveController.getCompanyLeaveRequests);
-router.patch("/:id/status", allowRoles(["OWNER", "HR", "SUPER_ADMIN"]), leaveController.updateLeaveStatus);
+router.get("/company", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.getCompanyLeaveRequests);
+router.patch("/:id/status", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.updateLeaveStatus);
 
 // ==========================================
 // EMPLOYEE ROUTES
