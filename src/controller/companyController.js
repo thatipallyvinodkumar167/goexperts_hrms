@@ -1,7 +1,6 @@
 import {
   createCompanyWithInvite,
   setupCompanyAccount,
-  completeCompanyProfile,
   activateCompany,
   getCompaniesForAdmin,
   getCompanyProfile,
@@ -46,27 +45,6 @@ export const createCompany = async (req, res) => {
       success: true,
       message: "Company invited successfully",
       inviteToken: data.rawToken, // for testing
-    });
-
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
-  }
-};
-
-//////////////////////////
-// COMPLETE PROFILE
-//////////////////////////
-
-export const completeProfile = async (req, res) => {
-  try {
-    const companyId = req.user.companyId;
-
-    const data = await completeCompanyProfile(companyId, req.body);
-
-    res.status(200).json({
-      success: true,
-      message: "Profile completed successfully",
-      isprofilecompleted: true
     });
 
   } catch (error) {
@@ -204,8 +182,8 @@ export const uploadCompanyDocumentsController = async (req, res) => {
 };
 
 //////////////////////////
-// ACTIVATE COMPANY
-//////////////////////////
+// // ACTIVATE COMPANY
+// //////////////////////////
 
 export const activateCompanyController = async (req, res) => {
   try {

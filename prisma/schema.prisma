@@ -821,3 +821,10 @@ enum NotificationType {
   COMPLIANCE
   FEATURE
 }
+
+model GlobalLeaveType {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  maxDays   Int
+  createdAt DateTime @default(now())
+}

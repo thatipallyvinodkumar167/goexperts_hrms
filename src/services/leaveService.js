@@ -2,20 +2,22 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const seedCompanyLeaveTypes = async (companyId) => {
-    const defaultLeaves = [
-        { name: "Sick Leave", maxDays: 12, companyId },
-        { name: "Casual Leave", maxDays: 8, companyId },
-        { name: "Earned Leave", maxDays: 18, companyId },
-        { name: "Maternity Leave", maxDays: 182, companyId },
-        { name: "Paternity Leave", maxDays: 7, companyId },
-        { name: "Compensatory Off", maxDays: 6, companyId }
-    ];
+    // Fetch global templates created by Super Admin
+    const globalTemplates = await prisma.globalLeaveType.findMany();
+    
+    if (globalTemplates.length > 0) {
+        const companyLeaves = globalTemplates.map(template => ({
+            name: template.name,
+            maxDays: template.maxDays,
+            companyId: companyId
+        }));
 
-    // Auto-seed the 6 standard industry leave types
-    await prisma.leaveType.createMany({
-        data: defaultLeaves,
-        skipDuplicates: true
-    });
+        // Auto-seed from global templates
+        await prisma.leaveType.createMany({
+            data: companyLeaves,
+            skipDuplicates: true
+        });
+    }
 };
 
 // ==========================================

@@ -181,24 +181,6 @@ export const setupCompanyAccount = async (token, password) => {
   return { message: "Account setup successful" };
 };
 
-//////////////////////////
-// 3. COMPLETE PROFILE
-//////////////////////////
-
-export const completeCompanyProfile = async (companyId, data) => {
-
-  const updated = await prisma.company.update({
-    where: { id: companyId },
-    data: {
-      ...data,
-      isProfileCompleted: true,   // ✅ make sure field exists in schema
-      status: "PENDING_APPROVAL",
-    },
-  });
-
-  return updated;
-};
-
 export const updateCompanyProfile = async (companyId, data) => {
   const updateData = {
     email: data.email || undefined,

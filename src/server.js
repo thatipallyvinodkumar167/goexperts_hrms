@@ -19,6 +19,7 @@ import onboardingRoutes from "./routes/onboardingRoutes.js";
 import masterRoutes from "./routes/masterRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
+import globalLeaveRoutes from "./routes/globalLeaveRoutes.js";
 import { loadFaceApiModels } from "./config/faceApi.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,6 +45,7 @@ app.use("/api/subscription", subscriptionRoutes);
 app.use("/api/invite", inviteRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/master", masterRoutes);
+app.use("/api/master/leaves", globalLeaveRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/leaves", leaveRoutes);
 
