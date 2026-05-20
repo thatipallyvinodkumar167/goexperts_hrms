@@ -519,20 +519,29 @@ export const saveComplianceAndFinalizeService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
 
+    // Validate UAN number format if provided
+    if (data.uanNumber) {
+        const uanRegex = /^1\d{11}$/;
+        if (!uanRegex.test(data.uanNumber)) {
+            throw new Error("Invalid UAN number format. It must be exactly 12 digits starting with '1'.");
+        }
+    }
+
     await prisma.employeeCompliance.upsert({
         where: { employeeId: employee.id },
         update: {
-            uanNumber: data.uanNumber,
-            pfNumber: data.pfNumber,
-            esiNumber: data.esiNumber
+            uanNumber: data.uanNumber || null,
+            pfNumber: data.pfNumber || null,
+            esiNumber: data.esiNumber || null
         },
         create: {
             employeeId: employee.id,
-            uanNumber: data.uanNumber,
-            pfNumber: data.pfNumber,
-            esiNumber: data.esiNumber
+            uanNumber: data.uanNumber || null,
+            pfNumber: data.pfNumber || null,
+            esiNumber: data.esiNumber || null
         }
     });
+
 
     // Finalize onboarding
     await prisma.employee.update({
@@ -622,9 +631,12 @@ export const finalizeEmployeeJoiningService = async ({
         include: { 
             user: true,
             company: true,
-            designation: true
+            designation: true,
+            experiences: true,
+            compliance: true
         }
     });
+
 
     if (!employee) throw Error("Employee not found");
 
@@ -651,7 +663,16 @@ export const finalizeEmployeeJoiningService = async ({
             }
         });
 
-        // 2. Map Salary Structure (Industry Standard Calculation)
+        // 2. Map Salary Structure (Industry Standard Calculation with Dynamic PF Rules)
+        const companyCompliance = await tx.companyCompliance.findUnique({
+            where: { companyId: employee.companyId }
+        });
+        const pfEnabled = companyCompliance?.pfEnabled || false;
+
+        const hasPreviousPf = !!(employee.compliance?.uanNumber || employee.compliance?.pfNumber);
+        const isExperiencedWithPf = (employee.experiences.length > 0) && hasPreviousPf;
+        const pfActive = pfEnabled && isExperiencedWithPf;
+
         // Priority: salaryBreakdown object > plain salary number > offer letter auto-calc
         let finalSalary = salaryBreakdown;
 
@@ -661,14 +682,24 @@ export const finalizeEmployeeJoiningService = async ({
             const basic = gross * 0.5;
             const hra = gross * 0.2;
             const allowances = gross * 0.3;
+            
+            const pfEmployeeVal = pfActive ? (basic * 0.12) : 0;
+            const pfEmployerVal = pfActive ? (basic * 0.12) : 0;
+            const esiEmployeeVal = gross < 21000 ? (gross * 0.0075) : 0;
+            const esiEmployerVal = gross < 21000 ? (gross * 0.0325) : 0;
+            
+            const deductions = pfEmployeeVal + esiEmployeeVal;
+            const netSalary = gross - deductions;
+
             finalSalary = {
                 basic, hra, allowances,
-                bonus: 0, pfEmployee: basic * 0.12,
-                esiEmployee: gross < 21000 ? gross * 0.0075 : 0,
-                pfEmployer: basic * 0.12,
-                esiEmployer: gross < 21000 ? gross * 0.0325 : 0,
-                deductions: basic * 0.12 + (gross < 21000 ? gross * 0.0075 : 0),
-                netSalary: gross - (basic * 0.12 + (gross < 21000 ? gross * 0.0075 : 0))
+                bonus: 0,
+                pfEmployee: pfEmployeeVal,
+                esiEmployee: esiEmployeeVal,
+                pfEmployer: pfEmployerVal,
+                esiEmployer: esiEmployerVal,
+                deductions,
+                netSalary
             };
         }
 
@@ -695,10 +726,10 @@ export const finalizeEmployeeJoiningService = async ({
                     const allowances = gross - (basic + hra); // Balance goes to allowances
 
                     // Statutory Components
-                    const pfEmployee = basic * (template.pfPercentage / 100);
+                    const pfEmployee = pfActive ? (basic * (template.pfPercentage / 100)) : 0;
                     const esiEmployee = gross < 21000 ? gross * (template.esiPercentage / 100) : 0;
                     
-                    const pfEmployer = basic * (template.employerPfPercentage / 100);
+                    const pfEmployer = pfActive ? (basic * (template.employerPfPercentage / 100)) : 0;
                     const esiEmployer = gross < 21000 ? gross * (template.employerEsiPercentage / 100) : 0;
 
                     const deductions = pfEmployee + esiEmployee;
@@ -731,6 +762,15 @@ export const finalizeEmployeeJoiningService = async ({
         }
 
         if (finalSalary) {
+            // Apply PF compliance filter to direct salary breakdowns if passed
+            if (!pfActive) {
+                const pfDeduction = finalSalary.pfEmployee || 0;
+                finalSalary.pfEmployee = 0;
+                finalSalary.pfEmployer = 0;
+                finalSalary.deductions = Math.max(0, (finalSalary.deductions || 0) - pfDeduction);
+                finalSalary.netSalary = (finalSalary.netSalary || 0) + pfDeduction;
+            }
+
             await tx.salaryStructure.upsert({
                 where: { employeeId },
                 create: { 
