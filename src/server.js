@@ -18,6 +18,7 @@ import inviteRoutes from "./routes/inviteRoutes.js";
 import onboardingRoutes from "./routes/onboardingRoutes.js";
 import masterRoutes from "./routes/masterRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
+import leaveRoutes from "./routes/leaveRoutes.js";
 import { loadFaceApiModels } from "./config/faceApi.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -44,6 +45,7 @@ app.use("/api/invite", inviteRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/master", masterRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/leaves", leaveRoutes);
 
 // ✅ Serve uploaded files (profile logos, etc.) as static
 app.use("/uploads", express.static(join(__dirname, "../uploads")));
