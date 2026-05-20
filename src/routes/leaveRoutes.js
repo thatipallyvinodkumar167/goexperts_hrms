@@ -10,20 +10,20 @@ const router = express.Router();
 router.use(authMiddleware, companyGuard);
 
 // ==========================================
-// HR / ADMIN ROUTES
+// HR / COMPANY ADMIN ROUTES
 // ==========================================
-router.post("/types", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.createLeaveType);
-router.get("/types", leaveController.getCompanyLeaveTypes);
-router.patch("/types/:id", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.updateLeaveType);
+router.post("/types", allowRoles("OWNER", "HR"), leaveController.createLeaveType);
+router.get("/types", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.getCompanyLeaveTypes);
+router.patch("/types/:id", allowRoles("OWNER", "HR"), leaveController.updateLeaveType);
 
-router.get("/company", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.getCompanyLeaveRequests);
-router.patch("/:id/status", allowRoles("OWNER", "HR", "SUPER_ADMIN"), leaveController.updateLeaveStatus);
+router.get("/company", allowRoles("OWNER", "HR"), leaveController.getCompanyLeaveRequests);
+router.patch("/:id/status", allowRoles("OWNER", "HR"), leaveController.updateLeaveStatus);
 
 // ==========================================
 // EMPLOYEE ROUTES
 // ==========================================
-router.get("/balances", leaveController.getLeaveBalances);
-router.post("/apply", leaveController.applyLeave);
-router.get("/me", leaveController.getMyLeaveHistory);
+router.get("/balances", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.getLeaveBalances);
+router.post("/apply", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.applyLeave);
+router.get("/me", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.getMyLeaveHistory);
 
 export default router;
