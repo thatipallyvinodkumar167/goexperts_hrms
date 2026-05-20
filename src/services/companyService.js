@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { hashPassword } from "../utils/hashPassword.js";
 import { assignTrialSubscription } from "./subscriptionService.js";
 import { seedCompanyMastersFromTemplate } from "./masterSeedService.js";
+import { seedCompanyLeaveTypes } from "./leaveService.js";
 
 // ✅ NEW IMPORTS (ADDED)
 import { sendEmail } from "../utils/sendEmail.js";
@@ -352,6 +353,9 @@ export const activateCompany = async (companyId) => {
   if (company.industryTypeId) {
     await seedCompanyMastersFromTemplate(companyId, company.industryTypeId);
   }
+
+  // ✅ AUTO-SEED LEAVE TYPES
+  await seedCompanyLeaveTypes(companyId);
 
   return prisma.company.update({
     where: { id: companyId },

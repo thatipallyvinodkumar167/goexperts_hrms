@@ -1,6 +1,23 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
+export const seedCompanyLeaveTypes = async (companyId) => {
+    const defaultLeaves = [
+        { name: "Sick Leave", maxDays: 12, companyId },
+        { name: "Casual Leave", maxDays: 8, companyId },
+        { name: "Earned Leave", maxDays: 18, companyId },
+        { name: "Maternity Leave", maxDays: 182, companyId },
+        { name: "Paternity Leave", maxDays: 7, companyId },
+        { name: "Compensatory Off", maxDays: 6, companyId }
+    ];
+
+    // Auto-seed the 6 standard industry leave types
+    await prisma.leaveType.createMany({
+        data: defaultLeaves,
+        skipDuplicates: true
+    });
+};
+
 // ==========================================
 // 1. LEAVE TYPE MANAGEMENT (HR/ADMIN)
 // ==========================================
