@@ -98,21 +98,27 @@ export const loginUser = async ({ email, password } = {}) => {
     data: { lastLoginAt: new Date() },
   });
 
+  const responseUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    // 💡 SMART FALLBACK: If OWNER has no personal logo, use the Company Logo!
+    profileLogo: user.profileLogo || (user.role === "OWNER" ? user.company?.companyLogo : null),
+    companyId: user.companyId,
+    // Pass these to the frontend so it knows which screen to show!
+    isProfileCompleted: user.company ? user.company.isProfileCompleted : true, 
+    companyStatus: user.company ? user.company.status : "ACTIVE"
+  };
+
+  // Only include employee onboarding fields if the user is an employee or HR
+  if (user.role === "EMPLOYEE" || user.role === "HR") {
+    responseUser.onboardingStep = user.employee ? user.employee.onboardingStep : 1;
+    responseUser.onboardingCompleted = user.employee ? user.employee.onboardingCompleted : false;
+  }
+
   return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      // 💡 SMART FALLBACK: If OWNER has no personal logo, use the Company Logo!
-      profileLogo: user.profileLogo || (user.role === "OWNER" ? user.company?.companyLogo : null),
-      companyId: user.companyId,
-      // Pass these to the frontend so it knows which screen to show!
-      isProfileCompleted: user.company ? user.company.isProfileCompleted : true, 
-      onboardingStep: user.employee ? user.employee.onboardingStep : null,
-      onboardingCompleted: user.employee ? user.employee.onboardingCompleted : null,
-      companyStatus: user.company ? user.company.status : "ACTIVE"
-    },
+    user: responseUser,
     token: generateToken(user),
   };
 };
