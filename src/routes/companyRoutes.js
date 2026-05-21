@@ -12,7 +12,11 @@ import {
   removeCompany,
   uploadCompanyDocumentsController,
   getCompanyProfileController,
-  uploadCompanyLogoController
+  uploadCompanyLogoController,
+  updateBasicSettingsController,
+  updateHrSettingsController,
+  updatePayrollSettingsController,
+  updateComplianceSettingsController
 } from "../controller/companyController.js";
 const router = express.Router();
 
@@ -78,6 +82,38 @@ router.post(
     { name: "tanProof", maxCount: 1 },
   ]),
   uploadCompanyDocumentsController
+);
+
+// ──────────────────────────────────────────────
+// CATEGORY-WISE SETTINGS (Post-Onboarding)
+// ──────────────────────────────────────────────
+router.put(
+  "/settings/basic",
+  authMiddleware,
+  allowRoles("OWNER", "HR"),
+  uploadCompanyLogo.single("logo"),
+  updateBasicSettingsController
+);
+
+router.put(
+  "/settings/hr",
+  authMiddleware,
+  allowRoles("OWNER", "HR"),
+  updateHrSettingsController
+);
+
+router.put(
+  "/settings/payroll",
+  authMiddleware,
+  allowRoles("OWNER", "HR"),
+  updatePayrollSettingsController
+);
+
+router.put(
+  "/settings/compliance",
+  authMiddleware,
+  allowRoles("OWNER", "HR"),
+  updateComplianceSettingsController
 );
 
 

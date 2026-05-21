@@ -317,6 +317,149 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
   });
 };
 
+// ──────────────────────────────────────────────
+// CATEGORY-WISE SETTINGS UPDATES
+// ──────────────────────────────────────────────
+
+export const updateBasicSettings = async (companyId, data) => {
+  const updateData = {
+    // Exclude email and domain as per user request
+    ownerName: data.ownerName || undefined,
+    ownerEmail: data.ownerEmail || undefined,
+    legalName: data.legalName || undefined,
+    phone: data.phone || undefined,
+    website: data.website || undefined,
+    companyLogo: data.companyLogo || undefined,
+    linkedinUrl: data.linkedinUrl || undefined,
+    companySize: data.companySize || undefined,
+    foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
+    latitude: data.latitude ? parseFloat(data.latitude) : undefined,
+    longitude: data.longitude ? parseFloat(data.longitude) : undefined,
+    
+    address: (data.addressLine1 || data.city || data.state || data.country || data.pincode) ? {
+      upsert: {
+        create: {
+          addressLine1: data.addressLine1 || "",
+          addressLine2: data.addressLine2 || null,
+          city: data.city || "",
+          state: data.state || "",
+          country: data.country || "",
+          pincode: data.pincode || "",
+          landmark: data.landmark || null,
+        },
+        update: {
+          addressLine1: data.addressLine1 || undefined,
+          addressLine2: data.addressLine2 || undefined,
+          city: data.city || undefined,
+          state: data.state || undefined,
+          country: data.country || undefined,
+          pincode: data.pincode || undefined,
+          landmark: data.landmark || undefined,
+        }
+      }
+    } : undefined,
+  };
+
+  return prisma.company.update({
+    where: { id: companyId },
+    data: updateData,
+  });
+};
+
+export const updateHrSettings = async (companyId, data) => {
+  return prisma.company.update({
+    where: { id: companyId },
+    data: {
+      hrSetting: {
+        upsert: {
+          create: {
+            workingHours: data.workingHours || "9:00 AM - 6:00 PM",
+            workingDays: data.workingDays || "Monday - Friday",
+            probationPeriod: data.defaultProbationPeriod ? parseInt(data.defaultProbationPeriod) : null,
+            noticePeriod: data.defaultNoticePeriod ? parseInt(data.defaultNoticePeriod) : null,
+            leaveCycle: data.leaveCycle || "Jan-Dec",
+            workModel: data.workModel || "On-site",
+            shiftType: data.shiftType || "General",
+            companyPolicy: data.companyPolicy || null,
+            employeeTerms: data.employeeTerms || null,
+          },
+          update: {
+            workingHours: data.workingHours || undefined,
+            workingDays: data.workingDays || undefined,
+            probationPeriod: data.defaultProbationPeriod ? parseInt(data.defaultProbationPeriod) : undefined,
+            noticePeriod: data.defaultNoticePeriod ? parseInt(data.defaultNoticePeriod) : undefined,
+            leaveCycle: data.leaveCycle || undefined,
+            workModel: data.workModel || undefined,
+            shiftType: data.shiftType || undefined,
+            companyPolicy: data.companyPolicy || undefined,
+            employeeTerms: data.employeeTerms || undefined,
+          }
+        }
+      }
+    }
+  });
+};
+
+export const updatePayrollSettings = async (companyId, data) => {
+  return prisma.company.update({
+    where: { id: companyId },
+    data: {
+      payrollSetting: {
+        upsert: {
+          create: {
+            currency: data.currency || "INR",
+            salaryCycle: data.salaryCycle || "Monthly",
+            payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : 1,
+            payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : 31,
+          },
+          update: {
+            currency: data.currency || undefined,
+            salaryCycle: data.salaryCycle || undefined,
+            payrollStartDay: data.payrollStartDay ? Number(data.payrollStartDay) : undefined,
+            payrollEndDay: data.payrollEndDay ? Number(data.payrollEndDay) : undefined,
+          }
+        }
+      }
+    }
+  });
+};
+
+export const updateComplianceSettings = async (companyId, data) => {
+  return prisma.company.update({
+    where: { id: companyId },
+    data: {
+      compliance: {
+        upsert: {
+          create: {
+            gstNumber: data.gstNumber || null,
+            panNumber: data.panNumber || null,
+            tanNumber: data.tanNumber || null,
+            cinNumber: data.cinNumber || null,
+            pfEnabled: data.pfEnabled === "true" || data.pfEnabled === true,
+            pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : 12.0,
+            pfRegistrationNumber: data.pfRegistrationNumber || null,
+            esiEnabled: data.esiEnabled === "true" || data.esiEnabled === true,
+            esiRegistrationNumber: data.esiRegistrationNumber || null,
+            ptRegistrationNumber: data.ptRegistrationNumber || null,
+          },
+          update: {
+            gstNumber: data.gstNumber || undefined,
+            panNumber: data.panNumber || undefined,
+            tanNumber: data.tanNumber || undefined,
+            cinNumber: data.cinNumber || undefined,
+            pfEnabled: data.pfEnabled !== undefined ? (data.pfEnabled === "true" || data.pfEnabled === true) : undefined,
+            pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : undefined,
+            pfRegistrationNumber: data.pfRegistrationNumber || undefined,
+            esiEnabled: data.esiEnabled !== undefined ? (data.esiEnabled === "true" || data.esiEnabled === true) : undefined,
+            esiRegistrationNumber: data.esiRegistrationNumber || undefined,
+            ptRegistrationNumber: data.ptRegistrationNumber || undefined,
+          }
+        }
+      }
+    }
+  });
+};
+
 //////////////////////////
 // 4. ACTIVATE COMPANY
 //////////////////////////

@@ -6,6 +6,10 @@ import {
   getCompanyProfile,
   resendCompanyInvite,
   updateCompanyProfile,
+  updateBasicSettings,
+  updateHrSettings,
+  updatePayrollSettings,
+  updateComplianceSettings,
   deleteCompany
 } from "../services/companyService.js";
 import prisma from "../config/db.js";
@@ -101,6 +105,68 @@ export const updateCompanyProfileController = async (req, res) => {
       message: "Company profile updated successfully",
       isprofilecompleted: data.isProfileCompleted
     });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+// ──────────────────────────────────────────────
+// CATEGORY-WISE SETTINGS CONTROLLERS
+// ──────────────────────────────────────────────
+
+export const updateBasicSettingsController = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    if (!companyId) throw new Error("Company ID is required");
+
+    const logoFile = req.files?.logo?.[0];
+    const payload = {
+      ...req.body,
+      companyLogo: logoFile ? logoFile.path : undefined,
+    };
+
+    await updateBasicSettings(companyId, payload);
+
+    res.status(200).json({ success: true, message: "Basic settings updated successfully" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateHrSettingsController = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    if (!companyId) throw new Error("Company ID is required");
+
+    await updateHrSettings(companyId, req.body);
+
+    res.status(200).json({ success: true, message: "HR settings updated successfully" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updatePayrollSettingsController = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    if (!companyId) throw new Error("Company ID is required");
+
+    await updatePayrollSettings(companyId, req.body);
+
+    res.status(200).json({ success: true, message: "Payroll settings updated successfully" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateComplianceSettingsController = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    if (!companyId) throw new Error("Company ID is required");
+
+    await updateComplianceSettings(companyId, req.body);
+
+    res.status(200).json({ success: true, message: "Compliance settings updated successfully" });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
