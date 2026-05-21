@@ -94,7 +94,7 @@ export const updateCompanyProfileController = async (req, res) => {
       documents: [...(Array.isArray(req.body.documents) ? req.body.documents : []), ...documents],
     };
 
-    const data = await updateCompanyProfile(companyId, payload);
+    const data = await updateCompanyProfile(companyId, payload, req.user.role === "SUPER_ADMIN");
 
     res.status(200).json({
       success: true,

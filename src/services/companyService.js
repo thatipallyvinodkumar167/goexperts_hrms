@@ -181,7 +181,19 @@ export const setupCompanyAccount = async (token, password) => {
   return { message: "Account setup successful" };
 };
 
-export const updateCompanyProfile = async (companyId, data) => {
+export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false) => {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+  });
+
+  if (!company) {
+    throw new Error("Company not found");
+  }
+
+  if (!isSuperAdmin && company.isProfileCompleted) {
+    throw new Error("Onboarding is already completed");
+  }
+
   const updateData = {
     email: data.email || undefined,
     ownerName: data.ownerName || undefined,
