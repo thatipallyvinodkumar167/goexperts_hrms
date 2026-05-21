@@ -250,3 +250,321 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     workingHours
   };
 };
+
+/**
+ * Parses company working hours string (e.g., "9:00 AM - 6:00 PM") and returns shift start minutes from midnight.
+ */
+const getShiftStartMinutes = (workingHoursStr) => {
+  const match = (workingHoursStr || "9:00 AM").match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (match) {
+    let hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    const ampm = match[3].toUpperCase();
+    if (ampm === "PM" && hours !== 12) hours += 12;
+    if (ampm === "AM" && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  }
+  return 9 * 60; // default 9:00 AM (540 minutes)
+};
+
+/**
+ * Checks if a specific date is a weekend based on company working days setting.
+ */
+const isWeekend = (date, workingDaysStr) => {
+  const day = date.getDay(); // 0: Sunday, 6: Saturday
+  const cleanStr = (workingDaysStr || "Monday - Friday").toLowerCase();
+  
+  if (cleanStr.includes("monday - friday") || cleanStr.includes("mon-fri")) {
+    return day === 0 || day === 6; // Sunday and Saturday
+  }
+  if (cleanStr.includes("monday - saturday") || cleanStr.includes("mon-sat")) {
+    return day === 0; // Only Sunday
+  }
+  return day === 0 || day === 6; // Default Sat/Sun
+};
+
+/**
+ * Gets attendance history for a single employee (Monthly Summary + Daily Breakdown)
+ */
+export const getEmployeeAttendanceHistory = async (userId, month, year) => {
+  const employee = await prisma.employee.findUnique({
+    where: { userId },
+    include: {
+      company: {
+        include: { hrSetting: true }
+      }
+    }
+  });
+
+  if (!employee) throw new Error("Employee profile details missing.");
+
+  const startOfMonth = new Date(year, month - 1, 1);
+  const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+  // Fetch actual attendance records
+  const attendanceRecords = await prisma.attendance.findMany({
+    where: {
+      employeeId: employee.id,
+      date: {
+        gte: startOfMonth,
+        lte: endOfMonth
+      }
+    },
+    orderBy: { date: 'asc' }
+  });
+
+  // Fetch approved leaves
+  const approvedLeaves = await prisma.leave.findMany({
+    where: {
+      employeeId: employee.id,
+      status: 'APPROVED',
+      OR: [
+        {
+          fromDate: { lte: endOfMonth },
+          toDate: { gte: startOfMonth }
+        }
+      ]
+    }
+  });
+
+  const dailyRecords = [];
+  let totalPresent = 0;
+  let totalAbsent = 0;
+  let totalHalfDays = 0;
+  let totalLeaves = 0;
+  let totalWeekOffs = 0;
+  let totalLate = 0;
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const workingHoursSetting = employee.company?.hrSetting?.workingHours || "9:00 AM - 6:00 PM";
+  const workingDaysSetting = employee.company?.hrSetting?.workingDays || "Monday - Friday";
+  const shiftStartMinutes = getShiftStartMinutes(workingHoursSetting);
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const currentDate = new Date(year, month - 1, day);
+    const dateStr = currentDate.toISOString().split('T')[0];
+
+    // Find if there is an attendance record for this day
+    const record = attendanceRecords.find(r => {
+      const rDateStr = new Date(r.date).toISOString().split('T')[0];
+      return rDateStr === dateStr;
+    });
+
+    // Check if employee was on approved leave this day
+    const isOnLeave = approvedLeaves.some(l => {
+      const from = new Date(l.fromDate);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date(l.toDate);
+      to.setHours(23, 59, 59, 999);
+      return currentDate >= from && currentDate <= to;
+    });
+
+    const isWeekendDay = isWeekend(currentDate, workingDaysSetting);
+
+    let status = "ABSENT";
+    let checkIn = null;
+    let checkOut = null;
+    let workingHours = "0h 0m";
+    let isLateDay = false;
+
+    if (record) {
+      checkIn = record.checkIn;
+      checkOut = record.checkOut;
+      
+      // Calculate working hours dynamically
+      let durationMs = 0;
+      if (checkIn && checkOut) {
+        durationMs = new Date(checkOut) - new Date(checkIn);
+        const totalMinutes = Math.floor(durationMs / (1000 * 60));
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        workingHours = `${hours}h ${minutes}m`;
+      }
+
+      // Check if late check-in (grace period 15 mins)
+      if (checkIn) {
+        const checkInTime = new Date(checkIn);
+        const checkInMinutes = checkInTime.getHours() * 60 + checkInTime.getMinutes();
+        if (checkInMinutes > (shiftStartMinutes + 15)) {
+          isLateDay = true;
+          totalLate++;
+        }
+      }
+
+      // Determine Status
+      if (checkIn && checkOut && durationMs < 4.5 * 60 * 60 * 1000) {
+        status = "HALF_DAY";
+        totalHalfDays++;
+      } else {
+        status = "PRESENT";
+        totalPresent++;
+      }
+    } else {
+      // No attendance record
+      if (isOnLeave) {
+        status = "LEAVE";
+        totalLeaves++;
+      } else if (isWeekendDay) {
+        status = "WEEK_OFF";
+        totalWeekOffs++;
+      } else {
+        // If date is in the future, don't mark as absent yet
+        if (currentDate > today) {
+          status = "FUTURE";
+        } else {
+          status = "ABSENT";
+          totalAbsent++;
+        }
+      }
+    }
+
+    dailyRecords.push({
+      date: dateStr,
+      dayOfWeek: currentDate.toLocaleDateString('en-US', { weekday: 'long' }),
+      status,
+      checkIn,
+      checkOut,
+      workingHours,
+      isLate: isLateDay
+    });
+  }
+
+  return {
+    summary: {
+      month,
+      year,
+      totalWorkingDays: daysInMonth - totalWeekOffs,
+      present: totalPresent,
+      absent: totalAbsent,
+      halfDays: totalHalfDays,
+      leaves: totalLeaves,
+      weekOffs: totalWeekOffs,
+      late: totalLate
+    },
+    history: dailyRecords
+  };
+};
+
+/**
+ * Gets daily company-wide attendance log for HR / Admin
+ */
+export const getCompanyAttendanceHistory = async (companyId, dateStr) => {
+  const targetDate = dateStr ? new Date(dateStr) : new Date();
+  const startOfDay = new Date(targetDate);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(targetDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Fetch all active employees
+  const employees = await prisma.employee.findMany({
+    where: {
+      companyId,
+      status: "ACTIVE"
+    },
+    include: {
+      user: true
+    }
+  });
+
+  // Fetch attendance records for today
+  const attendanceRecords = await prisma.attendance.findMany({
+    where: {
+      employee: { companyId },
+      date: {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    }
+  });
+
+  // Fetch approved leaves overlapping today
+  const approvedLeaves = await prisma.leave.findMany({
+    where: {
+      employee: { companyId },
+      status: 'APPROVED',
+      fromDate: { lte: endOfDay },
+      toDate: { gte: startOfDay }
+    }
+  });
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    include: { hrSetting: true }
+  });
+
+  const workingDaysSetting = company?.hrSetting?.workingDays || "Monday - Friday";
+  const isWeekendDay = isWeekend(targetDate, workingDaysSetting);
+
+  let presentCount = 0;
+  let absentCount = 0;
+  let leaveCount = 0;
+  let halfDayCount = 0;
+
+  const records = employees.map(emp => {
+    const record = attendanceRecords.find(r => r.employeeId === emp.id);
+    const leave = approvedLeaves.find(l => l.employeeId === emp.id);
+
+    let status = "ABSENT";
+    let checkIn = null;
+    let checkOut = null;
+    let workingHours = "0h 0m";
+
+    if (record) {
+      checkIn = record.checkIn;
+      checkOut = record.checkOut;
+
+      let durationMs = 0;
+      if (checkIn && checkOut) {
+        durationMs = new Date(checkOut) - new Date(checkIn);
+        const totalMinutes = Math.floor(durationMs / (1000 * 60));
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        workingHours = `${hours}h ${minutes}m`;
+      }
+
+      if (checkIn && checkOut && durationMs < 4.5 * 60 * 60 * 1000) {
+        status = "HALF_DAY";
+        halfDayCount++;
+      } else {
+        status = "PRESENT";
+        presentCount++;
+      }
+    } else if (leave) {
+      status = "LEAVE";
+      leaveCount++;
+    } else if (isWeekendDay) {
+      status = "WEEK_OFF";
+    } else {
+      status = "ABSENT";
+      absentCount++;
+    }
+
+    return {
+      employeeId: emp.id,
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      email: emp.user?.email || "",
+      designation: emp.designation,
+      status,
+      checkIn,
+      checkOut,
+      workingHours
+    };
+  });
+
+  return {
+    date: targetDate.toISOString().split('T')[0],
+    summary: {
+      totalEmployees: employees.length,
+      present: presentCount,
+      absent: absentCount,
+      onLeave: leaveCount,
+      halfDays: halfDayCount,
+      isWeekend: isWeekendDay
+    },
+    records
+  };
+};
