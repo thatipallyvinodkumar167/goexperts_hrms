@@ -81,8 +81,8 @@ router.post(
 );
 
 
-// // SUPER ADMIN → approve/activate company
-// router.post("/activate/:id", authMiddleware, allowRoles("SUPER_ADMIN"), activateCompanyController);
+// SUPER ADMIN → approve/activate company
+router.post("/activate/:id", authMiddleware, allowRoles("SUPER_ADMIN"), activateCompanyController);
 
 // SUPER ADMIN → resend invitation
 router.post("/resend-invite/:id", authMiddleware, allowRoles("SUPER_ADMIN"), resendInvitation);
