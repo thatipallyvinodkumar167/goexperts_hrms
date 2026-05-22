@@ -139,6 +139,7 @@ export const saveBasicInfoService = async (userId, data) => {
 
     let employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee record missing. Please contact HR.");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
     
     // Update the existing employee record
     // Update both the existing employee record and the user record for visual consistency
@@ -185,6 +186,7 @@ export const saveBasicInfoService = async (userId, data) => {
 export const saveContactInfoService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     await prisma.employeePersonal.upsert({
         where: { employeeId: employee.id },
@@ -225,6 +227,7 @@ export const saveContactInfoService = async (userId, data) => {
 export const saveEmergencyContactService = async (userId, dataArray) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     // Clear existing to avoid duplicates on re-submission
     await prisma.employeeEmergencyContact.deleteMany({ where: { employeeId: employee.id } });
@@ -252,6 +255,7 @@ export const saveEmergencyContactService = async (userId, dataArray) => {
 export const saveEducationService = async (userId, dataArray) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     await prisma.employeeEducation.deleteMany({ where: { employeeId: employee.id } });
 
@@ -281,6 +285,7 @@ export const saveEducationService = async (userId, dataArray) => {
 export const addExperienceService = async (userId, experienceArray) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw new Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     await prisma.employeeExperience.deleteMany({ where: { employeeId: employee.id } });
 
@@ -312,6 +317,7 @@ export const addExperienceService = async (userId, experienceArray) => {
 export const saveSkillsService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     await prisma.employeeSkill.upsert({
         where: { employeeId: employee.id },
@@ -400,6 +406,7 @@ export const uploadEmployeeDocumentsService = async (userId, files) => {
     });
 
     if (!employee) throw new Error("Employee profile not found. Complete profile first.");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     const documents = [];
 
@@ -438,6 +445,7 @@ export const uploadEmployeeDocumentsService = async (userId, files) => {
 export const saveBankDetailsService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     if (data.accountNumber !== data.confirmAccountNumber) {
         throw Error("Account numbers do not match");
@@ -476,6 +484,7 @@ export const saveBankDetailsService = async (userId, data) => {
 export const saveNomineeService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     await prisma.employeeNominee.upsert({
         where: { employeeId: employee.id },
@@ -518,6 +527,7 @@ export const saveNomineeService = async (userId, data) => {
 export const saveComplianceAndFinalizeService = async (userId, data) => {
     const employee = await prisma.employee.findUnique({ where: { userId } });
     if (!employee) throw Error("Employee profile not found");
+    if (employee.onboardingCompleted) throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
 
     // Validate UAN number format if provided
     if (data.uanNumber) {
@@ -974,6 +984,11 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
         include: { user: true, company: true }
     });
     if (!employee) throw Error("Employee profile not found");
+
+    // 🚫 GUARD: Prevent duplicate onboarding submissions
+    if (employee.onboardingCompleted) {
+        throw Error("Onboarding has already been completed. You cannot submit onboarding again.");
+    }
 
     // 🏆 Industry Level Polish: Smart Validation
     // 1. Legal Declaration Check
