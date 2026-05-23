@@ -53,6 +53,9 @@ export const loadFaceApiModels = async () => {
     const filesToDownload = [
       'tiny_face_detector_model-weights_manifest.json',
       'tiny_face_detector_model-shard1',
+      'ssd_mobilenetv1_model-weights_manifest.json',
+      'ssd_mobilenetv1_model-shard1',
+      'ssd_mobilenetv1_model-shard2',
       'face_landmark_68_model-weights_manifest.json',
       'face_landmark_68_model-shard1',
       'face_recognition_model-weights_manifest.json',
@@ -74,6 +77,7 @@ export const loadFaceApiModels = async () => {
 
     // Load optimized face-api neural networks
     await faceapi.nets.tinyFaceDetector.loadFromDisk(modelsPath);
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelsPath);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(modelsPath);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(modelsPath);
 

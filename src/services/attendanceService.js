@@ -46,7 +46,7 @@ const verifyFace = async (livePhotoInput, masterImageUrl) => {
     const masterImg = await loadImage(masterImageUrl);
 
     // 3. Extract face landmarks and descriptors using the loaded models
-    const detectorOptions = new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 });
+    const detectorOptions = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 });
     
     const liveDetection = await faceapi.detectSingleFace(liveImg, detectorOptions)
       .withFaceLandmarks()
