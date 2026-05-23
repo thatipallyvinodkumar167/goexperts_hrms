@@ -115,7 +115,8 @@ const attendanceStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: "hrms/attendance_selfies",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    // Accept common mobile/browser capture formats (including iOS HEIC/HEIF)
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "heic", "heif", "avif"],
     transformation: [{ width: 600, height: 600, crop: "limit" }],
   },
 });
@@ -124,4 +125,3 @@ export const uploadAttendanceSelfie = multer({
   storage: attendanceStorage,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
-
