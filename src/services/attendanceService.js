@@ -28,14 +28,21 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
  * Compares a live base64 selfie with the master Cloudinary profile image URL
  * using Euclidean Distance calculation between facial landmarks.
  */
-const verifyFace = async (liveBase64, masterImageUrl) => {
+const verifyFace = async (livePhotoInput, masterImageUrl) => {
   try {
-    // 1. Convert base64 data to image buffer
-    const base64Data = liveBase64.replace(/^data:image\/\w+;base64,/, "");
-    const imgBuffer = Buffer.from(base64Data, 'base64');
+    // 1. Load live image — supports both URLs (from Cloudinary upload) and base64 data URIs
+    let liveImg;
+    if (livePhotoInput.startsWith("http://") || livePhotoInput.startsWith("https://")) {
+      // Cloudinary URL (multer uploaded the file) — load directly
+      liveImg = await loadImage(livePhotoInput);
+    } else {
+      // Base64 data URI (sent via JSON body) — decode to buffer first
+      const base64Data = livePhotoInput.replace(/^data:image\/\w+;base64,/, "");
+      const imgBuffer = Buffer.from(base64Data, 'base64');
+      liveImg = await loadImage(imgBuffer);
+    }
 
-    // 2. Load images into Node Canvas instances
-    const liveImg = await loadImage(imgBuffer);
+    // 2. Load master image from Cloudinary URL
     const masterImg = await loadImage(masterImageUrl);
 
     // 3. Extract face landmarks and descriptors using the loaded models
