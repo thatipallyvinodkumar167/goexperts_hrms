@@ -58,7 +58,7 @@ const verifyFace = async (livePhotoInput, masterImageUrl) => {
       throw new Error("Facial Recognition failed: No face detected in the live camera check.");
     }
     if (!masterDetection) {
-      throw new Error("Master Verification failed: Official onboarding photo has no readable face. Contact HR.");
+      throw new Error("Face is not matching try again");
     }
 
     // 4. Compute Euclidean Distance
