@@ -10,6 +10,7 @@ router.post("/send", authMiddleware, allowRoles("SUPER_ADMIN"), createNotificati
 
 router.post("/company", authMiddleware, getCompanyNotifications);
 
+
 router.put("/read/:id", authMiddleware, markAsRead);
 
 export default router;

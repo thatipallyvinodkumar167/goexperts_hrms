@@ -3,23 +3,53 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { companyGuard } from "../middleware/companyGuard.js";
 import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee } from "../controller/employeeController.js";
-import { updateSelf } from "../controllers/employeeUpdateController.js";
+import { getSelf, updateSelf } from "../controller/employeeUpdateController.js";
 import { uploadProfileImage } from "../config/multer.js";
 
 const router = express.Router();
 
 
-//get emp
+import {
+  createCorrectionRequest,
+  listPendingRequests,
+  decideCorrectionRequest,
+} from "../controller/correctionController.js";
+
+// ── Self routes (must be BEFORE /:id so Express doesn't treat "self" as an id) ──
+//get own profile
+router.get("/self", authMiddleware, getSelf);
+// update own profile (after HR approval + optional profile photo upload)
+router.patch("/self", authMiddleware, uploadProfileImage.single("profileLogo"), updateSelf);
+
+//get all emps
 router.get("/", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getAllEmployees);
 
 //get emp by id
 router.get("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getEmployeeById);
 
 //update emp
-// Existing update endpoint (admin) remains for full employee updates
 router.put("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, updateEmployee);
-// New self‑service endpoint (employee updates limited fields + profile photo)
-router.patch("/self", authMiddleware, uploadProfileImage.single("profileLogo"), updateSelf);
+
+// Correction Request flow
+router.post(
+  "/:id/correction-request",
+  authMiddleware,
+  createCorrectionRequest
+); // employee creates request
+
+router.get(
+  "/correction-requests",
+  authMiddleware,
+  allowRoles("HR", "OWNER"),
+  listPendingRequests
+); // HR views pending
+
+router.patch(
+  "/correction-request/:requestId",
+  authMiddleware,
+  allowRoles("HR", "OWNER"),
+  decideCorrectionRequest
+); // HR approves / rejects
 
 //delete emp
 router.delete("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, deleteEmployee);

@@ -315,11 +315,33 @@ model Employee {
   offerLetter         OfferLetter?
   payrolls            Payroll[]
   salaryStructure     SalaryStructure?
+  correctionRequests  CorrectionRequest[]
+  approvedCorrections CorrectionRequest[]        @relation("CorrectionApprovedBy")
 
   @@index([companyId], map: "Employee_companyId_fkey")
   @@index([departmentId], map: "Employee_departmentId_fkey")
   @@index([designationId], map: "Employee_designationId_fkey")
   @@index([managerId], map: "Employee_managerId_fkey")
+}
+
+model CorrectionRequest {
+  id          String           @id @default(uuid())
+  employeeId  String
+  requestedBy String
+  reason      String
+  fields      Json
+  attachments Json?
+  status      CorrectionStatus @default(PENDING)
+  hrNote      String?          @db.LongText
+  approvedBy  String?
+  approvedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  employee    Employee         @relation(fields: [employeeId], references: [id])
+  approver    Employee?        @relation("CorrectionApprovedBy", fields: [approvedBy], references: [id])
+
+  @@index([employeeId, status])
+  @@index([approvedBy], map: "CorrectionRequest_approvedBy_fkey")
 }
 
 model EmployeePersonal {
@@ -820,6 +842,13 @@ enum NotificationType {
   MAINTENANCE
   COMPLIANCE
   FEATURE
+}
+
+enum CorrectionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
 }
 
 model GlobalLeaveType {

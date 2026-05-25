@@ -100,6 +100,8 @@ app.use((err, req, res, next) => {
 });
 
 
+import { initSocket } from "./socket.js";
+
 const startServer = async () => {
   try {
     // Load pre-trained models
@@ -109,9 +111,12 @@ const startServer = async () => {
     inviteReminderCron();
 
     console.log(`🚀 Starting server on port ${PORT}...`);
-    app.listen(PORT, "0.0.0.0", () => {
+    const httpServer = app.listen(PORT, "0.0.0.0", () => {
       console.log(`✅ Server is successfully running on port ${PORT}`);
     });
+
+    // Initialise socket.io
+    initSocket(httpServer);
   } catch (error) {
     console.error("Failed to start server:", error.message);
     process.exit(1);
