@@ -64,7 +64,7 @@ export const getSelf = async (req, res) => {
     }
 
     const formattedEmployee = {
-      employeeId: employee.id,
+      id: employee.id,
       companyId: employee.companyId,
       firstName: employee.firstName,
       lastName: employee.lastName,
