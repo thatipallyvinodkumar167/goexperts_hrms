@@ -54,7 +54,117 @@ export const getSelf = async (req, res) => {
       employee.lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
     }
 
-    res.status(200).json({ success: true, data: employee });
+    const formattedEmployee = {
+      id: employee.id,
+      companyId: employee.companyId,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      profilePhoto: employee.profilePhoto,
+      onboardingStep: employee.onboardingStep,
+      onboardingCompleted: employee.onboardingCompleted,
+      status: employee.status,
+      user: employee.user ? {
+        id: employee.user.id,
+        name: employee.user.name,
+        email: employee.user.email,
+        role: employee.user.role,
+        status: employee.user.status,
+        lastLoginAt: employee.user.lastLoginAt,
+      } : null,
+      personal: employee.personal ? {
+        personalEmail: employee.personal.personalEmail,
+        phone: employee.personal.phone,
+        alternatePhone: employee.personal.alternatePhone,
+        addressLine1: employee.personal.addressLine1,
+        addressLine2: employee.personal.addressLine2,
+        city: employee.personal.city,
+        state: employee.personal.state,
+        country: employee.personal.country,
+        pincode: employee.personal.pincode,
+        gender: employee.personal.gender,
+        dob: employee.personal.dob,
+        maritalStatus: employee.personal.maritalStatus,
+        bloodGroup: employee.personal.bloodGroup,
+        nationality: employee.personal.nationality,
+      } : null,
+      emergencyContacts: (employee.emergencyContacts || []).map(contact => ({
+        contactPersonName: contact.contactPersonName,
+        relationship: contact.relationship,
+        contactNumber: contact.contactNumber,
+        alternateContact: contact.alternateContact,
+        address: contact.address,
+      })),
+      educations: (employee.educations || []).map(edu => ({
+        degree: edu.degree,
+        specialization: edu.specialization,
+        college: edu.college,
+        university: edu.university,
+        percentage: edu.percentage,
+        startYear: edu.startYear,
+        endYear: edu.endYear,
+      })),
+      experiences: (employee.experiences || []).map(exp => ({
+        companyName: exp.companyName,
+        role: exp.role,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        totalYears: exp.totalYears,
+      })),
+      skills: employee.skills ? {
+        primarySkills: employee.skills.primarySkills,
+        secondarySkills: employee.skills.secondarySkills,
+        certifications: employee.skills.certifications,
+        languagesKnown: employee.skills.languagesKnown,
+        linkedinUrl: employee.skills.linkedinUrl,
+        githubUrl: employee.skills.githubUrl,
+        portfolioUrl: employee.skills.portfolioUrl,
+      } : null,
+      bankDetails: employee.bankDetails ? {
+        bankName: employee.bankDetails.bankName,
+        accountHolderName: employee.bankDetails.accountHolderName,
+        accountNumber: employee.bankDetails.accountNumber,
+        ifscCode: employee.bankDetails.ifscCode,
+        branchName: employee.bankDetails.branchName,
+        upiId: employee.bankDetails.upiId,
+      } : null,
+      nominee: employee.nominee ? {
+        nomineeName: employee.nominee.nomineeName,
+        relationship: employee.nominee.relationship,
+        dob: employee.nominee.dob,
+        gender: employee.nominee.gender,
+        phone: employee.nominee.phone,
+        email: employee.nominee.email,
+        aadhaarNumber: employee.nominee.aadhaarNumber,
+        panNumber: employee.nominee.panNumber,
+        nomineePercentage: employee.nominee.nomineePercentage,
+        address: employee.nominee.address,
+      } : null,
+      compliance: employee.compliance ? {
+        pfNumber: employee.compliance.pfNumber,
+        esiNumber: employee.compliance.esiNumber,
+        uanNumber: employee.compliance.uanNumber,
+      } : null,
+      documents: (employee.documents || []).map(doc => ({
+        name: doc.name,
+        fileUrl: doc.fileUrl,
+        status: doc.status,
+      })),
+      department: employee.department ? {
+        name: employee.department.name,
+      } : null,
+      designation: employee.designation ? {
+        title: employee.designation.title,
+        level: employee.designation.level,
+      } : null,
+      correctionRequests: (employee.correctionRequests || []).map(cr => ({
+        id: cr.id,
+        reason: cr.reason,
+        status: cr.status,
+        createdAt: cr.createdAt,
+      })),
+    };
+
+    res.status(200).json({ success: true, data: formattedEmployee });
   } catch (error) {
     console.error("getSelf error:", error);
     res.status(500).json({ success: false, message: error.message });
@@ -69,6 +179,7 @@ export const getSelf = async (req, res) => {
  */
 export const updateSelf = async (req, res) => {
   try {
+    const { id } = req.params; // Get Employee ID from path
     const userId = req.user.id;
 
     // If the body comes as multipart/form-data, the JSON fields
@@ -83,13 +194,21 @@ export const updateSelf = async (req, res) => {
       data.profilePhoto = req.file.path;
     }
 
-    // Get the employee record for this user
+    // Get the employee record by ID (UUID)
     const employee = await prisma.employee.findUnique({
-      where: { userId },
+      where: { id },
     });
 
     if (!employee) {
       return res.status(404).json({ success: false, message: "Employee not found." });
+    }
+
+    // Verify the logged-in user matches this employee profile
+    if (employee.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update this profile.",
+      });
     }
 
     // 1️⃣ Verify there is an APPROVED request for this employee
@@ -109,7 +228,7 @@ export const updateSelf = async (req, res) => {
     }
 
     // 2️⃣ Apply the self-service update
-    const result = await updateSelfService(userId, data);
+    const result = await updateSelfService(employee.id, data);
 
     // 3️⃣ Mark the request as COMPLETED
     await prisma.correctionRequest.update({

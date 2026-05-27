@@ -5,8 +5,8 @@ import prisma from "../config/db.js";
  * Allows updates to contact info, emergency contacts, address, etc.
  * Does NOT allow changes to payroll, compliance, or legal declarations.
  */
-export const updateSelfService = async (userId, data) => {
-  const employee = await prisma.employee.findUnique({ where: { userId } });
+export const updateSelfService = async (employeeId, data) => {
+  const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
   if (!employee) throw new Error("Employee profile not found");
 
   // Allowed top‑level fields for self‑service

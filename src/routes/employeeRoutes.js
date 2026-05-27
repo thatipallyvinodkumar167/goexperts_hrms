@@ -19,7 +19,7 @@ import {
 //get own profile
 router.get("/self", authMiddleware, getSelf);
 // update own profile (after HR approval + optional profile photo upload)
-router.patch("/self", authMiddleware, uploadProfileImage.single("profileLogo"), updateSelf);
+router.patch("/self/:id", authMiddleware, uploadProfileImage.single("profileLogo"), updateSelf);
 
 //get all emps
 router.get("/", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getAllEmployees);
