@@ -43,7 +43,6 @@ export const loginUser = async ({ email, password } = {}) => {
         email: superAdmin.email,
         role: superAdmin.role,
         profileLogo: superAdmin.profileLogo,
-        companyId: superAdmin.companyId, // will be null
       },
       token: generateToken(superAdmin),
     };
