@@ -113,6 +113,7 @@ export const loginUser = async ({ email, password } = {}) => {
 
   // Only include employee onboarding fields if the user is an employee or HR
   if (user.role === "EMPLOYEE" || user.role === "HR") {
+    delete responseUser.id; // Remove User ID to prevent confusion with employeeId
     responseUser.employeeId = user.employee ? user.employee.id : null;
     responseUser.onboardingStep = user.employee ? user.employee.onboardingStep : 1;
     responseUser.onboardingCompleted = user.employee ? user.employee.onboardingCompleted : false;
