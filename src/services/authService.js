@@ -39,6 +39,7 @@ export const loginUser = async ({ email, password } = {}) => {
     return {
       user: {
         id: superAdmin.id,
+        superAdminId: superAdmin.id,
         name: superAdmin.name,
         email: superAdmin.email,
         role: superAdmin.role,
@@ -110,6 +111,11 @@ export const loginUser = async ({ email, password } = {}) => {
     isProfileCompleted: user.company ? user.company.isProfileCompleted : true, 
     companyStatus: user.company ? user.company.status : "ACTIVE"
   };
+
+  // Explicit owner ID
+  if (user.role === "OWNER") {
+    responseUser.ownerId = user.id;
+  }
 
   // Only include employee onboarding fields if the user is an employee or HR
   if (user.role === "EMPLOYEE" || user.role === "HR") {
