@@ -17,7 +17,7 @@ import {
 
 // ── Self routes (must be BEFORE /:id so Express doesn't treat "self" as an id) ──
 //get own profile
-router.get("/self", authMiddleware, getSelf);
+router.get("/self/:id", authMiddleware, getSelf);
 // update own profile (after HR approval + optional profile photo upload)
 router.patch("/self/:id", authMiddleware, uploadProfileImage.single("profileLogo"), updateSelf);
 

@@ -7,10 +7,11 @@ import prisma from "../config/db.js";
  */
 export const getSelf = async (req, res) => {
   try {
+    const { id } = req.params; // Get Employee ID from path
     const userId = req.user.id;
 
     const employee = await prisma.employee.findUnique({
-      where: { userId },
+      where: { id },
       include: {
         user: {
           select: {
@@ -47,6 +48,14 @@ export const getSelf = async (req, res) => {
       return res.status(404).json({ success: false, message: "Employee profile not found." });
     }
 
+    // Verify the logged-in user matches this employee profile
+    if (employee.userId !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view this profile.",
+      });
+    }
+
     // Smart fallback: fix null names
     if (!employee.firstName && employee.user?.name) {
       const parts = employee.user.name.trim().split(/\s+/);
@@ -55,7 +64,7 @@ export const getSelf = async (req, res) => {
     }
 
     const formattedEmployee = {
-      id: employee.id,
+      employeeId: employee.id,
       companyId: employee.companyId,
       firstName: employee.firstName,
       lastName: employee.lastName,
