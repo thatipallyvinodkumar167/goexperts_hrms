@@ -121,7 +121,7 @@ export const updateSelfService = async (employeeId, data) => {
       }
     }
     return await tx.employee.findUnique({ where: { id: employee.id } });
-  });
+  }, { timeout: 20000 });
 
   return tx;
 };
