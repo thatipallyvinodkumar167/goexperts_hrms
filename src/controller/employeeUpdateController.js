@@ -220,7 +220,17 @@ export const updateSelf = async (req, res) => {
       });
     }
 
-    // 1️⃣ Verify there is an APPROVED request for this employee
+    // 1️⃣ Determine if request updates any restricted fields requiring HR approval
+    const restrictedKeys = ["bankDetails", "compliance", "nominee", "emergencyContacts", "educations", "experiences"];
+    const hasRestrictedKeys = Object.keys(data).some(key => restrictedKeys.includes(key));
+
+    if (!hasRestrictedKeys) {
+      // Direct personal edit - allowed directly without HR approval
+      const result = await updateSelfService(employee.id, data);
+      return res.status(200).json({ success: true, data: result, message: "Personal details updated successfully." });
+    }
+
+    // 2️⃣ Verify there is an APPROVED request for this employee since restricted keys are modified
     const approvedRequest = await prisma.correctionRequest.findFirst({
       where: {
         employeeId: employee.id,
@@ -232,14 +242,14 @@ export const updateSelf = async (req, res) => {
     if (!approvedRequest) {
       return res.status(403).json({
         success: false,
-        message: "No approved correction request – you cannot edit data.",
+        message: "No approved correction request – you cannot edit restricted data.",
       });
     }
 
-    // 2️⃣ Apply the self-service update
+    // 3️⃣ Apply the self-service update
     const result = await updateSelfService(employee.id, data);
 
-    // 3️⃣ Mark the request as COMPLETED
+    // 4️⃣ Mark the request as COMPLETED
     await prisma.correctionRequest.update({
       where: { id: approvedRequest.id },
       data: { status: "COMPLETED" },

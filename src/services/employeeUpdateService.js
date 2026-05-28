@@ -9,14 +9,6 @@ export const updateSelfService = async (employeeId, data) => {
   const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
   if (!employee) throw new Error("Employee profile not found");
 
-  // Allowed top‑level fields for self‑service
-  const allowed = [
-    "personal",
-    "contact",
-    "skills",
-    "profilePhoto"
-  ];
-
   // Prepare update operations for each allowed section if present in `data`
   const tx = await prisma.$transaction(async (tx) => {
     if (data.profilePhoto) {
@@ -54,6 +46,79 @@ export const updateSelfService = async (employeeId, data) => {
         update: data.skills,
         create: { employeeId: employee.id, ...data.skills }
       });
+    }
+    if (data.bankDetails) {
+      await tx.employeeBank.upsert({
+        where: { employeeId: employee.id },
+        update: data.bankDetails,
+        create: { employeeId: employee.id, ...data.bankDetails }
+      });
+    }
+    if (data.compliance) {
+      await tx.employeeCompliance.upsert({
+        where: { employeeId: employee.id },
+        update: data.compliance,
+        create: { employeeId: employee.id, ...data.compliance }
+      });
+    }
+    if (data.nominee) {
+      const nomineeData = { ...data.nominee };
+      if (nomineeData.dob) nomineeData.dob = new Date(nomineeData.dob);
+      await tx.employeeNominee.upsert({
+        where: { employeeId: employee.id },
+        update: nomineeData,
+        create: { employeeId: employee.id, ...nomineeData }
+      });
+    }
+    if (data.emergencyContacts) {
+      await tx.employeeEmergencyContact.deleteMany({ where: { employeeId: employee.id } });
+      if (Array.isArray(data.emergencyContacts) && data.emergencyContacts.length > 0) {
+        await tx.employeeEmergencyContact.createMany({
+          data: data.emergencyContacts.map(contact => ({
+            employeeId: employee.id,
+            contactPersonName: contact.contactPersonName,
+            relationship: contact.relationship,
+            contactNumber: contact.contactNumber,
+            alternateContact: contact.alternateContact,
+            address: contact.address
+          }))
+        });
+      }
+    }
+    if (data.educations) {
+      await tx.employeeEducation.deleteMany({ where: { employeeId: employee.id } });
+      if (Array.isArray(data.educations) && data.educations.length > 0) {
+        await tx.employeeEducation.createMany({
+          data: data.educations.map(edu => ({
+            employeeId: employee.id,
+            degree: edu.degree,
+            specialization: edu.specialization,
+            college: edu.college,
+            university: edu.university,
+            percentage: edu.percentage,
+            cgpa: edu.cgpa,
+            startYear: edu.startYear,
+            endYear: edu.endYear
+          }))
+        });
+      }
+    }
+    if (data.experiences) {
+      await tx.employeeExperience.deleteMany({ where: { employeeId: employee.id } });
+      if (Array.isArray(data.experiences) && data.experiences.length > 0) {
+        await tx.employeeExperience.createMany({
+          data: data.experiences.map(exp => ({
+            employeeId: employee.id,
+            companyName: exp.companyName,
+            role: exp.role || exp.designation,
+            startDate: exp.startDate ? new Date(exp.startDate) : null,
+            endDate: exp.endDate ? new Date(exp.endDate) : null,
+            totalYears: exp.totalYears || exp.totalExperience,
+            technologies: exp.technologies,
+            responsibilities: exp.responsibilities
+          }))
+        });
+      }
     }
     return await tx.employee.findUnique({ where: { id: employee.id } });
   });
