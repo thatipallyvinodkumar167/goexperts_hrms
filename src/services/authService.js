@@ -43,7 +43,7 @@ export const loginUser = async ({ email, password } = {}) => {
         email: superAdmin.email,
         role: superAdmin.role,
         profileLogo: superAdmin.profileLogo,
-        isProfileCompleted: true, // Super Admin profile is always complete
+        isProfileCompleted: true,
       },
       token: generateToken(superAdmin),
     };
