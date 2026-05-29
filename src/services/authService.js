@@ -43,7 +43,7 @@ export const loginUser = async ({ email, password } = {}) => {
         email: superAdmin.email,
         role: superAdmin.role,
         profileLogo: superAdmin.profileLogo,
-        isProfileCompleted: true, // Super Admin is always completed
+        isFullRegistered: true,
       },
       token: generateToken(superAdmin),
     };
@@ -109,7 +109,10 @@ export const loginUser = async ({ email, password } = {}) => {
     companyId: user.companyId,
     // Pass these to the frontend so it knows which screen to show!
     isProfileCompleted: user.company ? user.company.isProfileCompleted : true, 
-    companyStatus: user.company ? user.company.status : "ACTIVE"
+    companyStatus: user.company ? user.company.status : "ACTIVE",
+    isFullRegistered: user.role === "OWNER" 
+      ? (user.company ? user.company.isProfileCompleted : true)
+      : false // Default false, will be overridden below for HR/Employee
   };
 
   // Only include employee onboarding fields if the user is an employee or HR
@@ -117,6 +120,7 @@ export const loginUser = async ({ email, password } = {}) => {
     responseUser.id = user.employee ? user.employee.id : null; // Set Employee ID under 'id' key
     responseUser.onboardingStep = user.employee ? user.employee.onboardingStep : 1;
     responseUser.onboardingCompleted = user.employee ? user.employee.onboardingCompleted : false;
+    responseUser.isFullRegistered = user.employee ? user.employee.onboardingCompleted : false;
   }
 
   return {
