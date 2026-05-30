@@ -1207,6 +1207,9 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
         return await tx.employee.update({
             where: { id: employee.id },
             data: { 
+                firstName: data.personal?.firstName || undefined,
+                middleName: data.personal?.middleName || undefined,
+                lastName: data.personal?.lastName || undefined,
                 onboardingCompleted: true,
                 isDeclaredTrue: true,
                 status: "PENDING_APPROVAL"
