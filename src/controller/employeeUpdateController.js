@@ -69,7 +69,6 @@ export const getSelf = async (req, res) => {
       firstName: employee.firstName,
       lastName: employee.lastName,
       profilePhoto: employee.profilePhoto,
-      onboardingStep: employee.onboardingStep,
       onboardingCompleted: employee.onboardingCompleted,
       status: employee.status,
       user: employee.user ? {

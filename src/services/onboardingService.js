@@ -89,7 +89,6 @@ export const acceptInviteService = async ({token, password, name}) => {
                   designationId: finalDesigId,
                   joiningDate: new Date(),
                   employmentType: "FRESHER",
-                  onboardingStep: 1,
                   status: "INVITED"
               }
             });
@@ -150,8 +149,7 @@ export const saveBasicInfoService = async (userId, data) => {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 middleName: data.middleName,
-                profilePhoto: data.profilePhoto,
-                onboardingStep: Math.max(employee.onboardingStep, 2)
+                profilePhoto: data.profilePhoto
             }
         }),
         prisma.user.update({
@@ -215,10 +213,7 @@ export const saveContactInfoService = async (userId, data) => {
         }
     });
 
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: { onboardingStep: Math.max(employee.onboardingStep, 3) }
-    });
+
 
     return { message: "Contact information saved" };
 };
@@ -243,10 +238,7 @@ export const saveEmergencyContactService = async (userId, dataArray) => {
         }))
     });
 
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: { onboardingStep: Math.max(employee.onboardingStep, 4) }
-    });
+
 
     return { message: "Emergency contacts saved" };
 };
@@ -273,10 +265,7 @@ export const saveEducationService = async (userId, dataArray) => {
         }))
     });
 
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: { onboardingStep: Math.max(employee.onboardingStep, 5) }
-    });
+
 
     return { message: "Education details saved" };
 };
@@ -305,8 +294,7 @@ export const addExperienceService = async (userId, experienceArray) => {
     await prisma.employee.update({
         where: { id: employee.id },
         data: { 
-            employmentType: experienceArray.length > 0 ? "EXPERIENCED" : employee.employmentType,
-            onboardingStep: Math.max(employee.onboardingStep, 6)
+            employmentType: experienceArray.length > 0 ? "EXPERIENCED" : employee.employmentType
         }
     });
 
@@ -342,10 +330,7 @@ export const saveSkillsService = async (userId, data) => {
         }
     });
 
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: { onboardingStep: Math.max(employee.onboardingStep, 7) }
-    });
+
 
     return { message: "Skills saved" };
 };
@@ -433,10 +418,7 @@ export const uploadEmployeeDocumentsService = async (userId, files) => {
         });
     }
     
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: { onboardingStep: Math.max(employee.onboardingStep, 8) }
-    });
+
 
     return { message: "Documents uploaded successfully", documents };
 };
@@ -472,10 +454,7 @@ export const saveBankDetailsService = async (userId, data) => {
         }
     });
 
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: { onboardingStep: Math.max(employee.onboardingStep, 9) }
-    });
+
 
     return { message: "Bank details saved" };
 };
@@ -515,10 +494,7 @@ export const saveNomineeService = async (userId, data) => {
         }
     });
 
-    await prisma.employee.update({
-        where: { id: employee.id },
-        data: { onboardingStep: Math.max(employee.onboardingStep, 10) }
-    });
+
 
     return { message: "Nominee details saved" };
 };
@@ -558,7 +534,6 @@ export const saveComplianceAndFinalizeService = async (userId, data) => {
         where: { id: employee.id },
         data: { 
             onboardingCompleted: true,
-            onboardingStep: 10,
             status: "PENDING_APPROVAL" // Moves to HR verification
         }
     });
@@ -1234,7 +1209,6 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
             data: { 
                 onboardingCompleted: true,
                 isDeclaredTrue: true,
-                onboardingStep: 10,
                 status: "PENDING_APPROVAL"
             }
         });
