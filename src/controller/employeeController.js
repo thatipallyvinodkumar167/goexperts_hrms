@@ -48,8 +48,10 @@ export const getAllEmployees = async (req, res) => {
 
     const employees = await prisma.employee.findMany({
       where: {
+        deletedAt: null,
         user: {
           companyId,
+          deletedAt: null,
           ...(roleFilter ? { role: { in: roleFilter } } : {})
         }
       },
@@ -84,7 +86,7 @@ export const getEmployeeById = async (req, res) => {
     }
 
     const employee = await prisma.employee.findFirst({
-      where: { id, user: { companyId } },
+      where: { id, deletedAt: null, user: { companyId, deletedAt: null } },
       include: { user: true, personal: true, experience: true, department: true, designation: true },
     });
 
@@ -111,6 +113,169 @@ export const updateEmployee = async (req, res) => {
   res.status(501).json({ success: false, message: "Update employee not implemented yet" });
 };
 
+
+// Soft delete employee or HR
 export const deleteEmployee = async (req, res) => {
-  res.status(501).json({ success: false, message: "Delete employee not implemented yet" });
+  try {
+    const { id } = req.params;
+    const companyId = req.user.companyId;
+    const requesterRole = req.user.role;
+
+    if (!companyId) {
+      return res.status(400).json({ success: false, message: "Invalid company context" });
+    }
+
+    // Fetch the target employee and user details
+    const employee = await prisma.employee.findFirst({
+      where: { id, user: { companyId } },
+      include: { user: true }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Employee not found" });
+    }
+
+    // Prevent duplicate deletion
+    if (employee.deletedAt) {
+      return res.status(400).json({ success: false, message: "Employee is already soft-deleted" });
+    }
+
+    const targetRole = employee.user.role;
+
+    // Validate role constraints
+    if (requesterRole === "HR") {
+      // HR can only delete Employees
+      if (targetRole !== "EMPLOYEE") {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Forbidden: HR can only delete employee accounts, not other HRs or Owners" 
+        });
+      }
+    } else if (requesterRole !== "OWNER") {
+      return res.status(403).json({ success: false, message: "Forbidden: Unauthorized to delete accounts" });
+    }
+
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.employee.update({
+        where: { id: employee.id },
+        data: {
+          deletedAt: now,
+          status: "INACTIVE"
+        }
+      }),
+      prisma.user.update({
+        where: { id: employee.userId },
+        data: {
+          deletedAt: now,
+          status: "INACTIVE"
+        }
+      })
+    ]);
+
+    res.status(200).json({ success: true, message: `${targetRole} soft-deleted successfully` });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+
+// Get list of soft-deleted Employees/HRs
+export const getDeletedEmployeesList = async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    const requesterRole = req.user.role;
+
+    if (!companyId) {
+      return res.status(400).json({ success: false, message: "Invalid company context" });
+    }
+
+    // Role-based visibility
+    let roleFilter = undefined;
+    if (requesterRole === "HR") {
+      roleFilter = ["EMPLOYEE"];
+    } else if (requesterRole === "OWNER") {
+      roleFilter = ["EMPLOYEE", "HR"];
+    } else {
+      return res.status(403).json({ success: false, message: "Forbidden: Unauthorized to view deleted list" });
+    }
+
+    const deletedEmployees = await prisma.employee.findMany({
+      where: {
+        deletedAt: { not: null },
+        user: {
+          companyId,
+          role: { in: roleFilter }
+        }
+      },
+      include: { user: true, department: true, designation: true },
+      orderBy: { deletedAt: "desc" }
+    });
+
+    res.status(200).json({ success: true, data: deletedEmployees });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+
+// Restore a soft-deleted employee or HR
+export const restoreEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const companyId = req.user.companyId;
+    const requesterRole = req.user.role;
+
+    if (!companyId) {
+      return res.status(400).json({ success: false, message: "Invalid company context" });
+    }
+
+    // Fetch the target employee (must be currently deleted)
+    const employee = await prisma.employee.findFirst({
+      where: { id, user: { companyId }, deletedAt: { not: null } },
+      include: { user: true }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Deleted employee not found" });
+    }
+
+    const targetRole = employee.user.role;
+
+    // Validate role constraints
+    if (requesterRole === "HR") {
+      if (targetRole !== "EMPLOYEE") {
+        return res.status(403).json({ 
+          success: false, 
+          message: "Forbidden: HR can only restore employee accounts, not HRs" 
+        });
+      }
+    } else if (requesterRole !== "OWNER") {
+      return res.status(403).json({ success: false, message: "Forbidden: Unauthorized to restore accounts" });
+    }
+
+    // Determine the status to restore back to
+    const restoredStatus = employee.onboardingCompleted ? "ACTIVE" : "INVITED";
+
+    await prisma.$transaction([
+      prisma.employee.update({
+        where: { id: employee.id },
+        data: {
+          deletedAt: null,
+          status: restoredStatus
+        }
+      }),
+      prisma.user.update({
+        where: { id: employee.userId },
+        data: {
+          deletedAt: null,
+          status: restoredStatus
+        }
+      })
+    ]);
+
+    res.status(200).json({ success: true, message: `${targetRole} restored successfully` });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
 };

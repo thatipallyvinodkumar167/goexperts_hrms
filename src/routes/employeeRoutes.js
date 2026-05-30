@@ -2,7 +2,7 @@ import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { companyGuard } from "../middleware/companyGuard.js";
-import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee } from "../controller/employeeController.js";
+import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, getDeletedEmployeesList, restoreEmployee } from "../controller/employeeController.js";
 import { getSelf, updateSelf } from "../controller/employeeUpdateController.js";
 import { uploadProfileImage } from "../config/multer.js";
 
@@ -24,6 +24,9 @@ router.put("/self/:id", authMiddleware, uploadProfileImage.single("profilePhoto"
 
 //get all emps
 router.get("/", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getAllEmployees);
+
+//get list of soft-deleted accounts
+router.get("/deleted-list", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getDeletedEmployeesList);
 
 //get emp by id
 router.get("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getEmployeeById);
@@ -54,6 +57,9 @@ router.patch(
 
 //delete emp
 router.delete("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, deleteEmployee);
+
+//restore soft-deleted emp
+router.post("/restore/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, restoreEmployee);
 
 
 
