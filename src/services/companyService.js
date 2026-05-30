@@ -8,6 +8,7 @@ import { seedCompanyLeaveTypes } from "./leaveService.js";
 // ✅ NEW IMPORTS (ADDED)
 import { sendEmail } from "../utils/sendEmail.js";
 import { companyInviteTemplate } from "../utils/templates/companyInviteTemplate.js";
+import { companyActivationTemplate } from "../utils/templates/companyActivationTemplate.js";
 
 //////////////////////////
 // 1. CREATE COMPANY + INVITE
@@ -519,7 +520,7 @@ export const activateCompany = async (companyId) => {
   // ✅ AUTO-SEED LEAVE TYPES
   await seedCompanyLeaveTypes(companyId);
 
-  return prisma.company.update({
+  const updatedCompany = await prisma.company.update({
     where: { id: companyId },
     data: {
       status: "ACTIVE",
@@ -527,6 +528,19 @@ export const activateCompany = async (companyId) => {
       lastActiveAt: new Date(),
     },
   });
+
+  // ✅ Send email notification to Owner about company activation
+  const recipientEmail = company.ownerEmail || company.email;
+  if (recipientEmail) {
+    const loginLink = `${process.env.FRONTEND_URL}/login`;
+    sendEmail(
+      recipientEmail,
+      "Your Company Account has been Activated!",
+      companyActivationTemplate(company.ownerName || "Owner", company.name, loginLink)
+    ).catch((err) => console.error("Activation Email Failed:", err.message));
+  }
+
+  return updatedCompany;
 };
 
 //////////////////////////
