@@ -20,6 +20,7 @@ export const createCompanyWithInvite = async ({
   ownerEmail,
   location,
   createdById,
+  industryTypeId,
 }) => {
 
   if (!email || !email.includes("@")) {
@@ -55,6 +56,7 @@ export const createCompanyWithInvite = async ({
         domain: null,
         ownerName,
         ownerEmail: normalizedOwnerEmail,
+        industryTypeId: industryTypeId || null,
 
         // ✅ STATUS FLOW (IMPROVED)
         status: "INVITED",
@@ -313,6 +315,7 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
     where: { id: companyId },
     include: {
       documents: true,
+      industryType: true,
     },
   });
 };
@@ -510,7 +513,11 @@ export const activateCompany = async (companyId) => {
 
 export const getCompaniesForAdmin = async () => {
   return prisma.company.findMany({
+    where: {
+      status: { not: "INACTIVE" } // Only get active/invited companies
+    },
     include: {
+      industryType: true,
       subscriptions: {
         include: { plan: true },
         orderBy: { endDate: "desc" },
@@ -524,11 +531,26 @@ export const getCompaniesForAdmin = async () => {
   });
 };
 
+export const getSoftDeletedCompanies = async () => {
+  return prisma.company.findMany({
+    where: {
+      status: "INACTIVE"
+    },
+    include: {
+      createdBy: {
+        select: { name: true, email: true }
+      }
+    },
+    orderBy: { deletedAt: "desc" },
+  });
+};
+
 export const getCompanyProfile = async (companyId) => {
   return prisma.company.findUnique({
     where: { id: companyId },
     include: {
       documents: true,
+      industryType: true,
       subscriptions: {
         include: { plan: true },
         orderBy: { endDate: "desc" },
@@ -589,7 +611,7 @@ export const resendCompanyInvite = async (companyId) => {
 // 7. DELETE COMPANY
 //////////////////////////
 
-export const deleteCompany = async (companyId) => {
+export const deleteCompany = async (companyId, type = "soft") => {
   const company = await prisma.company.findUnique({
     where: { id: companyId },
   });
@@ -598,27 +620,22 @@ export const deleteCompany = async (companyId) => {
     throw new Error("Company not found");
   }
 
-  // Handle cascading deletion manually if needed, 
-  // or rely on schema ON DELETE CASCADE if configured.
-  // For now, let's do a simple delete.
-  
-  await prisma.$transaction(async (tx) => {
-    // Delete related records that might block deletion
-    await tx.companyInvite.deleteMany({ where: { companyId } });
-    await tx.employeeInvite.deleteMany({ where: { companyId } });
-    await tx.subscription.deleteMany({ where: { companyId } });
-    
-    // Note: Users and Employees might need more careful handling 
-    // depending on business requirements (e.g. archiving vs deleting).
-    // For now, we delete the company.
-    
-    await tx.user.deleteMany({ where: { companyId } });
-    await tx.employee.deleteMany({ where: { companyId } });
-    
-    await tx.company.delete({
+  if (type === "hard") {
+    // Hard Delete: Because we added onDelete: Cascade to the schema, 
+    // deleting the company will automatically clean up all related records in the database.
+    await prisma.company.delete({
       where: { id: companyId },
     });
-  });
-
-  return { message: "Company and related data deleted successfully" };
+    return { message: "Company and all related data permanently deleted successfully" };
+  } else {
+    // Soft Delete: Mark as inactive and set deletedAt
+    await prisma.company.update({
+      where: { id: companyId },
+      data: {
+        status: "INACTIVE",
+        deletedAt: new Date(),
+      },
+    });
+    return { message: "Company has been soft deleted successfully (marked as inactive)" };
+  }
 };

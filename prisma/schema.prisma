@@ -1,859 +1,887 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
-}
-
-model User {
-  id                  String               @id @default(uuid())
-  name                String
-  email               String
-  password            String
-  role                Role
-  status              Status               @default(INVITED)
-  profileLogo         String?              @db.LongText
-  companyId           String?
-  isEmailVerified     Boolean              @default(false)
-  lastLoginAt         DateTime?
-  failedLoginAttempts Int                  @default(0)
-  lockUntil           DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  deletedAt           DateTime?
-  auditLogs           AuditLog[]
-  createdCompanies    Company[]            @relation("CompanyCreator")
-  companyInvites      CompanyInvite[]
-  employee            Employee?
-  employeeInvites     EmployeeInvite[]
-  hr                  HR?
-  notificationsSent   Notification[]
-  passwordResetTokens PasswordResetToken[]
-  company             Company?             @relation("CompanyUsers", fields: [companyId], references: [id])
-
-  @@unique([email, companyId])
-  @@index([companyId], map: "User_companyId_fkey")
-}
-
-model Company {
-  id                 String                 @id @default(uuid())
-  name               String?                @unique
-  email              String                 @unique
-  ownerName          String?
-  ownerEmail         String?
-  legalName          String?
-  phone              String?
-  website            String?
-  domain             String?                @unique
-  companyLogo        String?                @db.LongText
-  industryTypeId     String?
-  companySize        String?
-  foundedYear        Int?
-  latitude           Float?
-  longitude          Float?
-  status             Status                 @default(INVITED)
-  isEmailVerified    Boolean                @default(false)
-  isProfileCompleted Boolean                @default(false)
-  invitedAt          DateTime?
-  activatedAt        DateTime?
-  lastActiveAt       DateTime?
-  inactiveAt         DateTime?
-  deletedAt          DateTime?
-  createdById        String
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
-  cinNumber          String?
-  linkedinUrl        String?
-  signature          String?
-  termsAndConditions String?                @db.LongText
-  createdBy          User                   @relation("CompanyCreator", fields: [createdById], references: [id])
-  industryType       IndustryType?          @relation(fields: [industryTypeId], references: [id])
-  address            CompanyAddress?
-  compliance         CompanyCompliance?
-  directors          CompanyDirector[]
-  documents          CompanyDocument[]
-  hrSetting          CompanyHRSetting?
-  invites            CompanyInvite[]
-  notifications      CompanyNotification[]
-  payrollSetting     CompanyPayrollSetting?
-  systemSetting      CompanySystemSetting?
-  departments        Department[]
-  designations       Designation[]
-  employees          Employee[]
-  employeeInvites    EmployeeInvite[]
-  leaveTypes         LeaveType[]
-  offerLetters       OfferLetter[]
-  subscriptions      Subscription[]
-  users              User[]                 @relation("CompanyUsers")
-
-  @@index([status])
-  @@index([lastActiveAt])
-  @@index([createdById], map: "Company_createdById_fkey")
-  @@index([industryTypeId], map: "Company_industryTypeId_fkey")
-}
-
-model CompanyAddress {
-  id           String   @id @default(uuid())
-  companyId    String   @unique
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  state        String
-  country      String
-  pincode      String
-  landmark     String?
-  createdAt    DateTime @default(now())
-  company      Company  @relation(fields: [companyId], references: [id])
-}
-
-model CompanyCompliance {
-  id                    String   @id @default(uuid())
-  companyId             String   @unique
-  gstNumber             String?
-  panNumber             String?
-  tanNumber             String?
-  cinNumber             String?
-  msmeNumber            String?
-  pfEnabled             Boolean  @default(false)
-  pfPercentage          Float?
-  esiEnabled            Boolean  @default(false)
-  insuranceProvider     String?
-  createdAt             DateTime @default(now())
-  esiRegistrationNumber String?
-  pfRegistrationNumber  String?
-  ptRegistrationNumber  String?
-  company               Company  @relation(fields: [companyId], references: [id])
-}
-
-model CompanyPayrollSetting {
-  id              String   @id @default(uuid())
-  companyId       String   @unique
-  currency        String?
-  salaryCycle     String?
-  payrollStartDay Int?
-  payrollEndDay   Int?
-  createdAt       DateTime @default(now())
-  company         Company  @relation(fields: [companyId], references: [id])
-}
-
-model CompanyHRSetting {
-  id              String   @id @default(uuid())
-  companyId       String   @unique
-  workingHours    String?
-  workingDays     String?
-  probationPeriod Int?
-  noticePeriod    Int?
-  companyPolicy   String?  @db.LongText
-  createdAt       DateTime @default(now())
-  leaveCycle      String?
-  shiftType       String?
-  workModel       String?
-  employeeTerms   String?  @db.LongText
-  company         Company  @relation(fields: [companyId], references: [id])
-}
-
-model CompanySystemSetting {
-  id         String   @id @default(uuid())
-  companyId  String   @unique
-  timezone   String?
-  dateFormat String?
-  language   String?
-  createdAt  DateTime @default(now())
-  company    Company  @relation(fields: [companyId], references: [id])
-}
-
-model CompanyDirector {
-  id            String   @id @default(uuid())
-  companyId     String
-  fullName      String
-  designation   String?
-  email         String?
-  phone         String?
-  aadhaarNumber String?
-  panNumber     String?
-  bankName      String?
-  accountNumber String?
-  ifscCode      String?
-  address       String?
-  isPrimary     Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  company       Company  @relation(fields: [companyId], references: [id])
-
-  @@index([companyId], map: "CompanyDirector_companyId_fkey")
-}
-
-model CompanyDocument {
-  id         String              @id @default(uuid())
-  companyId  String
-  name       CompanyDocumentType
-  fileUrl    String              @db.LongText
-  status     DocumentStatus      @default(PENDING)
-  remarks    String?             @db.LongText
-  uploadedAt DateTime            @default(now())
-  verifiedAt DateTime?
-  company    Company             @relation(fields: [companyId], references: [id])
-
-  @@index([companyId], map: "CompanyDocument_companyId_fkey")
-}
-
-model CompanyInvite {
-  id           String    @id @default(uuid())
-  email        String
-  token        String    @unique
-  companyId    String
-  userId       String?
-  expiresAt    DateTime
-  acceptedAt   DateTime?
-  reminderSent Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  company      Company   @relation(fields: [companyId], references: [id])
-  user         User?     @relation(fields: [userId], references: [id])
-
-  @@index([companyId], map: "CompanyInvite_companyId_fkey")
-  @@index([userId], map: "CompanyInvite_userId_fkey")
-}
-
-model EmployeeInvite {
-  id            String    @id @default(uuid())
-  email         String
-  token         String    @unique
-  companyId     String
-  role          Role
-  name          String?
-  userId        String?
-  departmentId  String?
-  designationId String?
-  expiresAt     DateTime
-  acceptedAt    DateTime?
-  createdAt     DateTime  @default(now())
-  company       Company   @relation(fields: [companyId], references: [id])
-  user          User?     @relation(fields: [userId], references: [id])
-
-  @@index([companyId], map: "EmployeeInvite_companyId_fkey")
-  @@index([userId], map: "EmployeeInvite_userId_fkey")
-}
-
-model HR {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  permissions Json
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
-}
-
-model OfferLetter {
-  id            String      @id @default(uuid())
-  name          String?
-  employeeEmail String
-  companyId     String
-  role          Role        @default(EMPLOYEE)
-  position      String
-  departmentId  String?
-  designationId String?
-  ctc           Float
-  monthlyGross  Float?
-  variablePay   Float?
-  joiningBonus  Float?
-  annualBonus   Float?
-  joiningDate   DateTime
-  status        OfferStatus @default(SENT)
-  documentUrl   String?     @db.LongText
-  employeeId    String?     @unique
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  company       Company     @relation(fields: [companyId], references: [id])
-  employee      Employee?   @relation(fields: [employeeId], references: [id])
-
-  @@index([companyId], map: "OfferLetter_companyId_fkey")
-}
-
-model Employee {
-  id                  String                     @id @default(uuid())
-  userId              String                     @unique
-  companyId           String
-  employeeCode        String                     @unique
-  firstName           String?
-  middleName          String?
-  lastName            String?
-  profilePhoto        String?                    @db.LongText
-  onboardingStep      Int                        @default(1)
-  onboardingCompleted Boolean                    @default(false)
-  probationPeriod     String?                    @default("6 Months")
-  noticePeriod        String?                    @default("90 Days")
-  departmentId        String
-  designationId       String
-  joiningDate         DateTime
-  employmentType      EmploymentType
-  workLocation        String?
-  managerId           String?
-  status              Status                     @default(INVITED)
-  bgvStatus           BGVStatus                  @default(PENDING)
-  bgvRemarks          String?                    @db.LongText
-  deletedAt           DateTime?
-  isDeclaredTrue      Boolean                    @default(false)
-  signature           String?                    @db.LongText
-  attendances         Attendance[]
-  company             Company                    @relation(fields: [companyId], references: [id])
-  department          Department                 @relation(fields: [departmentId], references: [id])
-  designation         Designation                @relation(fields: [designationId], references: [id])
-  manager             Employee?                  @relation("Manager", fields: [managerId], references: [id])
-  subordinates        Employee[]                 @relation("Manager")
-  user                User                       @relation(fields: [userId], references: [id])
-  bankDetails         EmployeeBank?
-  compliance          EmployeeCompliance?
-  documents           EmployeeDocument[]
-  educations          EmployeeEducation[]
-  emergencyContacts   EmployeeEmergencyContact[]
-  experiences         EmployeeExperience[]
-  nominee             EmployeeNominee?
-  personal            EmployeePersonal?
-  skills              EmployeeSkill?
-  joiningLetter       JoiningLetter?
-  leaves              Leave[]
-  offerLetter         OfferLetter?
-  payrolls            Payroll[]
-  salaryStructure     SalaryStructure?
-  correctionRequests  CorrectionRequest[]
-  approvedCorrections CorrectionRequest[]        @relation("CorrectionApprovedBy")
-
-  @@index([companyId], map: "Employee_companyId_fkey")
-  @@index([departmentId], map: "Employee_departmentId_fkey")
-  @@index([designationId], map: "Employee_designationId_fkey")
-  @@index([managerId], map: "Employee_managerId_fkey")
-}
-
-model CorrectionRequest {
-  id          String           @id @default(uuid())
-  employeeId  String
-  requestedBy String
-  reason      String
-  fields      Json
-  attachments Json?
-  status      CorrectionStatus @default(PENDING)
-  hrNote      String?          @db.LongText
-  approvedBy  String?
-  approvedAt  DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  employee    Employee         @relation(fields: [employeeId], references: [id])
-  approver    Employee?        @relation("CorrectionApprovedBy", fields: [approvedBy], references: [id])
-
-  @@index([employeeId, status])
-  @@index([approvedBy], map: "CorrectionRequest_approvedBy_fkey")
-}
-
-model EmployeePersonal {
-  id             String    @id @default(uuid())
-  employeeId     String    @unique
-  personalEmail  String?
-  phone          String?
-  alternatePhone String?
-  addressLine1   String?
-  addressLine2   String?
-  city           String?
-  state          String?
-  country        String?
-  pincode        String?
-  gender         String?
-  dob            DateTime?
-  maritalStatus  String?
-  bloodGroup     String?
-  nationality    String?
-  createdAt      DateTime  @default(now())
-  employee       Employee  @relation(fields: [employeeId], references: [id])
-}
-
-model EmployeeExperience {
-  id               String    @id @default(uuid())
-  employeeId       String
-  companyName      String
-  role             String
-  startDate        DateTime
-  endDate          DateTime?
-  technologies     String?
-  responsibilities String?   @db.LongText
-  totalYears       Float?
-  createdAt        DateTime  @default(now())
-  employee         Employee  @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId], map: "EmployeeExperience_employeeId_fkey")
-}
-
-model EmployeeEducation {
-  id             String   @id @default(uuid())
-  employeeId     String
-  degree         String
-  specialization String?
-  college        String?
-  university     String?
-  percentage     String?
-  cgpa           String?
-  startYear      String?
-  endYear        String?
-  createdAt      DateTime @default(now())
-  employee       Employee @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId], map: "EmployeeEducation_employeeId_fkey")
-}
-
-model EmployeeEmergencyContact {
-  id                String   @id @default(uuid())
-  employeeId        String
-  contactPersonName String
-  relationship      String
-  contactNumber     String
-  alternateContact  String?
-  address           String?
-  createdAt         DateTime @default(now())
-  employee          Employee @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId], map: "EmployeeEmergencyContact_employeeId_fkey")
-}
-
-model EmployeeSkill {
-  id              String   @id @default(uuid())
-  employeeId      String   @unique
-  createdAt       DateTime @default(now())
-  certifications  Json?
-  githubUrl       String?
-  languagesKnown  Json?
-  linkedinUrl     String?
-  portfolioUrl    String?
-  primarySkills   Json?
-  secondarySkills Json?
-  employee        Employee @relation(fields: [employeeId], references: [id])
-}
-
-model EmployeeBank {
-  id                String   @id @default(uuid())
-  employeeId        String   @unique
-  bankName          String?
-  accountHolderName String?
-  accountNumber     String?
-  ifscCode          String?
-  branchName        String?
-  upiId             String?
-  createdAt         DateTime @default(now())
-  employee          Employee @relation(fields: [employeeId], references: [id])
-}
-
-model EmployeeNominee {
-  id                String    @id @default(uuid())
-  employeeId        String    @unique
-  nomineeName       String
-  relationship      String
-  dob               DateTime?
-  gender            String?
-  phone             String?
-  email             String?
-  aadhaarNumber     String?
-  panNumber         String?
-  nomineePercentage Float?
-  address           String?
-  createdAt         DateTime  @default(now())
-  employee          Employee  @relation(fields: [employeeId], references: [id])
-}
-
-model EmployeeCompliance {
-  id                String    @id @default(uuid())
-  employeeId        String    @unique
-  pfNumber          String?
-  esiNumber         String?
-  uanNumber         String?
-  insuranceId       String?
-  insuranceProvider String?
-  policyNumber      String?
-  coverageAmount    Float?
-  policyStartDate   DateTime?
-  policyEndDate     DateTime?
-  createdAt         DateTime  @default(now())
-  employee          Employee  @relation(fields: [employeeId], references: [id])
-}
-
-model EmployeeDocument {
-  id         String         @id @default(uuid())
-  employeeId String
-  name       String
-  fileUrl    String         @db.LongText
-  status     DocumentStatus @default(PENDING)
-  remarks    String?        @db.LongText
-  createdAt  DateTime       @default(now())
-  employee   Employee       @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId], map: "EmployeeDocument_employeeId_fkey")
-}
-
-model JoiningLetter {
-  id          String   @id @default(uuid())
-  employeeId  String   @unique
-  joiningDate DateTime
-  documentUrl String?  @db.LongText
-  createdAt   DateTime @default(now())
-  employee    Employee @relation(fields: [employeeId], references: [id])
-}
-
-model SalaryStructure {
-  id          String   @id @default(uuid())
-  employeeId  String   @unique
-  basic       Float
-  hra         Float
-  allowances  Float
-  bonus       Float    @default(0)
-  pfEmployee  Float    @default(0)
-  esiEmployee Float    @default(0)
-  pfEmployer  Float    @default(0)
-  esiEmployer Float    @default(0)
-  deductions  Float    @default(0)
-  netSalary   Float    @default(0)
-  createdAt   DateTime @default(now())
-  employee    Employee @relation(fields: [employeeId], references: [id])
-}
-
-model Department {
-  id        String     @id @default(uuid())
-  name      String
-  companyId String
-  createdAt DateTime   @default(now())
-  company   Company    @relation(fields: [companyId], references: [id])
-  employees Employee[]
-
-  @@index([companyId], map: "Department_companyId_fkey")
-}
-
-model Designation {
-  id        String     @id @default(uuid())
-  title     String
-  level     Int
-  companyId String
-  createdAt DateTime   @default(now())
-  company   Company    @relation(fields: [companyId], references: [id])
-  employees Employee[]
-
-  @@index([companyId], map: "Designation_companyId_fkey")
-}
-
-model Attendance {
-  id         String           @id @default(uuid())
-  employeeId String
-  date       DateTime
-  checkIn    DateTime?
-  checkOut   DateTime?
-  status     AttendanceStatus
-  createdAt  DateTime         @default(now())
-  employee   Employee         @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId], map: "Attendance_employeeId_fkey")
-}
-
-model LeaveType {
-  id        String   @id @default(uuid())
-  name      String
-  maxDays   Int
-  companyId String
-  createdAt DateTime @default(now())
-  leaves    Leave[]
-  company   Company  @relation(fields: [companyId], references: [id])
-
-  @@index([companyId], map: "LeaveType_companyId_fkey")
-}
-
-model Leave {
-  id          String      @id @default(uuid())
-  employeeId  String
-  leaveTypeId String
-  fromDate    DateTime
-  toDate      DateTime
-  reason      String?     @db.LongText
-  status      LeaveStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
-  employee    Employee    @relation(fields: [employeeId], references: [id])
-  leaveType   LeaveType   @relation(fields: [leaveTypeId], references: [id])
-
-  @@index([employeeId], map: "Leave_employeeId_fkey")
-  @@index([leaveTypeId], map: "Leave_leaveTypeId_fkey")
-}
-
-model Payroll {
-  id              String        @id @default(uuid())
-  employeeId      String
-  grossSalary     Float
-  deductions      Float
-  pfAmount        Float
-  esiAmount       Float
-  tdsAmount       Float
-  professionalTax Float
-  bonus           Float
-  lopDays         Float?
-  netSalary       Float
-  payslipUrl      String?       @db.LongText
-  status          PayrollStatus @default(PENDING)
-  month           Int
-  year            Int
-  generatedAt     DateTime      @default(now())
-  employee        Employee      @relation(fields: [employeeId], references: [id])
-
-  @@index([employeeId], map: "Payroll_employeeId_fkey")
-}
-
-model SubscriptionPlan {
-  id            String         @id @default(uuid())
-  name          String         @unique
-  price         Float
-  duration      Int
-  features      Json
-  createdAt     DateTime       @default(now())
-  subscriptions Subscription[]
-}
-
-model Subscription {
-  id        String           @id @default(uuid())
-  companyId String
-  planId    String
-  startDate DateTime
-  endDate   DateTime
-  createdAt DateTime         @default(now())
-  company   Company          @relation(fields: [companyId], references: [id])
-  plan      SubscriptionPlan @relation(fields: [planId], references: [id])
-
-  @@index([companyId], map: "Subscription_companyId_fkey")
-  @@index([planId], map: "Subscription_planId_fkey")
-}
-
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  action    String
-  module    String
-  metadata  Json?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@index([userId], map: "AuditLog_userId_fkey")
-}
-
-model IndustryType {
-  id             String                 @id @default(uuid())
-  name           String                 @unique
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  companies      Company[]
-  departments    DepartmentTemplate[]
-  designations   DesignationTemplate[]
-  notifications  NotificationIndustry[]
-  salaryTemplate SalaryTemplate?
-}
-
-model SalaryTemplate {
-  id                    String       @id @default(uuid())
-  name                  String
-  basicPercentage       Float        @default(50)
-  hraPercentageOfBasic  Float        @default(40)
-  pfPercentage          Float        @default(12)
-  esiPercentage         Float        @default(0.75)
-  employerPfPercentage  Float        @default(12)
-  employerEsiPercentage Float        @default(3.25)
-  industryTypeId        String       @unique
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
-  industryType          IndustryType @relation(fields: [industryTypeId], references: [id])
-}
-
-model DepartmentTemplate {
-  id             String                @id @default(uuid())
-  name           String
-  industryTypeId String
-  createdAt      DateTime              @default(now())
-  industryType   IndustryType          @relation(fields: [industryTypeId], references: [id])
-  designations   DesignationTemplate[]
-
-  @@index([industryTypeId], map: "DepartmentTemplate_industryTypeId_fkey")
-}
-
-model DesignationTemplate {
-  id             String              @id @default(uuid())
-  title          String
-  level          Int                 @default(1)
-  industryTypeId String
-  createdAt      DateTime            @default(now())
-  departmentId   String?
-  department     DepartmentTemplate? @relation(fields: [departmentId], references: [id])
-  industryType   IndustryType        @relation(fields: [industryTypeId], references: [id])
-
-  @@index([departmentId], map: "DesignationTemplate_departmentId_fkey")
-  @@index([industryTypeId], map: "DesignationTemplate_industryTypeId_fkey")
-}
-
-model SystemPolicy {
-  id        String     @id @default(uuid())
-  type      PolicyType @unique
-  content   String     @db.LongText
-  version   String     @default("1.0.0")
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-}
-
-model PasswordResetToken {
-  id        String   @id @default(uuid())
-  token     String
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@index([userId], map: "PasswordResetToken_userId_fkey")
-}
-
-model Notification {
-  id         String                 @id @default(uuid())
-  title      String
-  message    String                 @db.LongText
-  type       NotificationType       @default(INFO)
-  sentById   String
-  isGlobal   Boolean                @default(false)
-  createdAt  DateTime               @default(now())
-  updatedAt  DateTime               @updatedAt
-  companies  CompanyNotification[]
-  sentBy     User                   @relation(fields: [sentById], references: [id])
-  industries NotificationIndustry[]
-
-  @@index([sentById], map: "Notification_sentById_fkey")
-}
-
-model NotificationIndustry {
-  id             String       @id @default(uuid())
-  notificationId String
-  industryTypeId String
-  industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
-  notification   Notification @relation(fields: [notificationId], references: [id])
-
-  @@unique([notificationId, industryTypeId])
-  @@index([industryTypeId], map: "NotificationIndustry_industryTypeId_fkey")
-}
-
-model CompanyNotification {
-  id             String       @id @default(uuid())
-  notificationId String
-  companyId      String
-  isRead         Boolean      @default(false)
-  readAt         DateTime?
-  createdAt      DateTime     @default(now())
-  company        Company      @relation(fields: [companyId], references: [id])
-  notification   Notification @relation(fields: [notificationId], references: [id])
-
-  @@unique([notificationId, companyId])
-  @@index([companyId], map: "CompanyNotification_companyId_fkey")
-}
-
-enum Role {
-  SUPER_ADMIN
-  OWNER
-  HR
-  EMPLOYEE
-}
-
-enum Status {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-  INVITED
-  PENDING_APPROVAL
-}
-
-enum EmploymentType {
-  FRESHER
-  EXPERIENCED
-  INTERN
-  CONTRACT
-  PART_TIME
-  FULL_TIME
-}
-
-enum OfferStatus {
-  SENT
-  ACCEPTED
-  REJECTED
-  EXPIRED
-}
-
-enum CompanyDocumentType {
-  GST_CERTIFICATE
-  PAN_CARD
-  TAN_CERTIFICATE
-  INCORPORATION_CERTIFICATE
-  ADDRESS_PROOF
-  BANK_PROOF
-  PF_REGISTRATION
-  ESI_REGISTRATION
-  MSME_CERTIFICATE
-  SHOP_LICENSE
-  COMPANY_LOGO
-}
-
-enum DocumentStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum AttendanceStatus {
-  PRESENT
-  ABSENT
-  HALF_DAY
-  WEEK_OFF
-  HOLIDAY
-  LEAVE
-}
-
-enum LeaveStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  CANCELLED
-}
-
-enum BGVStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum PayrollStatus {
-  PENDING
-  PROCESSED
-  PAID
-  FAILED
-}
-
-enum PolicyType {
-  TERMS_AND_CONDITIONS
-  PRIVACY_POLICY
-  REFUND_POLICY
-  COOKIE_POLICY
-}
-
-enum NotificationType {
-  INFO
-  WARNING
-  SUCCESS
-  ERROR
-  MAINTENANCE
-  COMPLIANCE
-  FEATURE
-}
-
-enum CorrectionStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  COMPLETED
-}
-
-model GlobalLeaveType {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  maxDays   Int
-  createdAt DateTime @default(now())
-}
+  generator client {
+    provider = "prisma-client-js"
+  }
+
+  datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+  }
+
+  model User {
+    id                  String               @id @default(uuid())
+    name                String
+    email               String
+    password            String
+    role                Role
+    status              Status               @default(INVITED)
+    profileLogo         String?              @db.LongText
+    companyId           String?
+    isEmailVerified     Boolean              @default(false)
+    lastLoginAt         DateTime?
+    failedLoginAttempts Int                  @default(0)
+    lockUntil           DateTime?
+    createdAt           DateTime             @default(now())
+    updatedAt           DateTime             @updatedAt
+    deletedAt           DateTime?
+    auditLogs           AuditLog[]
+    createdCompanies    Company[]            @relation("CompanyCreator")
+    companyInvites      CompanyInvite[]
+    employee            Employee?
+    employeeInvites     EmployeeInvite[]
+    hr                  HR?
+    notificationsSent   Notification[]
+    passwordResetTokens PasswordResetToken[]
+    company             Company?             @relation("CompanyUsers", fields: [companyId], references: [id])
+
+    @@unique([email, companyId])
+    @@index([companyId], map: "User_companyId_fkey")
+  }
+
+  model Company {
+    id                 String                 @id @default(uuid())
+    name               String?                @unique
+    email              String                 @unique
+    ownerName          String?
+    ownerEmail         String?
+    legalName          String?
+    phone              String?
+    website            String?
+    domain             String?                @unique
+    companyLogo        String?                @db.LongText
+    industryTypeId     String?
+    companySize        String?
+    foundedYear        Int?
+    latitude           Float?
+    longitude          Float?
+    status             Status                 @default(INVITED)
+    isEmailVerified    Boolean                @default(false)
+    isProfileCompleted Boolean                @default(false)
+    invitedAt          DateTime?
+    activatedAt        DateTime?
+    lastActiveAt       DateTime?
+    inactiveAt         DateTime?
+    deletedAt          DateTime?
+    createdById        String
+    createdAt          DateTime               @default(now())
+    updatedAt          DateTime               @updatedAt
+    cinNumber          String?
+    linkedinUrl        String?
+    signature          String?
+    termsAndConditions String?                @db.LongText
+    createdBy          User                   @relation("CompanyCreator", fields: [createdById], references: [id])
+    industryType       IndustryType?          @relation(fields: [industryTypeId], references: [id])
+    address            CompanyAddress?
+    compliance         CompanyCompliance?
+    directors          CompanyDirector[]
+    documents          CompanyDocument[]
+    hrSetting          CompanyHRSetting?
+    invites            CompanyInvite[]
+    notifications      CompanyNotification[]
+    payrollSetting     CompanyPayrollSetting?
+    systemSetting      CompanySystemSetting?
+    departments        Department[]
+    designations       Designation[]
+    employees          Employee[]
+    employeeInvites    EmployeeInvite[]
+    leaveTypes         LeaveType[]
+    offerLetters       OfferLetter[]
+    subscriptions      Subscription[]
+    transactions       Transaction[]
+    users              User[]                 @relation("CompanyUsers")
+
+    @@index([status])
+    @@index([lastActiveAt])
+    @@index([createdById], map: "Company_createdById_fkey")
+    @@index([industryTypeId], map: "Company_industryTypeId_fkey")
+  }
+
+  model CompanyAddress {
+    id           String   @id @default(uuid())
+    companyId    String   @unique
+    addressLine1 String
+    addressLine2 String?
+    city         String
+    state        String
+    country      String
+    pincode      String
+    landmark     String?
+    createdAt    DateTime @default(now())
+    company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  }
+
+  model CompanyCompliance {
+    id                    String   @id @default(uuid())
+    companyId             String   @unique
+    gstNumber             String?
+    panNumber             String?
+    tanNumber             String?
+    cinNumber             String?
+    msmeNumber            String?
+    pfEnabled             Boolean  @default(false)
+    pfPercentage          Float?
+    esiEnabled            Boolean  @default(false)
+    insuranceProvider     String?
+    createdAt             DateTime @default(now())
+    esiRegistrationNumber String?
+    pfRegistrationNumber  String?
+    ptRegistrationNumber  String?
+    company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  }
+
+  model CompanyPayrollSetting {
+    id              String   @id @default(uuid())
+    companyId       String   @unique
+    currency        String?
+    salaryCycle     String?
+    payrollStartDay Int?
+    payrollEndDay   Int?
+    createdAt       DateTime @default(now())
+    company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  }
+
+  model CompanyHRSetting {
+    id              String   @id @default(uuid())
+    companyId       String   @unique
+    workingHours    String?
+    workingDays     String?
+    probationPeriod Int?
+    noticePeriod    Int?
+    companyPolicy   String?  @db.LongText
+    createdAt       DateTime @default(now())
+    leaveCycle      String?
+    shiftType       String?
+    workModel       String?
+    employeeTerms   String?  @db.LongText
+    company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  }
+
+  model CompanySystemSetting {
+    id         String   @id @default(uuid())
+    companyId  String   @unique
+    timezone   String?
+    dateFormat String?
+    language   String?
+    createdAt  DateTime @default(now())
+    company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  }
+
+  model CompanyDirector {
+    id            String   @id @default(uuid())
+    companyId     String
+    fullName      String
+    designation   String?
+    email         String?
+    phone         String?
+    aadhaarNumber String?
+    panNumber     String?
+    bankName      String?
+    accountNumber String?
+    ifscCode      String?
+    address       String?
+    isPrimary     Boolean  @default(false)
+    createdAt     DateTime @default(now())
+    company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    @@index([companyId], map: "CompanyDirector_companyId_fkey")
+  }
+
+  model CompanyDocument {
+    id         String              @id @default(uuid())
+    companyId  String
+    name       CompanyDocumentType
+    fileUrl    String              @db.LongText
+    status     DocumentStatus      @default(PENDING)
+    remarks    String?             @db.LongText
+    uploadedAt DateTime            @default(now())
+    verifiedAt DateTime?
+    company    Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    @@index([companyId], map: "CompanyDocument_companyId_fkey")
+  }
+
+  model CompanyInvite {
+    id           String    @id @default(uuid())
+    email        String
+    token        String    @unique
+    companyId    String
+    userId       String?
+    expiresAt    DateTime
+    acceptedAt   DateTime?
+    reminderSent Boolean   @default(false)
+    createdAt    DateTime  @default(now())
+    company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    user         User?     @relation(fields: [userId], references: [id])
+
+    @@index([companyId], map: "CompanyInvite_companyId_fkey")
+    @@index([userId], map: "CompanyInvite_userId_fkey")
+  }
+
+  model EmployeeInvite {
+    id            String    @id @default(uuid())
+    email         String
+    token         String    @unique
+    companyId     String
+    role          Role
+    name          String?
+    userId        String?
+    departmentId  String?
+    designationId String?
+    expiresAt     DateTime
+    acceptedAt    DateTime?
+    createdAt     DateTime  @default(now())
+    company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    user          User?     @relation(fields: [userId], references: [id])
+
+    @@index([companyId], map: "EmployeeInvite_companyId_fkey")
+    @@index([userId], map: "EmployeeInvite_userId_fkey")
+  }
+
+  model HR {
+    id          String   @id @default(uuid())
+    userId      String   @unique
+    permissions Json
+    createdAt   DateTime @default(now())
+    user        User     @relation(fields: [userId], references: [id])
+  }
+
+  model OfferLetter {
+    id            String      @id @default(uuid())
+    name          String?
+    employeeEmail String
+    companyId     String
+    role          Role        @default(EMPLOYEE)
+    position      String
+    departmentId  String?
+    designationId String?
+    ctc           Float
+    monthlyGross  Float?
+    variablePay   Float?
+    joiningBonus  Float?
+    annualBonus   Float?
+    joiningDate   DateTime
+    status        OfferStatus @default(SENT)
+    documentUrl   String?     @db.LongText
+    employeeId    String?     @unique
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+    company       Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    employee      Employee?   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+    @@index([companyId], map: "OfferLetter_companyId_fkey")
+  }
+
+  model Employee {
+    id                  String                     @id @default(uuid())
+    userId              String                     @unique
+    companyId           String
+    employeeCode        String                     @unique
+    firstName           String?
+    middleName          String?
+    lastName            String?
+    profilePhoto        String?                    @db.LongText
+    onboardingStep      Int                        @default(1)
+    onboardingCompleted Boolean                    @default(false)
+    probationPeriod     String?                    @default("6 Months")
+    noticePeriod        String?                    @default("90 Days")
+    departmentId        String
+    designationId       String
+    joiningDate         DateTime
+    employmentType      EmploymentType
+    workLocation        String?
+    managerId           String?
+    status              Status                     @default(INVITED)
+    bgvStatus           BGVStatus                  @default(PENDING)
+    bgvRemarks          String?                    @db.LongText
+    deletedAt           DateTime?
+    isDeclaredTrue      Boolean                    @default(false)
+    signature           String?                    @db.LongText
+    attendances         Attendance[]
+    company             Company                    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    department          Department                 @relation(fields: [departmentId], references: [id])
+    designation         Designation                @relation(fields: [designationId], references: [id])
+    manager             Employee?                  @relation("Manager", fields: [managerId], references: [id])
+    subordinates        Employee[]                 @relation("Manager")
+    user                User                       @relation(fields: [userId], references: [id])
+    bankDetails         EmployeeBank?
+    compliance          EmployeeCompliance?
+    documents           EmployeeDocument[]
+    educations          EmployeeEducation[]
+    emergencyContacts   EmployeeEmergencyContact[]
+    experiences         EmployeeExperience[]
+    nominee             EmployeeNominee?
+    personal            EmployeePersonal?
+    skills              EmployeeSkill?
+    joiningLetter       JoiningLetter?
+    leaves              Leave[]
+    offerLetter         OfferLetter?
+    payrolls            Payroll[]
+    salaryStructure     SalaryStructure?
+    correctionRequests  CorrectionRequest[]
+    approvedCorrections CorrectionRequest[]        @relation("CorrectionApprovedBy")
+
+    @@index([companyId], map: "Employee_companyId_fkey")
+    @@index([departmentId], map: "Employee_departmentId_fkey")
+    @@index([designationId], map: "Employee_designationId_fkey")
+    @@index([managerId], map: "Employee_managerId_fkey")
+  }
+
+  model CorrectionRequest {
+    id          String           @id @default(uuid())
+    employeeId  String
+    requestedBy String
+    reason      String
+    fields      Json
+    attachments Json?
+    status      CorrectionStatus @default(PENDING)
+    hrNote      String?          @db.LongText
+    approvedBy  String?
+    approvedAt  DateTime?
+    createdAt   DateTime         @default(now())
+    updatedAt   DateTime         @updatedAt
+    employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    approver    Employee?        @relation("CorrectionApprovedBy", fields: [approvedBy], references: [id])
+
+    @@index([employeeId, status])
+    @@index([approvedBy], map: "CorrectionRequest_approvedBy_fkey")
+  }
+
+  model EmployeePersonal {
+    id             String    @id @default(uuid())
+    employeeId     String    @unique
+    personalEmail  String?
+    phone          String?
+    alternatePhone String?
+    addressLine1   String?
+    addressLine2   String?
+    city           String?
+    state          String?
+    country        String?
+    pincode        String?
+    gender         String?
+    dob            DateTime?
+    maritalStatus  String?
+    bloodGroup     String?
+    nationality    String?
+    createdAt      DateTime  @default(now())
+    employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  }
+
+  model EmployeeExperience {
+    id               String    @id @default(uuid())
+    employeeId       String
+    companyName      String
+    role             String
+    startDate        DateTime
+    endDate          DateTime?
+    technologies     String?
+    responsibilities String?   @db.LongText
+    totalYears       Float?
+    createdAt        DateTime  @default(now())
+    employee         Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+    @@index([employeeId], map: "EmployeeExperience_employeeId_fkey")
+  }
+
+  model EmployeeEducation {
+    id             String   @id @default(uuid())
+    employeeId     String
+    degree         String
+    specialization String?
+    college        String?
+    university     String?
+    percentage     String?
+    cgpa           String?
+    startYear      String?
+    endYear        String?
+    createdAt      DateTime @default(now())
+    employee       Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+    @@index([employeeId], map: "EmployeeEducation_employeeId_fkey")
+  }
+
+  model EmployeeEmergencyContact {
+    id                String   @id @default(uuid())
+    employeeId        String
+    contactPersonName String
+    relationship      String
+    contactNumber     String
+    alternateContact  String?
+    address           String?
+    createdAt         DateTime @default(now())
+    employee          Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+    @@index([employeeId], map: "EmployeeEmergencyContact_employeeId_fkey")
+  }
+
+  model EmployeeSkill {
+    id              String   @id @default(uuid())
+    employeeId      String   @unique
+    createdAt       DateTime @default(now())
+    certifications  Json?
+    githubUrl       String?
+    languagesKnown  Json?
+    linkedinUrl     String?
+    portfolioUrl    String?
+    primarySkills   Json?
+    secondarySkills Json?
+    employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  }
+
+  model EmployeeBank {
+    id                String   @id @default(uuid())
+    employeeId        String   @unique
+    bankName          String?
+    accountHolderName String?
+    accountNumber     String?
+    ifscCode          String?
+    branchName        String?
+    upiId             String?
+    createdAt         DateTime @default(now())
+    employee          Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  }
+
+  model EmployeeNominee {
+    id                String    @id @default(uuid())
+    employeeId        String    @unique
+    nomineeName       String
+    relationship      String
+    dob               DateTime?
+    gender            String?
+    phone             String?
+    email             String?
+    aadhaarNumber     String?
+    panNumber         String?
+    nomineePercentage Float?
+    address           String?
+    createdAt         DateTime  @default(now())
+    employee          Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  }
+
+  model EmployeeCompliance {
+    id                String    @id @default(uuid())
+    employeeId        String    @unique
+    pfNumber          String?
+    esiNumber         String?
+    uanNumber         String?
+    insuranceId       String?
+    insuranceProvider String?
+    policyNumber      String?
+    coverageAmount    Float?
+    policyStartDate   DateTime?
+    policyEndDate     DateTime?
+    createdAt         DateTime  @default(now())
+    employee          Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  }
+
+  model EmployeeDocument {
+    id         String         @id @default(uuid())
+    employeeId String
+    name       String
+    fileUrl    String         @db.LongText
+    status     DocumentStatus @default(PENDING)
+    remarks    String?        @db.LongText
+    createdAt  DateTime       @default(now())
+    employee   Employee       @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+    @@index([employeeId], map: "EmployeeDocument_employeeId_fkey")
+  }
+
+  model JoiningLetter {
+    id          String   @id @default(uuid())
+    employeeId  String   @unique
+    joiningDate DateTime
+    documentUrl String?  @db.LongText
+    createdAt   DateTime @default(now())
+    employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  }
+
+  model SalaryStructure {
+    id          String   @id @default(uuid())
+    employeeId  String   @unique
+    basic       Float
+    hra         Float
+    allowances  Float
+    bonus       Float    @default(0)
+    pfEmployee  Float    @default(0)
+    esiEmployee Float    @default(0)
+    pfEmployer  Float    @default(0)
+    esiEmployer Float    @default(0)
+    deductions  Float    @default(0)
+    netSalary   Float    @default(0)
+    createdAt   DateTime @default(now())
+    employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  }
+
+  model Department {
+    id        String     @id @default(uuid())
+    name      String
+    companyId String
+    createdAt DateTime   @default(now())
+    company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    employees Employee[]
+
+    @@index([companyId], map: "Department_companyId_fkey")
+  }
+
+  model Designation {
+    id        String     @id @default(uuid())
+    title     String
+    level     Int
+    companyId String
+    createdAt DateTime   @default(now())
+    company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    employees Employee[]
+
+    @@index([companyId], map: "Designation_companyId_fkey")
+  }
+
+  model Attendance {
+    id         String           @id @default(uuid())
+    employeeId String
+    date       DateTime
+    checkIn    DateTime?
+    checkOut   DateTime?
+    status     AttendanceStatus
+    createdAt  DateTime         @default(now())
+    employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+    @@index([employeeId], map: "Attendance_employeeId_fkey")
+  }
+
+  model LeaveType {
+    id        String   @id @default(uuid())
+    name      String
+    maxDays   Int
+    companyId String
+    createdAt DateTime @default(now())
+    leaves    Leave[]
+    company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+    @@index([companyId], map: "LeaveType_companyId_fkey")
+  }
+
+  model Leave {
+    id          String      @id @default(uuid())
+    employeeId  String
+    leaveTypeId String
+    fromDate    DateTime
+    toDate      DateTime
+    reason      String?     @db.LongText
+    status      LeaveStatus @default(PENDING)
+    createdAt   DateTime    @default(now())
+    employee    Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    leaveType   LeaveType   @relation(fields: [leaveTypeId], references: [id])
+
+    @@index([employeeId], map: "Leave_employeeId_fkey")
+    @@index([leaveTypeId], map: "Leave_leaveTypeId_fkey")
+  }
+
+  model Payroll {
+    id              String        @id @default(uuid())
+    employeeId      String
+    grossSalary     Float
+    deductions      Float
+    pfAmount        Float
+    esiAmount       Float
+    tdsAmount       Float
+    professionalTax Float
+    bonus           Float
+    lopDays         Float?
+    netSalary       Float
+    payslipUrl      String?       @db.LongText
+    status          PayrollStatus @default(PENDING)
+    month           Int
+    year            Int
+    generatedAt     DateTime      @default(now())
+    employee        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+    @@index([employeeId], map: "Payroll_employeeId_fkey")
+  }
+
+  model SubscriptionPlan {
+    id            String          @id @default(uuid())
+    name          String          @unique
+    price         Float
+    duration      Int
+    features      Json
+    createdAt     DateTime        @default(now())
+    subscriptions Subscription[]
+    transactions  Transaction[]
+  }
+
+  model Subscription {
+    id        String           @id @default(uuid())
+    companyId String
+    planId    String
+    startDate DateTime
+    endDate   DateTime
+    createdAt DateTime         @default(now())
+    company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    plan      SubscriptionPlan @relation(fields: [planId], references: [id])
+
+    @@index([companyId], map: "Subscription_companyId_fkey")
+    @@index([planId], map: "Subscription_planId_fkey")
+  }
+
+  model Transaction {
+    id        String            @id @default(uuid())
+    companyId String
+    planId    String
+    amount    Float
+    currency  String            @default("INR")
+    accessKey String            @unique
+    txnId     String            @unique
+    status    TransactionStatus @default(PENDING)
+    hash      String?
+    createdAt DateTime          @default(now())
+    updatedAt DateTime          @updatedAt
+    company   Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    plan      SubscriptionPlan  @relation(fields: [planId], references: [id])
+
+    @@index([companyId], map: "Transaction_companyId_fkey")
+    @@index([planId], map: "Transaction_planId_fkey")
+  }
+
+  model AuditLog {
+    id        String   @id @default(uuid())
+    userId    String
+    action    String
+    module    String
+    metadata  Json?
+    createdAt DateTime @default(now())
+    user      User     @relation(fields: [userId], references: [id])
+
+    @@index([userId], map: "AuditLog_userId_fkey")
+  }
+
+  model IndustryType {
+    id             String                 @id @default(uuid())
+    name           String                 @unique
+    createdAt      DateTime               @default(now())
+    updatedAt      DateTime               @updatedAt
+    companies      Company[]
+    departments    DepartmentTemplate[]
+    designations   DesignationTemplate[]
+    notifications  NotificationIndustry[]
+    salaryTemplate SalaryTemplate?
+  }
+
+  model SalaryTemplate {
+    id                    String       @id @default(uuid())
+    name                  String
+    basicPercentage       Float        @default(50)
+    hraPercentageOfBasic  Float        @default(40)
+    pfPercentage          Float        @default(12)
+    esiPercentage         Float        @default(0.75)
+    employerPfPercentage  Float        @default(12)
+    employerEsiPercentage Float        @default(3.25)
+    industryTypeId        String       @unique
+    createdAt             DateTime     @default(now())
+    updatedAt             DateTime     @updatedAt
+    industryType          IndustryType @relation(fields: [industryTypeId], references: [id])
+  }
+
+  model DepartmentTemplate {
+    id             String                @id @default(uuid())
+    name           String
+    industryTypeId String
+    createdAt      DateTime              @default(now())
+    industryType   IndustryType          @relation(fields: [industryTypeId], references: [id])
+    designations   DesignationTemplate[]
+
+    @@index([industryTypeId], map: "DepartmentTemplate_industryTypeId_fkey")
+  }
+
+  model DesignationTemplate {
+    id             String              @id @default(uuid())
+    title          String
+    level          Int                 @default(1)
+    industryTypeId String
+    createdAt      DateTime            @default(now())
+    departmentId   String?
+    department     DepartmentTemplate? @relation(fields: [departmentId], references: [id])
+    industryType   IndustryType        @relation(fields: [industryTypeId], references: [id])
+
+    @@index([departmentId], map: "DesignationTemplate_departmentId_fkey")
+    @@index([industryTypeId], map: "DesignationTemplate_industryTypeId_fkey")
+  }
+
+  model SystemPolicy {
+    id        String     @id @default(uuid())
+    type      PolicyType @unique
+    content   String     @db.LongText
+    version   String     @default("1.0.0")
+    isActive  Boolean    @default(true)
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @updatedAt
+  }
+
+  model PasswordResetToken {
+    id        String   @id @default(uuid())
+    token     String
+    userId    String
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+    user      User     @relation(fields: [userId], references: [id])
+
+    @@index([userId], map: "PasswordResetToken_userId_fkey")
+  }
+
+  model Notification {
+    id         String                 @id @default(uuid())
+    title      String
+    message    String                 @db.LongText
+    type       NotificationType       @default(INFO)
+    sentById   String
+    isGlobal   Boolean                @default(false)
+    createdAt  DateTime               @default(now())
+    updatedAt  DateTime               @updatedAt
+    companies  CompanyNotification[]
+    sentBy     User                   @relation(fields: [sentById], references: [id])
+    industries NotificationIndustry[]
+
+    @@index([sentById], map: "Notification_sentById_fkey")
+  }
+
+  model NotificationIndustry {
+    id             String       @id @default(uuid())
+    notificationId String
+    industryTypeId String
+    industryType   IndustryType @relation(fields: [industryTypeId], references: [id])
+    notification   Notification @relation(fields: [notificationId], references: [id])
+
+    @@unique([notificationId, industryTypeId])
+    @@index([industryTypeId], map: "NotificationIndustry_industryTypeId_fkey")
+  }
+
+  model CompanyNotification {
+    id             String       @id @default(uuid())
+    notificationId String
+    companyId      String
+    isRead         Boolean      @default(false)
+    readAt         DateTime?
+    createdAt      DateTime     @default(now())
+    company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+    notification   Notification @relation(fields: [notificationId], references: [id])
+
+    @@unique([notificationId, companyId])
+    @@index([companyId], map: "CompanyNotification_companyId_fkey")
+  }
+
+  enum Role {
+    SUPER_ADMIN
+    OWNER
+    HR
+    EMPLOYEE
+  }
+
+  enum Status {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+    INVITED
+    PENDING_APPROVAL
+  }
+
+  enum EmploymentType {
+    FRESHER
+    EXPERIENCED
+    INTERN
+    CONTRACT
+    PART_TIME
+    FULL_TIME
+  }
+
+  enum OfferStatus {
+    SENT
+    ACCEPTED
+    REJECTED
+    EXPIRED
+  }
+
+  enum CompanyDocumentType {
+    GST_CERTIFICATE
+    PAN_CARD
+    TAN_CERTIFICATE
+    INCORPORATION_CERTIFICATE
+    ADDRESS_PROOF
+    BANK_PROOF
+    PF_REGISTRATION
+    ESI_REGISTRATION
+    MSME_CERTIFICATE
+    SHOP_LICENSE
+    COMPANY_LOGO
+  }
+
+  enum DocumentStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+
+  enum AttendanceStatus {
+    PRESENT
+    ABSENT
+    HALF_DAY
+    WEEK_OFF
+    HOLIDAY
+    LEAVE
+  }
+
+  enum LeaveStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    CANCELLED
+  }
+
+  enum BGVStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+
+  enum PayrollStatus {
+    PENDING
+    PROCESSED
+    PAID
+    FAILED
+  }
+
+  enum PolicyType {
+    TERMS_AND_CONDITIONS
+    PRIVACY_POLICY
+    REFUND_POLICY
+    COOKIE_POLICY
+  }
+
+  enum NotificationType {
+    INFO
+    WARNING
+    SUCCESS
+    ERROR
+    MAINTENANCE
+    COMPLIANCE
+    FEATURE
+  }
+
+  enum CorrectionStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    COMPLETED
+  }
+
+  enum TransactionStatus {
+    PENDING
+    SUCCESS
+    FAILED
+  }
+
+  model GlobalLeaveType {
+    id        String   @id @default(uuid())
+    name      String   @unique
+    maxDays   Int
+    createdAt DateTime @default(now())
+  }
+

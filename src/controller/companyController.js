@@ -10,7 +10,8 @@ import {
   updateHrSettings,
   updatePayrollSettings,
   updateComplianceSettings,
-  deleteCompany
+  deleteCompany,
+  getSoftDeletedCompanies
 } from "../services/companyService.js";
 import prisma from "../config/db.js";
 import fs from "fs";
@@ -29,6 +30,20 @@ export const getAllCompanies = async (req, res) => {
       data,
     });
 
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getSoftDeletedCompaniesController = async (req, res) => {
+  try {
+    const data = await getSoftDeletedCompanies();
+
+    res.status(200).json({
+      success: true,
+      count: data.length,
+      data,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -295,8 +310,9 @@ export const resendInvitation = async (req, res) => {
 export const removeCompany = async (req, res) => {
   try {
     const { id } = req.params;
+    const { type } = req.query; // e.g., ?type=hard or ?type=soft
 
-    const result = await deleteCompany(id);
+    const result = await deleteCompany(id, type);
 
     res.status(200).json({
       success: true,

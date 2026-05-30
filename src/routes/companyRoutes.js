@@ -16,12 +16,16 @@ import {
   updateBasicSettingsController,
   updateHrSettingsController,
   updatePayrollSettingsController,
-  updateComplianceSettingsController
+  updateComplianceSettingsController,
+  getSoftDeletedCompaniesController
 } from "../controller/companyController.js";
 const router = express.Router();
 
 // SUPER ADMIN → list all companies
 router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), getAllCompanies);
+
+// SUPER ADMIN → list soft-deleted companies
+router.get("/soft-deleted", authMiddleware, allowRoles("SUPER_ADMIN"), getSoftDeletedCompaniesController);
 
 // OWNER/HR → upload logo
 router.post("/logo", authMiddleware, allowRoles("OWNER", "HR"), uploadCompanyLogo.single("logo"), uploadCompanyLogoController);
