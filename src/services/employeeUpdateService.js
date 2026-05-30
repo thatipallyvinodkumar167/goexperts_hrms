@@ -31,8 +31,7 @@ export const updateSelfService = async (employeeId, data) => {
           personalEmail: data.contact.personalEmail,
           phone: data.contact.phone,
           alternatePhone: data.contact.alternatePhone,
-          addressLine1: data.contact.addressLine1,
-          addressLine2: data.contact.addressLine2,
+          address: data.contact.address,
           city: data.contact.city,
           state: data.contact.state,
           country: data.contact.country,
@@ -96,7 +95,6 @@ export const updateSelfService = async (employeeId, data) => {
             college: edu.college,
             university: edu.university,
             percentage: edu.percentage,
-            cgpa: edu.cgpa,
             startYear: edu.startYear,
             endYear: edu.endYear
           }))
