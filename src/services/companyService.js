@@ -215,8 +215,32 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
     termsAndConditions: data.termsAndConditions || undefined,
     signature: data.signature || undefined,
 
-    // Nested Update: HR Settings (Policy, Hours, Probation, Leave Cycle, Work Model, Employee Terms)
-    hrSetting: (data.companyPolicy || data.workingHours || data.defaultProbationPeriod || data.workingDays || data.leaveCycle || data.workModel || data.shiftType || data.employeeTerms) ? {
+    // Nested Update: Address details (added to onboarding)
+    address: (data.addressLine1 || data.address || data.city || data.state || data.country || data.contry || data.pincode) ? {
+      upsert: {
+        create: {
+          addressLine1: data.addressLine1 || data.address || "",
+          addressLine2: data.addressLine2 || null,
+          city: data.city || "",
+          state: data.state || "",
+          country: data.country || data.contry || "",
+          pincode: data.pincode || "",
+          landmark: data.landmark || null,
+        },
+        update: {
+          addressLine1: data.addressLine1 || data.address || undefined,
+          addressLine2: data.addressLine2 || undefined,
+          city: data.city || undefined,
+          state: data.state || undefined,
+          country: data.country || data.contry || undefined,
+          pincode: data.pincode || undefined,
+          landmark: data.landmark || undefined,
+        }
+      }
+    } : undefined,
+
+    // Nested Update: HR Settings (Policy, Hours, Probation, Work Model, Employee Terms)
+    hrSetting: (data.companyPolicy || data.workingHours || data.defaultProbationPeriod || data.workingDays || data.workModel || data.shiftType || data.employeeTerms) ? {
       upsert: {
         create: {
           companyPolicy: data.companyPolicy || null,
@@ -225,7 +249,6 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
           workingDays: data.workingDays || "Monday - Friday",
           probationPeriod: parseInt(data.defaultProbationPeriod) || null,
           noticePeriod: parseInt(data.defaultNoticePeriod) || null,
-          leaveCycle: data.leaveCycle || "Jan-Dec",
           workModel: data.workModel || "On-site",
           shiftType: data.shiftType || "General",
         },
@@ -236,7 +259,6 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
           workingDays: data.workingDays || undefined,
           probationPeriod: data.defaultProbationPeriod ? parseInt(data.defaultProbationPeriod) : undefined,
           noticePeriod: data.defaultNoticePeriod ? parseInt(data.defaultNoticePeriod) : undefined,
-          leaveCycle: data.leaveCycle || undefined,
           workModel: data.workModel || undefined,
           shiftType: data.shiftType || undefined,
         }
