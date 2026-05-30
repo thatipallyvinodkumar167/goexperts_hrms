@@ -149,7 +149,8 @@ export const saveBasicInfoService = async (userId, data) => {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 middleName: data.middleName,
-                profilePhoto: data.profilePhoto
+                profilePhoto: data.profilePhoto,
+                faceVerificationPhoto: data.profilePhoto
             }
         }),
         prisma.user.update({
@@ -1193,7 +1194,10 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
                 if (fieldname === "profilePhoto") {
                     await tx.employee.update({
                         where: { id: employee.id },
-                        data: { profilePhoto: fileUrl }
+                        data: { 
+                            profilePhoto: fileUrl,
+                            faceVerificationPhoto: fileUrl
+                        }
                     });
                     // Also sync to User record
                     await tx.user.update({

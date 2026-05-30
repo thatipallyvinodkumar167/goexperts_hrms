@@ -110,7 +110,7 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
   }
 
   // 4. Stage 2: Facial Verification validation
-  const masterPhoto = employee.profilePhoto || employee.user?.profileLogo;
+  const masterPhoto = employee.faceVerificationPhoto || employee.profilePhoto || employee.user?.profileLogo;
   if (!masterPhoto) {
     throw new Error("Profile picture missing. Please update your onboarding photo to clock-in.");
   }
@@ -196,7 +196,7 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
   }
 
   // 4. Stage 2: Facial Verification validation
-  const masterPhoto = employee.profilePhoto || employee.user?.profileLogo;
+  const masterPhoto = employee.faceVerificationPhoto || employee.profilePhoto || employee.user?.profileLogo;
   if (!masterPhoto) {
     throw new Error("Profile picture missing. Please update your onboarding photo to clock-out.");
   }

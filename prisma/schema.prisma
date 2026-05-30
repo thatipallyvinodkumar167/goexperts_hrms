@@ -279,6 +279,7 @@
     middleName          String?
     lastName            String?
     profilePhoto        String?                    @db.LongText
+    faceVerificationPhoto String?                    @db.LongText
     onboardingCompleted Boolean                    @default(false)
     probationPeriod     String?                    @default("6 Months")
     noticePeriod        String?                    @default("90 Days")
