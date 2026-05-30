@@ -1,4 +1,4 @@
-export const companyActivationTemplate = (ownerName, companyName, loginLink, industryName) => {
+export const companyActivationTemplate = (ownerName, companyName, industryName) => {
   let industryBullets = "";
   const nameLower = (industryName || "").toLowerCase();
 
@@ -76,17 +76,6 @@ export const companyActivationTemplate = (ownerName, companyName, loginLink, ind
         <ul style="margin: 0; padding-left: 20px; color: #047857; font-size: 14px; line-height: 1.6;">
           ${industryBullets}
         </ul>
-      </div>
-
-      <p style="font-size: 15px; color: #4B5563; line-height: 1.6;">
-        You can now log in to your dashboard to begin setting up your workplace:
-      </p>
-
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="${loginLink}" 
-           style="background-color: #10B981; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
-           Go to Dashboard
-        </a>
       </div>
 
       <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 32px 0;" />

@@ -532,11 +532,10 @@ export const activateCompany = async (companyId) => {
   // ✅ Send email notification to Owner about company activation
   const recipientEmail = company.ownerEmail || company.email;
   if (recipientEmail) {
-    const loginLink = `${process.env.FRONTEND_URL}/login`;
     sendEmail(
       recipientEmail,
       "Your Company Account has been Activated!",
-      companyActivationTemplate(company.ownerName || "Owner", company.name, loginLink, company.industryType?.name)
+      companyActivationTemplate(company.ownerName || "Owner", company.name, company.industryType?.name)
     ).catch((err) => console.error("Activation Email Failed:", err.message));
   }
 
