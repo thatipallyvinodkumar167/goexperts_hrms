@@ -981,6 +981,12 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
     if (!files.education_proof) {
         throw Error("Education proof upload is mandatory.");
     }
+    if (!files.signature) {
+        throw Error("Signature upload is mandatory.");
+    }
+    if (!files.profilePhoto) {
+        throw Error("Profile photo upload is mandatory.");
+    }
 
     // 3. Experienced Professional Check
     const hasExperience = (employee.employmentType === "EXPERIENCED") || (data.experience && Array.isArray(data.experience) && data.experience.length > 0);
