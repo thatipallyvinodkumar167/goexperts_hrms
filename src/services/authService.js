@@ -112,7 +112,8 @@ export const loginUser = async ({ email, password } = {}) => {
     companyStatus: user.company ? user.company.status : "ACTIVE",
     isFullRegistered: user.role === "OWNER" 
       ? (user.company ? user.company.isProfileCompleted : true)
-      : false // Default false, will be overridden below for HR/Employee
+      : false, // Default false, will be overridden below for HR/Employee
+    industryTypeId: user.company ? user.company.industryTypeId : null
   };
 
   // Only include employee onboarding fields if the user is an employee or HR
