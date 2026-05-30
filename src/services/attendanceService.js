@@ -104,8 +104,8 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
     company.longitude
   );
 
-  // Maximum allowed radius: 50 meters
-  if (distance > 50) {
+  // Maximum allowed radius: 100 meters
+  if (distance > 100) {
     throw new Error(`Location check failed: You are ${Math.round(distance)} meters away from the office.`);
   }
 
@@ -191,7 +191,7 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     company.longitude
   );
 
-  if (distance > 50) {
+  if (distance > 100) {
     throw new Error(`Location check failed: You are ${Math.round(distance)} meters away from the office.`);
   }
 
