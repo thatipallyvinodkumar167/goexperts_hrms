@@ -494,7 +494,7 @@ export const activateCompany = async (companyId) => {
 
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    include: { subscriptions: true },
+    include: { subscriptions: true, industryType: true },
   });
 
   if (!company) {
@@ -536,7 +536,7 @@ export const activateCompany = async (companyId) => {
     sendEmail(
       recipientEmail,
       "Your Company Account has been Activated!",
-      companyActivationTemplate(company.ownerName || "Owner", company.name, loginLink)
+      companyActivationTemplate(company.ownerName || "Owner", company.name, loginLink, company.industryType?.name)
     ).catch((err) => console.error("Activation Email Failed:", err.message));
   }
 
