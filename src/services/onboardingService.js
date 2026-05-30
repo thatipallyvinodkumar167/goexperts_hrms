@@ -968,8 +968,23 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
         throw Error("You must accept the legal declaration to complete onboarding.");
     }
 
-    // 2. Experienced Professional Check
-    if (employee.employmentType === "EXPERIENCED") {
+    // 2. Mandatory Documents Check for All Employees
+    if (!files.aadhaar) {
+        throw Error("Aadhaar card upload is mandatory.");
+    }
+    if (!files.pan) {
+        throw Error("PAN card upload is mandatory.");
+    }
+    if (!files.bankPassbook) {
+        throw Error("Bank Passbook or Statement upload is mandatory.");
+    }
+    if (!files.education_proof) {
+        throw Error("Education proof upload is mandatory.");
+    }
+
+    // 3. Experienced Professional Check
+    const hasExperience = (employee.employmentType === "EXPERIENCED") || (data.experience && Array.isArray(data.experience) && data.experience.length > 0);
+    if (hasExperience) {
         if (!data.experience || !Array.isArray(data.experience) || data.experience.length === 0) {
             throw Error("Previous work experience is mandatory for experienced professionals.");
         }
