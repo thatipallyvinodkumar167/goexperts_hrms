@@ -791,6 +791,8 @@ export const getEmployeeAttendanceHistory = async (userId, month, year) => {
         status = "ABSENT"; totalAbsent++;
       } else if (record.status === "EARLY_EXIT") {
         status = "EARLY_EXIT"; totalEarlyExit++;
+      } else if (record.status === "PENDING_VERIFICATION") {
+        status = "PENDING_VERIFICATION";
       } else if (checkIn && checkOut) {
         const durationMs = new Date(checkOut) - new Date(checkIn);
         if (durationMs < 4.5 * 60 * 60 * 1000) {
