@@ -231,9 +231,7 @@ export const saveEmergencyContactService = async (userId, dataArray) => {
             employeeId: employee.id,
             contactPersonName: data.contactPersonName,
             relationship: data.relationship,
-            contactNumber: data.contactNumber,
-            alternateContact: data.alternateContact,
-            address: data.address
+            contactNumber: data.contactNumber
         }))
     });
 
@@ -283,7 +281,6 @@ export const addExperienceService = async (userId, experienceArray) => {
             role: exp.designation || exp.role,
             startDate: new Date(exp.startDate),
             endDate: exp.endDate ? new Date(exp.endDate) : null,
-            totalYears: exp.totalExperience || exp.totalYears,
             technologies: exp.technologies,
             responsibilities: exp.responsibilities
         }))
@@ -1050,9 +1047,7 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
                     employeeId: employee.id,
                     contactPersonName: ec.contactPersonName,
                     relationship: ec.relationship,
-                    contactNumber: ec.contactNumber,
-                    alternateContact: ec.alternateContact,
-                    address: ec.address
+                    contactNumber: ec.contactNumber
                 }))
             });
         }
@@ -1084,7 +1079,6 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
                     role: exp.designation || exp.role,
                     startDate: new Date(exp.startDate),
                     endDate: exp.endDate ? new Date(exp.endDate) : null,
-                    totalYears: exp.totalExperience || exp.totalYears,
                     technologies: exp.technologies,
                     responsibilities: exp.responsibilities
                 }))

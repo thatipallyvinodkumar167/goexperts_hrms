@@ -279,3 +279,60 @@ export const restoreEmployee = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+// ─────────────────────────────────────────────────────────
+// UPDATE EMPLOYEE WORK MODEL (HR / OWNER only)
+// ─────────────────────────────────────────────────────────
+export const updateWorkModel = async (req, res) => {
+  try {
+    const { id } = req.params; // employee ID
+    const { workModel, expectedOfficeDays } = req.body;
+    const companyId = req.user?.companyId;
+
+    if (!workModel || !["WFO", "WFH", "HYBRID"].includes(workModel)) {
+      return res.status(400).json({
+        success: false,
+        message: 'workModel must be one of: "WFO", "WFH", "HYBRID"'
+      });
+    }
+
+    if (workModel === "HYBRID" && (!expectedOfficeDays || isNaN(expectedOfficeDays))) {
+      return res.status(400).json({
+        success: false,
+        message: "expectedOfficeDays is required for HYBRID work model (e.g., 3)"
+      });
+    }
+
+    // Verify the employee belongs to this company
+    const employee = await prisma.employee.findFirst({
+      where: { id, companyId }
+    });
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Employee not found in your company." });
+    }
+
+    const updated = await prisma.employee.update({
+      where: { id },
+      data: {
+        workModel,
+        expectedOfficeDays: workModel === "HYBRID" ? parseInt(expectedOfficeDays) : null
+      },
+      select: {
+        id: true,
+        employeeCode: true,
+        firstName: true,
+        lastName: true,
+        workModel: true,
+        expectedOfficeDays: true
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Work model updated to ${workModel} successfully.`,
+      data: updated
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};

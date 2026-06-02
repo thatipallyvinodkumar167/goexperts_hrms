@@ -15,7 +15,9 @@ export const inviteService = async (data) => {
     name,
     password,
     departmentId,
-    designationId
+    designationId,
+    workModel,         // "WFO" | "WFH" | "HYBRID"
+    expectedOfficeDays // For HYBRID: number of days/week (e.g., 3)
   } = data;
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -40,16 +42,19 @@ export const inviteService = async (data) => {
 
       await prisma.offerLetter.create({
           data: {
-              name: name || normalizedEmail.split('@')[0], // Fallback if name missing
+              name: name || normalizedEmail.split('@')[0],
               employeeEmail: normalizedEmail,
               companyId,
-              ctc: offerData.salary, // Mapped to ctc
+              ctc: offerData.salary,
               joiningDate: new Date(offerData.joiningDate),
               position: offerData.position,
-              role: role, // HR or EMPLOYEE
+              role: role,
               departmentId,
               designationId,
-              status: "SENT"
+              status: "SENT",
+              // Store work model in offer data for reference
+              workModel: workModel || "WFO",
+              expectedOfficeDays: expectedOfficeDays ? parseInt(expectedOfficeDays) : null,
           }
       });
 
@@ -114,6 +119,8 @@ export const inviteService = async (data) => {
             designationId,
             joiningDate: new Date(),
             employmentType: "EXPERIENCED",
+            workModel: workModel || "WFO",
+            expectedOfficeDays: (workModel === "HYBRID" && expectedOfficeDays) ? parseInt(expectedOfficeDays) : null,
           }
         });
 
@@ -156,7 +163,10 @@ export const inviteService = async (data) => {
           companyId,
           departmentId,
           designationId,
-          expiresAt
+          expiresAt,
+          // Store work model in invite for use during profile completion
+          workModel: workModel || "WFO",
+          expectedOfficeDays: (workModel === "HYBRID" && expectedOfficeDays) ? parseInt(expectedOfficeDays) : null,
       }
   });
 
@@ -247,8 +257,20 @@ export const completeProfileService = async ({
   const user = await prisma.user.findUnique({
     where: { id: userId }
   });
-
   if (!user) throw new Error("User not found");
+
+  // Read workModel from the accepted EmployeeInvite record
+  const invite = await prisma.employeeInvite.findFirst({
+    where: {
+      email: user.email,
+      companyId: user.companyId,
+      acceptedAt: { not: null }
+    },
+    orderBy: { createdAt: "desc" }
+  });
+
+  const workModel = invite?.workModel || "WFO";
+  const expectedOfficeDays = invite?.expectedOfficeDays || null;
 
   const employee = await prisma.employee.create({
     data: {
@@ -259,6 +281,8 @@ export const completeProfileService = async ({
       designationId,
       joiningDate: new Date(),
       employmentType: "FRESHER",
+      workModel,
+      expectedOfficeDays,
       personal: {
         create: personal
       }
@@ -316,18 +340,21 @@ export const acceptOfferService = async (email) => {
     });
 
     // 3. Automatically trigger the Invitation (Phase 2)
+    // ✅ Carry over workModel & expectedOfficeDays from the OfferLetter
     const rawToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
 
     await prisma.employeeInvite.create({
         data: {
             email: normalizedEmail,
-            name: offer.name, // Transfer name from Offer record
+            name: offer.name,
             token: rawToken,
-            role: offer.role, 
+            role: offer.role,
             companyId: offer.companyId,
             departmentId: offer.departmentId,
             designationId: offer.designationId,
+            workModel: offer.workModel || "WFO",
+            expectedOfficeDays: offer.expectedOfficeDays || null,
             expiresAt
         }
     });

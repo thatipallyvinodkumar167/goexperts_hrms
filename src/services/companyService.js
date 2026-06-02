@@ -347,25 +347,29 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
 // CATEGORY-WISE SETTINGS UPDATES
 // ──────────────────────────────────────────────
 
-export const updateBasicSettings = async (companyId, data) => {
+export const updateBasicSettings = async (companyId, data, isSuperAdmin = false) => {
   const updateData = {
     // Exclude email and domain as per user request
     ownerName: data.ownerName || undefined,
     ownerEmail: data.ownerEmail || undefined,
-    legalName: data.legalName || undefined,
     phone: data.phone || undefined,
     website: data.website || undefined,
     companyLogo: data.companyLogo || undefined,
     linkedinUrl: data.linkedinUrl || undefined,
     companySize: data.companySize || undefined,
-    foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
     latitude: data.latitude ? parseFloat(data.latitude) : undefined,
     longitude: data.longitude ? parseFloat(data.longitude) : undefined,
+    termsAndConditions: data.termsAndConditions || undefined,
     
-    address: (data.addressLine1 || data.city || data.state || data.country || data.pincode) ? {
+    // Locked Fields (Only Super Admin can update)
+    ...(isSuperAdmin && {
+      legalName: data.legalName || undefined,
+      foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
+    }),
+    address: (data.address || data.addressLine1 || data.city || data.state || data.country || data.pincode) ? {
       upsert: {
         create: {
-          addressLine1: data.addressLine1 || "",
+          addressLine1: data.address || data.addressLine1 || "",
           addressLine2: data.addressLine2 || null,
           city: data.city || "",
           state: data.state || "",
@@ -374,7 +378,7 @@ export const updateBasicSettings = async (companyId, data) => {
           landmark: data.landmark || null,
         },
         update: {
-          addressLine1: data.addressLine1 || undefined,
+          addressLine1: data.address || data.addressLine1 || undefined,
           addressLine2: data.addressLine2 || undefined,
           city: data.city || undefined,
           state: data.state || undefined,
@@ -450,35 +454,43 @@ export const updatePayrollSettings = async (companyId, data) => {
   });
 };
 
-export const updateComplianceSettings = async (companyId, data) => {
+export const updateComplianceSettings = async (companyId, data, isSuperAdmin = false) => {
   return prisma.company.update({
     where: { id: companyId },
     data: {
       compliance: {
         upsert: {
           create: {
-            gstNumber: data.gstNumber || null,
-            panNumber: data.panNumber || null,
-            tanNumber: data.tanNumber || null,
-            cinNumber: data.cinNumber || null,
             pfEnabled: data.pfEnabled === "true" || data.pfEnabled === true,
             pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : 12.0,
-            pfRegistrationNumber: data.pfRegistrationNumber || null,
             esiEnabled: data.esiEnabled === "true" || data.esiEnabled === true,
-            esiRegistrationNumber: data.esiRegistrationNumber || null,
-            ptRegistrationNumber: data.ptRegistrationNumber || null,
+            
+            // Only allow creating these numbers if Super Admin (though typically they are created at onboarding)
+            ...(isSuperAdmin && {
+              gstNumber: data.gstNumber || null,
+              panNumber: data.panNumber || null,
+              tanNumber: data.tanNumber || null,
+              cinNumber: data.cinNumber || null,
+              pfRegistrationNumber: data.pfRegistrationNumber || null,
+              esiRegistrationNumber: data.esiRegistrationNumber || null,
+              ptRegistrationNumber: data.ptRegistrationNumber || null,
+            })
           },
           update: {
-            gstNumber: data.gstNumber || undefined,
-            panNumber: data.panNumber || undefined,
-            tanNumber: data.tanNumber || undefined,
-            cinNumber: data.cinNumber || undefined,
             pfEnabled: data.pfEnabled !== undefined ? (data.pfEnabled === "true" || data.pfEnabled === true) : undefined,
             pfPercentage: data.pfPercentage ? parseFloat(data.pfPercentage) : undefined,
-            pfRegistrationNumber: data.pfRegistrationNumber || undefined,
             esiEnabled: data.esiEnabled !== undefined ? (data.esiEnabled === "true" || data.esiEnabled === true) : undefined,
-            esiRegistrationNumber: data.esiRegistrationNumber || undefined,
-            ptRegistrationNumber: data.ptRegistrationNumber || undefined,
+            
+            // Locked Fields
+            ...(isSuperAdmin && {
+              gstNumber: data.gstNumber || undefined,
+              panNumber: data.panNumber || undefined,
+              tanNumber: data.tanNumber || undefined,
+              cinNumber: data.cinNumber || undefined,
+              pfRegistrationNumber: data.pfRegistrationNumber || undefined,
+              esiRegistrationNumber: data.esiRegistrationNumber || undefined,
+              ptRegistrationNumber: data.ptRegistrationNumber || undefined,
+            })
           }
         }
       }

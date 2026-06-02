@@ -98,8 +98,6 @@ export const getSelf = async (req, res) => {
         contactPersonName: contact.contactPersonName,
         relationship: contact.relationship,
         contactNumber: contact.contactNumber,
-        alternateContact: contact.alternateContact,
-        address: contact.address,
       })),
       educations: (employee.educations || []).map(edu => ({
         degree: edu.degree,
@@ -115,7 +113,6 @@ export const getSelf = async (req, res) => {
         role: exp.role,
         startDate: exp.startDate,
         endDate: exp.endDate,
-        totalYears: exp.totalYears,
       })),
       skills: employee.skills ? {
         primarySkills: employee.skills.primarySkills,

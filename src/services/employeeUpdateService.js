@@ -77,9 +77,7 @@ export const updateSelfService = async (employeeId, data) => {
             employeeId: employee.id,
             contactPersonName: contact.contactPersonName,
             relationship: contact.relationship,
-            contactNumber: contact.contactNumber,
-            alternateContact: contact.alternateContact,
-            address: contact.address
+            contactNumber: contact.contactNumber
           }))
         });
       }
@@ -111,7 +109,6 @@ export const updateSelfService = async (employeeId, data) => {
             role: exp.role || exp.designation,
             startDate: exp.startDate ? new Date(exp.startDate) : null,
             endDate: exp.endDate ? new Date(exp.endDate) : null,
-            totalYears: exp.totalYears || exp.totalExperience,
             technologies: exp.technologies,
             responsibilities: exp.responsibilities
           }))

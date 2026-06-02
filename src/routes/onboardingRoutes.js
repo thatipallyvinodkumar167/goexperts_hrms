@@ -30,7 +30,6 @@ router.put(
         { name: "experienceLetter", maxCount: 1 },
         { name: "profilePhoto", maxCount: 1 },
         { name: "bankPassbook", maxCount: 1 },
-        { name: "cancelledCheque", maxCount: 1 },
         { name: "signature", maxCount: 1 },
         { name: "education_proof", maxCount: 1 },
         { name: "relieving_letter", maxCount: 1 },

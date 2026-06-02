@@ -140,7 +140,7 @@ export const updateBasicSettingsController = async (req, res) => {
       companyLogo: logoFile ? logoFile.path : undefined,
     };
 
-    await updateBasicSettings(companyId, payload);
+    await updateBasicSettings(companyId, payload, req.user.role === "SUPER_ADMIN");
 
     res.status(200).json({ success: true, message: "Basic settings updated successfully" });
   } catch (error) {
@@ -179,7 +179,7 @@ export const updateComplianceSettingsController = async (req, res) => {
     const companyId = req.user.companyId;
     if (!companyId) throw new Error("Company ID is required");
 
-    await updateComplianceSettings(companyId, req.body);
+    await updateComplianceSettings(companyId, req.body, req.user.role === "SUPER_ADMIN");
 
     res.status(200).json({ success: true, message: "Compliance settings updated successfully" });
   } catch (error) {

@@ -2,7 +2,7 @@ import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { companyGuard } from "../middleware/companyGuard.js";
-import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, getDeletedEmployeesList, restoreEmployee } from "../controller/employeeController.js";
+import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, getDeletedEmployeesList, restoreEmployee, updateWorkModel } from "../controller/employeeController.js";
 import { getSelf, updateSelf } from "../controller/employeeUpdateController.js";
 import { uploadProfileImage } from "../config/multer.js";
 
@@ -33,6 +33,9 @@ router.get("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getE
 
 //update emp
 router.put("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, updateEmployee);
+
+// HR → update employee work model (WFO / WFH / HYBRID)
+router.patch("/:id/work-model", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, updateWorkModel);
 
 // Correction Request flow
 router.post(
