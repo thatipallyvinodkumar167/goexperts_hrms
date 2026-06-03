@@ -118,16 +118,23 @@ export const getMyAttendanceHistory = async (req, res) => {
     if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized: User not authenticated." });
 
-    const today = new Date();
-    const queryMonth = req.query.month ? parseInt(req.query.month) : today.getMonth() + 1;
-    const queryYear = req.query.year ? parseInt(req.query.year) : today.getFullYear();
+    const { month, year, fromDate, toDate, sort } = req.query;
 
-    if (isNaN(queryMonth) || queryMonth < 1 || queryMonth > 12)
+    // Optional validations for month and year if they are explicitly passed
+    if (month && (isNaN(parseInt(month)) || parseInt(month) < 1 || parseInt(month) > 12)) {
       return res.status(400).json({ success: false, message: "Invalid month parameter. Must be 1-12." });
-    if (isNaN(queryYear) || queryYear < 2000)
+    }
+    if (year && (isNaN(parseInt(year)) || parseInt(year) < 2000)) {
       return res.status(400).json({ success: false, message: "Invalid year parameter." });
+    }
 
-    const result = await getEmployeeAttendanceHistory(userId, queryMonth, queryYear);
+    const result = await getEmployeeAttendanceHistory(userId, {
+      month,
+      year,
+      fromDate,
+      toDate,
+      sort,
+    });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });

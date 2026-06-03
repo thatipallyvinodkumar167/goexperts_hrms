@@ -728,18 +728,33 @@ export const midnightAttendanceCron = async () => {
 // ─────────────────────────────────────────────────────────
 // 6. EMPLOYEE ATTENDANCE HISTORY
 // ─────────────────────────────────────────────────────────
-export const getEmployeeAttendanceHistory = async (userId, month, year) => {
+export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDate, toDate, sort = "desc" }) => {
   const employee = await prisma.employee.findUnique({
     where: { userId },
     include: { company: { include: { hrSetting: true } } },
   });
   if (!employee) throw new Error("Employee profile details missing.");
 
-  const startOfMonth = new Date(year, month - 1, 1);
-  const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+  let startDate, endDate;
+
+  if (fromDate && toDate) {
+    startDate = new Date(fromDate);
+    startDate.setHours(0, 0, 0, 0);
+    endDate = new Date(toDate);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    const today = new Date();
+    const targetMonth = month ? parseInt(month) : today.getMonth() + 1;
+    const targetYear = year ? parseInt(year) : today.getFullYear();
+
+    startDate = new Date(targetYear, targetMonth - 1, 1);
+    startDate.setHours(0, 0, 0, 0);
+    endDate = new Date(targetYear, targetMonth, 0);
+    endDate.setHours(23, 59, 59, 999);
+  }
 
   const attendanceRecords = await prisma.attendance.findMany({
-    where: { employeeId: employee.id, date: { gte: startOfMonth, lte: endOfMonth } },
+    where: { employeeId: employee.id, date: { gte: startDate, lte: endDate } },
     orderBy: { date: "asc" },
   });
 
@@ -747,7 +762,7 @@ export const getEmployeeAttendanceHistory = async (userId, month, year) => {
     where: {
       employeeId: employee.id,
       status: "APPROVED",
-      OR: [{ fromDate: { lte: endOfMonth }, toDate: { gte: startOfMonth } }],
+      OR: [{ fromDate: { lte: endDate }, toDate: { gte: startDate } }],
     },
   });
 
@@ -758,12 +773,12 @@ export const getEmployeeAttendanceHistory = async (userId, month, year) => {
   const dailyRecords = [];
   let totalPresent = 0, totalAbsent = 0, totalHalfDays = 0;
   let totalLeaves = 0, totalWeekOffs = 0, totalLate = 0, totalEarlyExit = 0;
-  const daysInMonth = new Date(year, month, 0).getDate();
   const today = new Date();
   today.setHours(23, 59, 59, 999);
 
-  for (let day = 1; day <= daysInMonth; day++) {
-    const currentDate = new Date(year, month - 1, day);
+  let current = new Date(startDate);
+  while (current <= endDate) {
+    const currentDate = new Date(current);
     const dateStr = currentDate.toISOString().split("T")[0];
     const record = attendanceRecords.find((r) => new Date(r.date).toISOString().split("T")[0] === dateStr);
     const isOnLeave = approvedLeaves.some((l) => {
@@ -824,12 +839,23 @@ export const getEmployeeAttendanceHistory = async (userId, month, year) => {
       checkoutReason: record?.checkoutReason || null,
       dailyWorkSummary: record?.dailyWorkSummary || null,
     });
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  // Sort dailyRecords
+  if (sort === "asc") {
+    dailyRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
+  } else {
+    dailyRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
   }
 
   return {
     summary: {
-      month, year,
-      totalWorkingDays: daysInMonth - totalWeekOffs,
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+      totalDays: dailyRecords.length,
+      totalWorkingDays: dailyRecords.length - totalWeekOffs,
       present: totalPresent,
       absent: totalAbsent,
       halfDays: totalHalfDays,
