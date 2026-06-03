@@ -728,7 +728,7 @@ export const midnightAttendanceCron = async () => {
 // ─────────────────────────────────────────────────────────
 // 6. EMPLOYEE ATTENDANCE HISTORY
 // ─────────────────────────────────────────────────────────
-export const getEmployeeAttendanceHistory = async (userId, { date, month, year, fromDate, toDate, sort = "desc", status }) => {
+export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDate, toDate, sort = "desc", status }) => {
   const employee = await prisma.employee.findUnique({
     where: { userId },
     include: { company: { include: { hrSetting: true } } },
@@ -737,12 +737,7 @@ export const getEmployeeAttendanceHistory = async (userId, { date, month, year, 
 
   let startDate, endDate;
 
-  if (date) {
-    startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
-  } else if (fromDate && toDate) {
+  if (fromDate && toDate) {
     startDate = new Date(fromDate);
     startDate.setHours(0, 0, 0, 0);
     endDate = new Date(toDate);
@@ -848,17 +843,17 @@ export const getEmployeeAttendanceHistory = async (userId, { date, month, year, 
     current.setDate(current.getDate() + 1);
   }
 
-  // Sort dailyRecords
-  if (sort === "asc") {
-    dailyRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
-  } else {
-    dailyRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }
-
+  // Filter by status if provided
   let filteredRecords = dailyRecords;
   if (status) {
-    const filterStatus = status.toUpperCase();
-    filteredRecords = dailyRecords.filter(r => r.status.toUpperCase() === filterStatus);
+    filteredRecords = dailyRecords.filter(r => r.status.toUpperCase() === status.toUpperCase());
+  }
+
+  // Sort filteredRecords
+  if (sort === "asc") {
+    filteredRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
+  } else {
+    filteredRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
   }
 
   return {
