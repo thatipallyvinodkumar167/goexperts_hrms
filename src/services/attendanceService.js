@@ -728,7 +728,7 @@ export const midnightAttendanceCron = async () => {
 // ─────────────────────────────────────────────────────────
 // 6. EMPLOYEE ATTENDANCE HISTORY
 // ─────────────────────────────────────────────────────────
-export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDate, toDate, sort = "desc" }) => {
+export const getEmployeeAttendanceHistory = async (userId, { date, month, year, fromDate, toDate, sort = "desc", status }) => {
   const employee = await prisma.employee.findUnique({
     where: { userId },
     include: { company: { include: { hrSetting: true } } },
@@ -737,7 +737,12 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
 
   let startDate, endDate;
 
-  if (fromDate && toDate) {
+  if (date) {
+    startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+    endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+  } else if (fromDate && toDate) {
     startDate = new Date(fromDate);
     startDate.setHours(0, 0, 0, 0);
     endDate = new Date(toDate);
@@ -850,11 +855,17 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
     dailyRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
   }
 
+  let filteredRecords = dailyRecords;
+  if (status) {
+    const filterStatus = status.toUpperCase();
+    filteredRecords = dailyRecords.filter(r => r.status.toUpperCase() === filterStatus);
+  }
+
   return {
     summary: {
       startDate: startDate.toISOString().split("T")[0],
       endDate: endDate.toISOString().split("T")[0],
-      totalDays: dailyRecords.length,
+      totalDays: filteredRecords.length,
       totalWorkingDays: dailyRecords.length - totalWeekOffs,
       present: totalPresent,
       absent: totalAbsent,
@@ -864,7 +875,7 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
       weekOffs: totalWeekOffs,
       late: totalLate,
     },
-    history: dailyRecords,
+    history: filteredRecords,
   };
 };
 

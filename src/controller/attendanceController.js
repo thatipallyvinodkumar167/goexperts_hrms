@@ -118,7 +118,7 @@ export const getMyAttendanceHistory = async (req, res) => {
     if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized: User not authenticated." });
 
-    const { month, year, fromDate, toDate, sort } = req.query;
+    const { date, month, year, fromDate, toDate, sort, status } = req.query;
 
     // Optional validations for month and year if they are explicitly passed
     if (month && (isNaN(parseInt(month)) || parseInt(month) < 1 || parseInt(month) > 12)) {
@@ -129,11 +129,13 @@ export const getMyAttendanceHistory = async (req, res) => {
     }
 
     const result = await getEmployeeAttendanceHistory(userId, {
+      date,
       month,
       year,
       fromDate,
       toDate,
       sort,
+      status,
     });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
