@@ -871,8 +871,7 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
 // ─────────────────────────────────────────────────────────
 // 7. COMPANY ATTENDANCE HISTORY (HR VIEW)
 // ─────────────────────────────────────────────────────────
-export const getCompanyAttendanceHistory = async (companyId, dateStr) => {
-  const targetDate = dateStr ? new Date(dateStr) : new Date();
+const querySingleDayCompanyAttendance = async (companyId, targetDate) => {
   const startOfDay = new Date(targetDate); startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(targetDate); endOfDay.setHours(23, 59, 59, 999);
 
@@ -917,6 +916,7 @@ export const getCompanyAttendanceHistory = async (companyId, dateStr) => {
 
       if (record.status === "ABSENT") { status = "ABSENT"; absentCount++; }
       else if (record.status === "EARLY_EXIT") { status = "EARLY_EXIT"; earlyExitCount++; }
+      else if (record.status === "PENDING_VERIFICATION") { status = "PENDING_VERIFICATION"; }
       else if (checkIn && checkOut) {
         const durationMs = new Date(checkOut) - new Date(checkIn);
         if (durationMs < 4.5 * 60 * 60 * 1000) { status = "HALF_DAY"; halfDayCount++; }
@@ -962,6 +962,49 @@ export const getCompanyAttendanceHistory = async (companyId, dateStr) => {
     },
     records,
   };
+};
+
+export const getCompanyAttendanceHistory = async (companyId, { date, fromDate, toDate, month, year, sort = "desc" }) => {
+  const isRangeMode = (fromDate && toDate) || month || year;
+
+  if (!isRangeMode) {
+    const targetDate = date ? new Date(date) : new Date();
+    return await querySingleDayCompanyAttendance(companyId, targetDate);
+  }
+
+  let startDate, endDate;
+  if (fromDate && toDate) {
+    startDate = new Date(fromDate);
+    startDate.setHours(0, 0, 0, 0);
+    endDate = new Date(toDate);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    const today = new Date();
+    const targetMonth = month ? parseInt(month) : today.getMonth() + 1;
+    const targetYear = year ? parseInt(year) : today.getFullYear();
+
+    startDate = new Date(targetYear, targetMonth - 1, 1);
+    startDate.setHours(0, 0, 0, 0);
+    endDate = new Date(targetYear, targetMonth, 0);
+    endDate.setHours(23, 59, 59, 999);
+  }
+
+  const dailyHistoryList = [];
+  let current = new Date(startDate);
+  while (current <= endDate) {
+    const targetDate = new Date(current);
+    const dailyData = await querySingleDayCompanyAttendance(companyId, targetDate);
+    dailyHistoryList.push(dailyData);
+    current.setDate(current.getDate() + 1);
+  }
+
+  if (sort === "asc") {
+    dailyHistoryList.sort((a, b) => new Date(a.date) - new Date(b.date));
+  } else {
+    dailyHistoryList.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
+
+  return dailyHistoryList;
 };
 
 // ─────────────────────────────────────────────────────────
