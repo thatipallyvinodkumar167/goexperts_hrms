@@ -150,7 +150,7 @@ export const getCompanyAttendance = async (req, res) => {
     if (!companyId)
       return res.status(401).json({ success: false, message: "Unauthorized company context." });
 
-    const { date, month, year, fromDate, toDate, sort } = req.query;
+    const { date, month, year, fromDate, toDate, sort, status, employeeId, search } = req.query;
 
     const result = await getCompanyAttendanceHistory(companyId, {
       date,
@@ -159,6 +159,9 @@ export const getCompanyAttendance = async (req, res) => {
       fromDate,
       toDate,
       sort,
+      status,
+      employeeId,
+      search,
     });
     return res.status(200).json({ success: true, data: result });
   } catch (error) {

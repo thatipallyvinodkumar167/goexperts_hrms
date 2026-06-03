@@ -871,12 +871,25 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
 // ─────────────────────────────────────────────────────────
 // 7. COMPANY ATTENDANCE HISTORY (HR VIEW)
 // ─────────────────────────────────────────────────────────
-const querySingleDayCompanyAttendance = async (companyId, targetDate) => {
+const querySingleDayCompanyAttendance = async (companyId, targetDate, filters = {}) => {
+  const { status, employeeId, search } = filters;
   const startOfDay = new Date(targetDate); startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(targetDate); endOfDay.setHours(23, 59, 59, 999);
 
+  const employeeWhere = { companyId, status: "ACTIVE" };
+  if (employeeId) {
+    employeeWhere.id = employeeId;
+  }
+  if (search) {
+    employeeWhere.OR = [
+      { firstName: { contains: search } },
+      { lastName: { contains: search } },
+      { user: { email: { contains: search } } }
+    ];
+  }
+
   const employees = await prisma.employee.findMany({
-    where: { companyId, status: "ACTIVE" },
+    where: employeeWhere,
     include: { user: true },
   });
 
@@ -903,28 +916,28 @@ const querySingleDayCompanyAttendance = async (companyId, targetDate) => {
 
   let presentCount = 0, absentCount = 0, leaveCount = 0, halfDayCount = 0, earlyExitCount = 0;
 
-  const records = employees.map((emp) => {
+  let records = employees.map((emp) => {
     const record = attendanceRecords.find((r) => r.employeeId === emp.id);
     const leave = approvedLeaves.find((l) => l.employeeId === emp.id);
 
-    let status = "ABSENT", checkIn = null, checkOut = null, workingHours = "0h 0m";
+    let statusVal = "ABSENT", checkIn = null, checkOut = null, workingHours = "0h 0m";
 
     if (record) {
       checkIn = record.checkIn;
       checkOut = record.checkOut;
       if (checkIn && checkOut) workingHours = calcWorkingHours(checkIn, checkOut);
 
-      if (record.status === "ABSENT") { status = "ABSENT"; absentCount++; }
-      else if (record.status === "EARLY_EXIT") { status = "EARLY_EXIT"; earlyExitCount++; }
-      else if (record.status === "PENDING_VERIFICATION") { status = "PENDING_VERIFICATION"; }
+      if (record.status === "ABSENT") { statusVal = "ABSENT"; absentCount++; }
+      else if (record.status === "EARLY_EXIT") { statusVal = "EARLY_EXIT"; earlyExitCount++; }
+      else if (record.status === "PENDING_VERIFICATION") { statusVal = "PENDING_VERIFICATION"; }
       else if (checkIn && checkOut) {
         const durationMs = new Date(checkOut) - new Date(checkIn);
-        if (durationMs < 4.5 * 60 * 60 * 1000) { status = "HALF_DAY"; halfDayCount++; }
-        else { status = "PRESENT"; presentCount++; }
-      } else { status = "PRESENT"; presentCount++; }
-    } else if (leave) { status = "LEAVE"; leaveCount++; }
-    else if (isWeekendDay) { status = "WEEK_OFF"; }
-    else { status = "ABSENT"; absentCount++; }
+        if (durationMs < 4.5 * 60 * 60 * 1000) { statusVal = "HALF_DAY"; halfDayCount++; }
+        else { statusVal = "PRESENT"; presentCount++; }
+      } else { statusVal = "PRESENT"; presentCount++; }
+    } else if (leave) { statusVal = "LEAVE"; leaveCount++; }
+    else if (isWeekendDay) { statusVal = "WEEK_OFF"; }
+    else { statusVal = "ABSENT"; absentCount++; }
 
     return {
       employeeId: emp.id,
@@ -934,7 +947,7 @@ const querySingleDayCompanyAttendance = async (companyId, targetDate) => {
       email: emp.user?.email || "",
       workModel: emp.workModel,
       designation: emp.designation,
-      status,
+      status: statusVal,
       workTypeForToday: record?.workTypeForToday || null,
       checkIn,
       checkOut,
@@ -948,6 +961,10 @@ const querySingleDayCompanyAttendance = async (companyId, targetDate) => {
       masterFacePhoto: emp.faceVerificationPhoto || emp.profilePhoto || emp.user?.profileLogo || null,
     };
   });
+
+  if (status) {
+    records = records.filter(r => r.status.toUpperCase() === status.toUpperCase());
+  }
 
   return {
     date: targetDate.toISOString().split("T")[0],
@@ -964,12 +981,13 @@ const querySingleDayCompanyAttendance = async (companyId, targetDate) => {
   };
 };
 
-export const getCompanyAttendanceHistory = async (companyId, { date, fromDate, toDate, month, year, sort = "desc" }) => {
+export const getCompanyAttendanceHistory = async (companyId, { date, fromDate, toDate, month, year, sort = "desc", status, employeeId, search }) => {
   const isRangeMode = (fromDate && toDate) || month || year;
+  const filters = { status, employeeId, search };
 
   if (!isRangeMode) {
     const targetDate = date ? new Date(date) : new Date();
-    return await querySingleDayCompanyAttendance(companyId, targetDate);
+    return await querySingleDayCompanyAttendance(companyId, targetDate, filters);
   }
 
   let startDate, endDate;
@@ -993,8 +1011,12 @@ export const getCompanyAttendanceHistory = async (companyId, { date, fromDate, t
   let current = new Date(startDate);
   while (current <= endDate) {
     const targetDate = new Date(current);
-    const dailyData = await querySingleDayCompanyAttendance(companyId, targetDate);
-    dailyHistoryList.push(dailyData);
+    const dailyData = await querySingleDayCompanyAttendance(companyId, targetDate, filters);
+    
+    // Only include this day in the list if there are matching records (filters applied)
+    if (dailyData.records.length > 0) {
+      dailyHistoryList.push(dailyData);
+    }
     current.setDate(current.getDate() + 1);
   }
 
