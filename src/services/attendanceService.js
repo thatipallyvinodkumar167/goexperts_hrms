@@ -878,7 +878,7 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
 // 7. COMPANY ATTENDANCE HISTORY (HR VIEW)
 // ─────────────────────────────────────────────────────────
 const querySingleDayCompanyAttendance = async (companyId, targetDate, filters = {}) => {
-  const { status, employeeId, search } = filters;
+  const { status, employeeId, search, page, limit } = filters;
   const startOfDay = new Date(targetDate); startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(targetDate); endOfDay.setHours(23, 59, 59, 999);
 
@@ -972,6 +972,28 @@ const querySingleDayCompanyAttendance = async (companyId, targetDate, filters = 
     records = records.filter(r => r.status.toUpperCase() === status.toUpperCase());
   }
 
+  // Handle pagination if requested
+  let paginatedRecords = records;
+  let pagination = null;
+
+  if (page !== undefined || limit !== undefined) {
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const totalRecords = records.length;
+    const totalPages = Math.ceil(totalRecords / limitNum);
+    const startIndex = (pageNum - 1) * limitNum;
+    const endIndex = pageNum * limitNum;
+
+    paginatedRecords = records.slice(startIndex, endIndex);
+
+    pagination = {
+      currentPage: pageNum,
+      totalPages,
+      totalRecords,
+      limit: limitNum,
+    };
+  }
+
   return {
     date: targetDate.toISOString().split("T")[0],
     summary: {
@@ -983,13 +1005,14 @@ const querySingleDayCompanyAttendance = async (companyId, targetDate, filters = 
       earlyExits: earlyExitCount,
       isWeekend: isWeekendDay,
     },
-    records,
+    records: paginatedRecords,
+    ...(pagination && { pagination }),
   };
 };
 
-export const getCompanyAttendanceHistory = async (companyId, { date, fromDate, toDate, month, year, sort = "desc", status, employeeId, search }) => {
+export const getCompanyAttendanceHistory = async (companyId, { date, fromDate, toDate, month, year, sort = "desc", status, employeeId, search, page, limit }) => {
   const isRangeMode = (fromDate && toDate) || month || year;
-  const filters = { status, employeeId, search };
+  const filters = { status, employeeId, search, page, limit };
 
   if (!isRangeMode) {
     const targetDate = date ? new Date(date) : new Date();
