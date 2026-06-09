@@ -333,20 +333,22 @@
   }
 
   model CorrectionRequest {
-    id          String           @id @default(uuid())
-    employeeId  String
-    requestedBy String
-    reason      String
-    fields      Json
-    attachments Json?
-    status      CorrectionStatus @default(PENDING)
-    hrNote      String?          @db.LongText
-    approvedBy  String?
-    approvedAt  DateTime?
-    createdAt   DateTime         @default(now())
-    updatedAt   DateTime         @updatedAt
-    employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-    approver    Employee?        @relation("CorrectionApprovedBy", fields: [approvedBy], references: [id])
+    id                   String           @id @default(uuid())
+    employeeId           String
+    requestedBy          String
+    reason               String
+    fields               Json
+    attachments          Json?
+    status               CorrectionStatus @default(PENDING)
+    hrNote               String?          @db.LongText
+    approvedBy           String?
+    approvedAt           DateTime?
+    reminderSentAt       DateTime?        // Set when 48-hr reminder email is sent to HR
+    escalatedToOwnerAt   DateTime?        // Set when 72-hr escalation email is sent to Owner
+    createdAt            DateTime         @default(now())
+    updatedAt            DateTime         @updatedAt
+    employee             Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    approver             Employee?        @relation("CorrectionApprovedBy", fields: [approvedBy], references: [id])
 
     @@index([employeeId, status])
     @@index([approvedBy], map: "CorrectionRequest_approvedBy_fkey")

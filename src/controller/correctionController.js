@@ -1,95 +1,197 @@
 import {
   createCorrection,
-  getPending,
+  getCompanyRequests,
   decideCorrection,
-} from '../services/correctionService.js';
-import { notifyHr, notifyUser } from '../utils/notification.js';
+} from "../services/correctionService.js";
+import prisma from "../config/db.js";
 
-/*-------------------------------------------------
-   1️⃣ Employee creates a correction request
--------------------------------------------------*/
+// ─────────────────────────────────────────────────────────
+// 1. EMPLOYEE — Create a correction request (raise ticket)
+// ─────────────────────────────────────────────────────────
+// POST /api/employee/:id/correction-request
 export const createCorrectionRequest = async (req, res) => {
   try {
     const employeeId = req.params.id;
-    
     const { reason, fields, attachments } = req.body;
-    if (!reason || !fields) {
-      return res
-        .status(400)
-        .json({ success: false, message: '"reason" and "fields" are required' });
+
+    if (!reason || !fields || Object.keys(fields).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: '"reason" and at least one field to update are required.',
+      });
     }
 
-    const request = await createCorrection({
-      employeeId,
-      reason,
-      fields,
-      attachments,
+    // Verify employee belongs to the logged-in user
+    const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Employee not found." });
+    }
+    if (employee.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only raise correction requests for your own profile.",
+      });
+    }
+
+    // Block if employee already has a PENDING request
+    const existingPending = await prisma.correctionRequest.findFirst({
+      where: { employeeId, status: "PENDING" },
     });
+    if (existingPending) {
+      return res.status(409).json({
+        success: false,
+        message: "You already have a pending correction request. Please wait for HR to review it before raising a new one.",
+      });
+    }
 
-    // fire real‑time notification to all HR users
-    await notifyHr(request.id, employeeId, reason);
+    const request = await createCorrection({ employeeId, reason, fields, attachments });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       requestId: request.id,
       status: request.status,
-      message: 'Correction request submitted – HR will review it.',
+      message: "Correction request submitted successfully. HR will review it within 48 hours.",
     });
   } catch (err) {
     console.error("createCorrectionRequest error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res.status(500).json({ success: false, message: err.message || "Internal Server Error" });
   }
 };
 
-/*-------------------------------------------------
-   2️⃣ HR lists pending requests
--------------------------------------------------*/
-export const listPendingRequests = async (req, res) => {
+// ─────────────────────────────────────────────────────────
+// 2. HR/OWNER — List all correction requests (with filter)
+// ─────────────────────────────────────────────────────────
+// GET /api/employee/correction-requests?status=PENDING
+export const listCorrectionRequests = async (req, res) => {
   try {
-    const pending = await getPending();
-    res.json({ success: true, requests: pending });
+    const companyId = req.user?.companyId;
+    if (!companyId) {
+      return res.status(401).json({ success: false, message: "Unauthorized company context." });
+    }
+
+    const { status } = req.query; // optional: PENDING | APPROVED | REJECTED | COMPLETED
+
+    const requests = await getCompanyRequests(companyId, { status });
+
+    return res.status(200).json({
+      success: true,
+      total: requests.length,
+      requests: requests.map((r) => ({
+        id: r.id,
+        status: r.status,
+        reason: r.reason,
+        fields: r.fields,
+        attachments: r.attachments,
+        hrNote: r.hrNote,
+        createdAt: r.createdAt,
+        approvedAt: r.approvedAt,
+        reminderSentAt: r.reminderSentAt,
+        escalatedToOwnerAt: r.escalatedToOwnerAt,
+        hoursElapsed: Math.floor((Date.now() - new Date(r.createdAt).getTime()) / (1000 * 60 * 60)),
+        employee: {
+          id: r.employee.id,
+          employeeCode: r.employee.employeeCode,
+          firstName: r.employee.firstName,
+          lastName: r.employee.lastName,
+          email: r.employee.user?.email,
+          department: r.employee.department?.name,
+          designation: r.employee.designation?.title,
+        },
+      })),
+    });
   } catch (err) {
-    console.error("listPendingRequests error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    console.error("listCorrectionRequests error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Internal Server Error" });
   }
 };
 
-/*-------------------------------------------------
-   3️⃣ HR approves or rejects a request
--------------------------------------------------*/
+// ─────────────────────────────────────────────────────────
+// 3. EMPLOYEE — Get own correction requests history
+// ─────────────────────────────────────────────────────────
+// GET /api/employee/:id/correction-requests
+export const getMyCorrectionRequests = async (req, res) => {
+  try {
+    const employeeId = req.params.id;
+
+    const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
+    if (!employee) {
+      return res.status(404).json({ success: false, message: "Employee not found." });
+    }
+    if (employee.userId !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Unauthorized." });
+    }
+
+    const requests = await prisma.correctionRequest.findMany({
+      where: { employeeId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.status(200).json({
+      success: true,
+      requests: requests.map((r) => ({
+        id: r.id,
+        reason: r.reason,
+        fields: r.fields,
+        attachments: r.attachments,
+        status: r.status,
+        hrNote: r.hrNote,
+        createdAt: r.createdAt,
+        approvedAt: r.approvedAt,
+      })),
+    });
+  } catch (err) {
+    console.error("getMyCorrectionRequests error:", err);
+    return res.status(500).json({ success: false, message: err.message || "Internal Server Error" });
+  }
+};
+
+// ─────────────────────────────────────────────────────────
+// 4. HR/OWNER — Approve or Reject a request
+// ─────────────────────────────────────────────────────────
+// PATCH /api/employee/correction-request/:requestId
 export const decideCorrectionRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
     const { action, hrNote } = req.body; // action = APPROVE | REJECT
+    const companyId = req.user?.companyId;
+    const hrUserId = req.user?.id;
 
-    if (!['APPROVE', 'REJECT'].includes(action)) {
-      return res
-        .status(400)
-        .json({ success: false, message: 'Invalid action – use APPROVE or REJECT' });
+    if (!companyId) {
+      return res.status(401).json({ success: false, message: "Unauthorized company context." });
+    }
+    if (!["APPROVE", "REJECT"].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action. Use "APPROVE" or "REJECT".',
+      });
+    }
+    if (action === "REJECT" && (!hrNote || hrNote.trim() === "")) {
+      return res.status(400).json({
+        success: false,
+        message: "A rejection reason (hrNote) is required when rejecting a request.",
+      });
     }
 
-    const updated = await decideCorrection({
+    // Find HR employee record
+    const hrEmployee = await prisma.employee.findFirst({
+      where: { userId: hrUserId, companyId },
+    });
+
+    const result = await decideCorrection({
       requestId,
       action,
       hrNote,
-      hrId: null, 
+      hrEmployeeId: hrEmployee?.id || null,
+      companyId,
     });
 
-    // Notify the employee about the outcome
-    const title = `Your correction request was ${updated.status.toLowerCase()}`;
-    const body =
-      action === 'APPROVE'
-        ? 'HR approved – you may now edit the details.'
-        : `HR rejected: ${hrNote || 'No comment provided.'}`;
-    await notifyUser(updated.employeeId, title, body);
-
-    res.json({
+    return res.status(200).json({
       success: true,
-      status: updated.status,
-      message: `Request ${updated.status.toLowerCase()}.`,
+      status: result.status,
+      message: `Correction request ${result.status.toLowerCase()} successfully. Employee has been notified via email.`,
     });
   } catch (err) {
     console.error("decideCorrectionRequest error:", err);
-    res.status(500).json({ success: false, message: "Internal Server Error" });
+    return res.status(400).json({ success: false, message: err.message || "Internal Server Error" });
   }
 };

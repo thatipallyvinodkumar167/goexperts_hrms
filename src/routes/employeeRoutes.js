@@ -11,7 +11,8 @@ const router = express.Router();
 
 import {
   createCorrectionRequest,
-  listPendingRequests,
+  listCorrectionRequests,
+  getMyCorrectionRequests,
   decideCorrectionRequest,
 } from "../controller/correctionController.js";
 
@@ -37,26 +38,40 @@ router.put("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, upda
 // HR → update employee work model (WFO / WFH / HYBRID)
 router.patch("/:id/work-model", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, updateWorkModel);
 
-// Correction Request flow
+// ── Employee: raise a correction request ticket ──
 router.post(
   "/:id/correction-request",
   authMiddleware,
+  companyGuard,
   createCorrectionRequest
-); // employee creates request
+);
 
+// ── Employee: view own correction request history ──
 router.get(
-  "/correction-requests",
+  "/:id/correction-requests",
   authMiddleware,
-  allowRoles("HR", "OWNER"),
-  listPendingRequests
-); // HR views pending
+  companyGuard,
+  getMyCorrectionRequests
+);
 
+// ── HR/Owner: list all company correction requests (filter by status) ──
+// e.g. GET /api/employee/correction-requests?status=PENDING
+router.get(
+  "/correction-requests/all",
+  authMiddleware,
+  companyGuard,
+  allowRoles("HR", "OWNER"),
+  listCorrectionRequests
+);
+
+// ── HR/Owner: approve or reject a request ──
 router.patch(
   "/correction-request/:requestId",
   authMiddleware,
+  companyGuard,
   allowRoles("HR", "OWNER"),
   decideCorrectionRequest
-); // HR approves / rejects
+);
 
 //delete emp
 router.delete("/:id", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, deleteEmployee);
