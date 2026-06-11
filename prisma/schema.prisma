@@ -284,6 +284,7 @@
     profilePhoto          String?                    @db.LongText
     faceVerificationPhoto String?                    @db.LongText
     onboardingCompleted   Boolean                    @default(false)
+    onboardingStep        Int?                       @default(1)
     probationPeriod       String?                    @default("6 Months")
     noticePeriod          String?                    @default("90 Days")
     departmentId          String

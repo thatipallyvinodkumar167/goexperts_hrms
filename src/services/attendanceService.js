@@ -841,7 +841,9 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
       isEarlyCheckout: record?.isEarlyCheckout || false,
       isAutoCheckout: record?.isAutoCheckout || false,
       checkoutReason: record?.checkoutReason || null,
+      dailyWorkTitle: record?.dailyWorkTitle || null,
       dailyWorkSummary: record?.dailyWorkSummary || null,
+      workSubmittedAt: record?.workSubmittedAt || null,
     });
 
     current.setDate(current.getDate() + 1);
