@@ -13,4 +13,5 @@ router.get("/", globalLeaveController.getAllGlobalLeaveTypes);
 router.patch("/:id", globalLeaveController.updateGlobalLeaveType);
 router.delete("/:id", globalLeaveController.deleteGlobalLeaveType);
 
+
 export default router;
