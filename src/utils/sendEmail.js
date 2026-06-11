@@ -10,7 +10,9 @@ export const sendEmail = async (to, subject, html, dynamicAttachments = []) => {
             auth: {
                 user: process.env.SMTP_USER || "apikey",
                 pass: process.env.SMTP_PASS
-            }
+            },
+            connectionTimeout: 10000, // 10 seconds timeout
+            socketTimeout: 10000     // 10 seconds timeout
         });
 
         console.log("=============================================");
