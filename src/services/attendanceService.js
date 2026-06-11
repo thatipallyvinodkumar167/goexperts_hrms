@@ -564,7 +564,10 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
 // ─────────────────────────────────────────────────────────
 // 3. SUBMIT DAILY WORK (standalone, for auto-checkout cases)
 // ─────────────────────────────────────────────────────────
-export const submitDailyWorkService = async (userId, { dailyWorkSummary }) => {
+export const submitDailyWorkService = async (userId, { title, dailyWorkSummary }) => {
+  if (!title || title.trim() === "") {
+    throw new Error("Title cannot be empty.");
+  }
   if (!dailyWorkSummary || dailyWorkSummary.trim() === "") {
     throw new Error("Daily work summary cannot be empty.");
   }
@@ -586,6 +589,7 @@ export const submitDailyWorkService = async (userId, { dailyWorkSummary }) => {
   await prisma.attendance.update({
     where: { id: attendance.id },
     data: {
+      dailyWorkTitle: title.trim(),
       dailyWorkSummary: dailyWorkSummary.trim(),
       workSubmittedAt: new Date(),
     },
@@ -961,7 +965,9 @@ const querySingleDayCompanyAttendance = async (companyId, targetDate, filters = 
       isEarlyCheckout: record?.isEarlyCheckout || false,
       isAutoCheckout: record?.isAutoCheckout || false,
       checkoutReason: record?.checkoutReason || null,
+      dailyWorkTitle: record?.dailyWorkTitle || null,
       dailyWorkSummary: record?.dailyWorkSummary || null,
+      workSubmittedAt: record?.workSubmittedAt || null,
       checkInSelfie: record?.checkInSelfie || null,
       faceMatchScore: record?.faceMatchScore || null,
       masterFacePhoto: emp.faceVerificationPhoto || emp.profilePhoto || emp.user?.profileLogo || null,

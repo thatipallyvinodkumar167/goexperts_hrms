@@ -74,13 +74,13 @@ export const clockOut = async (req, res) => {
 // ─────────────────────────────────────────────────────────
 export const submitDailyWork = async (req, res) => {
   try {
-    const { dailyWorkSummary } = req.body;
+    const { title, dailyWorkSummary } = req.body;
     const userId = req.user?.id;
 
     if (!userId)
       return res.status(401).json({ success: false, message: "Unauthorized." });
 
-    const result = await submitDailyWorkService(userId, { dailyWorkSummary });
+    const result = await submitDailyWorkService(userId, { title, dailyWorkSummary });
     return res.status(200).json({ success: true, ...result });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });

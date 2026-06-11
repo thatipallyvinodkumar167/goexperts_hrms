@@ -553,6 +553,7 @@
     checkOutLat       Float?           // Where they checked out from
     checkOutLng       Float?           // Where they checked out from
     // Daily Work Submission
+    dailyWorkTitle    String?          // Employee's EOD work title
     dailyWorkSummary  String?          @db.LongText  // Employee's EOD work report
     workSubmittedAt   DateTime?        // Timestamp when daily work was submitted
     // Checkout metadata
