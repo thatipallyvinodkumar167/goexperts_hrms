@@ -198,16 +198,11 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
   }
 
   const updateData = {
-    email: data.email || undefined,
-    ownerName: data.ownerName || undefined,
-    ownerEmail: data.ownerEmail || undefined,
-    domain: data.domain || undefined,
     legalName: data.legalName || undefined,
     phone: data.phone || undefined,
     website: data.website || undefined,
     companyLogo: data.companyLogo || undefined,
     linkedinUrl: data.linkedinUrl || undefined,
-    industryType: data.industryTypeId ? { connect: { id: data.industryTypeId } } : undefined,
     companySize: data.companySize || undefined,
     foundedYear: data.foundedYear ? Number(data.foundedYear) : undefined,
     cinNumber: data.cinNumber || undefined,
@@ -221,7 +216,6 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
       upsert: {
         create: {
           addressLine1: data.addressLine1 || data.address || "",
-          addressLine2: data.addressLine2 || null,
           city: data.city || "",
           state: data.state || "",
           country: data.country || data.contry || "",
@@ -230,7 +224,6 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
         },
         update: {
           addressLine1: data.addressLine1 || data.address || undefined,
-          addressLine2: data.addressLine2 || undefined,
           city: data.city || undefined,
           state: data.state || undefined,
           country: data.country || data.contry || undefined,
@@ -318,6 +311,14 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
     status: "PENDING_APPROVAL",
   };
 
+  if (isSuperAdmin) {
+    if (data.email) updateData.email = data.email;
+    if (data.ownerName) updateData.ownerName = data.ownerName;
+    if (data.ownerEmail) updateData.ownerEmail = data.ownerEmail;
+    if (data.domain) updateData.domain = data.domain;
+    if (data.industryTypeId) updateData.industryType = { connect: { id: data.industryTypeId } };
+  }
+
   const updatedCompany = await prisma.company.update({
     where: { id: companyId },
     data: updateData,
@@ -370,7 +371,6 @@ export const updateBasicSettings = async (companyId, data, isSuperAdmin = false)
       upsert: {
         create: {
           addressLine1: data.address || data.addressLine1 || "",
-          addressLine2: data.addressLine2 || null,
           city: data.city || "",
           state: data.state || "",
           country: data.country || "",
@@ -379,7 +379,6 @@ export const updateBasicSettings = async (companyId, data, isSuperAdmin = false)
         },
         update: {
           addressLine1: data.address || data.addressLine1 || undefined,
-          addressLine2: data.addressLine2 || undefined,
           city: data.city || undefined,
           state: data.state || undefined,
           country: data.country || undefined,
