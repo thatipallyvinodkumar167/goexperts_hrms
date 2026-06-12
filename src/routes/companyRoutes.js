@@ -19,6 +19,8 @@ import {
   updateComplianceSettingsController,
   getSoftDeletedCompaniesController
 } from "../controller/companyController.js";
+import { getCompanyDashboard } from "../controller/companyDashboardController.js";
+import { companyGuard } from "../middleware/companyGuard.js";
 const router = express.Router();
 
 // SUPER ADMIN → list all companies
@@ -31,6 +33,9 @@ router.get("/soft-deleted", authMiddleware, allowRoles("SUPER_ADMIN"), getSoftDe
 router.post("/logo", authMiddleware, allowRoles("OWNER", "HR"), uploadCompanyLogo.single("logo"), uploadCompanyLogoController);
 
 router.post("/create", authMiddleware, allowRoles("SUPER_ADMIN"), createCompany);
+
+// OWNER/HR → Dashboard stats
+router.get("/dashboard", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getCompanyDashboard);
 
 // Consolidated Profile Update (Industry Standard)
 // - If ID is provided: Only Super Admin can use it to update any company.
