@@ -108,10 +108,10 @@ export const loginUser = async ({ email, password } = {}) => {
     profileLogo: user.profileLogo || (user.role === "OWNER" ? user.company?.companyLogo : null),
     companyId: user.companyId,
     // Pass these to the frontend so it knows which screen to show!
-    isProfileCompleted: user.company ? user.company.isProfileCompleted : true, 
-    companyStatus: user.company ? user.company.status : "ACTIVE",
+    isProfileCompleted: user.company ? user.company.isProfileCompleted : false, 
+    companyStatus: user.company ? user.company.status : "INCOMPLETE",
     isFullRegistered: user.role === "OWNER" 
-      ? (user.company ? user.company.isProfileCompleted : true)
+      ? (user.company ? user.company.isProfileCompleted : false)
       : false, // Default false, will be overridden below for HR/Employee
     industryTypeId: user.company ? user.company.industryTypeId : null
   };
