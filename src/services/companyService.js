@@ -558,7 +558,7 @@ export const activateCompany = async (companyId) => {
 //////////////////////////
 
 export const getCompaniesForAdmin = async () => {
-  return prisma.company.findMany({
+  const companies = await prisma.company.findMany({
     where: {
       status: { not: "INACTIVE" } // Only get active/invited companies
     },
@@ -574,6 +574,22 @@ export const getCompaniesForAdmin = async () => {
       }
     },
     orderBy: { createdAt: "desc" },
+  });
+
+  return companies.map(company => {
+    const { subscriptions, ...rest } = company;
+    let currentSubscription = null;
+    
+    if (subscriptions?.length > 0) {
+      currentSubscription = { ...subscriptions[0] };
+      const now = new Date();
+      currentSubscription.isSubscriptionActive = new Date(currentSubscription.startDate) <= now && new Date(currentSubscription.endDate) >= now;
+    }
+
+    return {
+      ...rest,
+      currentSubscription
+    };
   });
 };
 
@@ -592,7 +608,7 @@ export const getSoftDeletedCompanies = async () => {
 };
 
 export const getCompanyProfile = async (companyId) => {
-  return prisma.company.findUnique({
+  const company = await prisma.company.findUnique({
     where: { id: companyId },
     include: {
       documents: true,
@@ -604,6 +620,24 @@ export const getCompanyProfile = async (companyId) => {
       },
     },
   });
+
+  if (company) {
+    const { subscriptions, ...rest } = company;
+    let currentSubscription = null;
+    
+    if (subscriptions?.length > 0) {
+      currentSubscription = { ...subscriptions[0] };
+      const now = new Date();
+      currentSubscription.isSubscriptionActive = new Date(currentSubscription.startDate) <= now && new Date(currentSubscription.endDate) >= now;
+    }
+
+    return {
+      ...rest,
+      currentSubscription
+    };
+  }
+
+  return company;
 };
 
 //////////////////////////
