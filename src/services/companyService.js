@@ -31,17 +31,23 @@ export const createCompanyWithInvite = async ({
   const normalizedCompanyEmail = email.trim().toLowerCase();
   const normalizedOwnerEmail = ownerEmail?.trim().toLowerCase();
 
-  // check existing company email only
+  // check existing company email or name
   const existing = await prisma.company.findFirst({
     where: { 
       OR: [
-        { email: normalizedCompanyEmail }
-      ].filter(Boolean)
+        { email: normalizedCompanyEmail },
+        { name: name }
+      ]
     },
   });
 
   if (existing) {
-    throw new Error("Company with this Email already exists");
+    if (existing.email === normalizedCompanyEmail) {
+      throw new Error("Company with this Email already exists");
+    }
+    if (existing.name === name) {
+      throw new Error("Company with this Name already exists");
+    }
   }
 
   // ✅ TOKEN GENERATION (NO CHANGE, BUT USED PROPERLY NOW)
