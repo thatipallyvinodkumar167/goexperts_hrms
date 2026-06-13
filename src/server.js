@@ -25,6 +25,7 @@ import { inviteReminderCron } from "./jobs/inviteReminderCron.js";
 import { startMidnightAttendanceCron } from "./jobs/midnightAttendanceCron.js";
 import { startHybridQuotaCron } from "./jobs/hybridQuotaCron.js";
 import { correctionReminderCron } from "./jobs/correctionReminderCron.js";
+import { subscriptionReminderCron } from "./jobs/subscriptionReminderCron.js";
 import { loadFaceApiModels } from "./config/faceApi.js";
 import { initSocket } from "./socket.js";
 
@@ -146,6 +147,7 @@ const startServer = async () => {
     startMidnightAttendanceCron();
     startHybridQuotaCron();
     correctionReminderCron();
+    subscriptionReminderCron();
 
     const server = app.listen(PORT, "0.0.0.0", () => {
       console.log(`🚀 Server running on port ${PORT}`);
