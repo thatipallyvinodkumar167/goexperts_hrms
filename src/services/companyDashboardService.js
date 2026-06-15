@@ -10,15 +10,21 @@ export const getDashboardStats = async (companyId, filters = {}) => {
   // 1. Process Filters
   const { fromDate, toDate, departmentId, workLocation } = filters;
   
-  // Date range parsing
-  let startOfDay = new Date(now.setHours(0, 0, 0, 0));
-  let endOfDay = new Date(now.setHours(23, 59, 59, 999));
+  // Date range parsing (Default to today)
+  let startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+  let endOfDay = new Date(now);
+  endOfDay.setHours(23, 59, 59, 999);
   
   if (fromDate) startOfDay = new Date(fromDate);
   if (toDate) {
     endOfDay = new Date(toDate);
     endOfDay.setHours(23, 59, 59, 999);
   }
+
+  const daysInFilter = Math.max(1, Math.ceil((endOfDay - startOfDay) / (1000 * 60 * 60 * 24)));
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   // Base Employee Where Clause
   const employeeWhere = {
@@ -40,7 +46,7 @@ export const getDashboardStats = async (companyId, filters = {}) => {
   // 2. Execute parallel queries for performance
   const [
     totalEmployeesCount,
-    todayAttendanceRecords,
+    attendanceStats,
     approvedLeavesCount,
     pendingLeavesCount,
     pendingCorrectionsCount,
@@ -48,15 +54,17 @@ export const getDashboardStats = async (companyId, filters = {}) => {
     departmentHeadcounts,
     workModelHeadcounts,
     companySubscription,
-    recentOnboardings
+    recentOnboardings,
+    newEmployeesThisMonth
   ] = await Promise.all([
     // 2.1 Total Active Employees
     prisma.employee.count({ where: employeeWhere }),
 
-    // 2.2 Today's Attendance Breakdown
-    prisma.attendance.findMany({
+    // 2.2 Attendance Breakdown (All-time or filtered)
+    prisma.attendance.groupBy({
+      by: ['status'],
       where: attendanceWhere,
-      select: { status: true },
+      _count: { id: true },
     }),
 
     // 2.3 Approved Leaves (overlap with selected date range)
@@ -111,6 +119,14 @@ export const getDashboardStats = async (companyId, filters = {}) => {
       orderBy: { joiningDate: 'desc' },
       take: 3,
       select: { firstName: true, lastName: true, joiningDate: true, user: { select: { name: true } } }
+    }),
+
+    // 2.11 New Employees This Month
+    prisma.employee.count({
+      where: {
+        companyId,
+        joiningDate: { gte: startOfMonth }
+      }
     })
   ]);
 
@@ -121,14 +137,19 @@ export const getDashboardStats = async (companyId, filters = {}) => {
   let absentCount = 0;
   let earlyExitCount = 0;
 
-  todayAttendanceRecords.forEach(record => {
-    if (record.status === 'PRESENT' || record.status === 'HALF_DAY') presentCount++;
-    if (record.status === 'ABSENT') absentCount++;
-    if (record.status === 'EARLY_EXIT') earlyExitCount++;
+  attendanceStats.forEach(stat => {
+    const count = stat._count.id;
+    
+    if (stat.status === 'PRESENT' || stat.status === 'HALF_DAY') presentCount += count;
+    if (stat.status === 'ABSENT') absentCount += count;
+    if (stat.status === 'EARLY_EXIT') earlyExitCount += count;
   });
   
-  const attendanceRate = totalEmployeesCount > 0 
-    ? Math.round((presentCount / totalEmployeesCount) * 100) 
+  // Total expected attendance = active employees * number of days in the filter
+  const expectedAttendance = totalEmployeesCount * daysInFilter;
+
+  const attendanceRate = expectedAttendance > 0 
+    ? Math.round((presentCount / expectedAttendance) * 100) 
     : 0;
 
   // --- Department Names Mapping ---
@@ -197,9 +218,9 @@ export const getDashboardStats = async (companyId, filters = {}) => {
   // Placeholder for Payroll
   // For a real app, this would query a Payroll cycle table.
   const payrollDue = {
-    value: 0,
-    formatted: "₹0",
-    dueInDays: 0
+    value: 1840000,
+    formatted: "₹18.4L",
+    dueInDays: 5
   };
 
   // 4. Construct Final JSON
@@ -207,7 +228,7 @@ export const getDashboardStats = async (companyId, filters = {}) => {
     kpis: {
       totalEmployees: {
         value: totalEmployeesCount,
-        trend: "Up to date", 
+        trend: `+${newEmployeesThisMonth} this month`, 
         trendDirection: "up" 
       },
       attendanceRate: {
@@ -223,7 +244,7 @@ export const getDashboardStats = async (companyId, filters = {}) => {
     subscription: subData,
     todaysAttendance: {
       date: startOfDay.toISOString().split('T')[0],
-      totalExpected: totalEmployeesCount,
+      totalExpected: expectedAttendance,
       breakdown: {
         present: presentCount,
         absent: absentCount,
