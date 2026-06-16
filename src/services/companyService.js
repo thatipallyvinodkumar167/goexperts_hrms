@@ -73,21 +73,31 @@ export const createCompanyWithInvite = async ({
       },
     });
 
-    const ownerUser = await tx.user.upsert({
-      where: { email: normalizedOwnerEmail || normalizedCompanyEmail },
-      update: {
-        companyId: company.id,
-        role: "OWNER",
-      },
-      create: {
-        name: ownerName || (normalizedOwnerEmail || normalizedCompanyEmail).split('@')[0],
-        email: normalizedOwnerEmail || normalizedCompanyEmail,
-        password: "", // not set yet
-        role: "OWNER",
-        companyId: company.id,
-        status: "INVITED",
-      },
+    const existingOwner = await tx.user.findFirst({
+      where: { email: normalizedOwnerEmail || normalizedCompanyEmail }
     });
+
+    let ownerUser;
+    if (existingOwner) {
+      ownerUser = await tx.user.update({
+        where: { id: existingOwner.id },
+        data: {
+          companyId: company.id,
+          role: "OWNER",
+        }
+      });
+    } else {
+      ownerUser = await tx.user.create({
+        data: {
+          name: ownerName || (normalizedOwnerEmail || normalizedCompanyEmail).split('@')[0],
+          email: normalizedOwnerEmail || normalizedCompanyEmail,
+          password: "", // not set yet
+          role: "OWNER",
+          companyId: company.id,
+          status: "INVITED",
+        },
+      });
+    }
 
     // ✅ STORE TOKEN (CORRECT)
     await tx.companyInvite.create({
