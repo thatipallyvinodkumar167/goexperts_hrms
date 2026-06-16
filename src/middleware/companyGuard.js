@@ -46,11 +46,18 @@ export const companyGuard = async (req, res, next) => {
     // CHECK 2: PENDING APPROVAL
     // ──────────────────────────────────────────────
     if (company.status === "PENDING_APPROVAL") {
-      return res.status(403).json({
-        success: false,
-        code: "PENDING_APPROVAL",
-        message: "Your account is pending approval from the Admin. You will be notified once it is activated.",
-      });
+      // Allow dashboard to load (so frontend can show the empty dashboard + banner)
+      if (req.originalUrl && req.originalUrl.includes("/dashboard")) {
+        // Attach company status to req to be used by the controller/service
+        req.companyStatus = company.status;
+        // Do not return, let it continue
+      } else {
+        return res.status(403).json({
+          success: false,
+          code: "PENDING_APPROVAL",
+          message: "Your account is pending approval from the Admin. You will be notified once it is activated.",
+        });
+      }
     }
 
     // ──────────────────────────────────────────────
