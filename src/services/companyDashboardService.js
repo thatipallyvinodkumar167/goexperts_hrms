@@ -4,7 +4,7 @@ import prisma from "../config/db.js";
  * Get aggregated stats for the Company Owner Dashboard.
  * Supports filtering by date range, departmentId, and workLocation.
  */
-export const getDashboardStats = async (companyId, filters = {}, user = null, companyStatus = null) => {
+export const getDashboardStats = async (companyId, filters = {}, user = null) => {
   const now = new Date();
   
   // ============================================================
@@ -18,29 +18,6 @@ export const getDashboardStats = async (companyId, filters = {}, user = null, co
   // OWNER / HR DASHBOARD - Company-wide stats
   // ============================================================
   
-  if (companyStatus === "PENDING_APPROVAL") {
-    return {
-      message: "Your account is pending approval from the Admin. You will be notified once it is activated.",
-      isPending: true,
-      totalEmployees: 0,
-      activeEmployees: 0,
-      newJoinees: 0,
-      attrition: 0,
-      presentToday: 0,
-      absentToday: 0,
-      lateToday: 0,
-      halfDayToday: 0,
-      totalLeaveRequests: 0,
-      pendingLeaveRequests: 0,
-      approvedLeaveRequests: 0,
-      rejectedLeaveRequests: 0,
-      departmentStats: [],
-      attendanceTrends: [],
-      upcomingBirthdays: [],
-      recentActivities: []
-    };
-  }
-
   // 1. Process Filters
   const { fromDate, toDate, departmentId, workLocation } = filters;
   

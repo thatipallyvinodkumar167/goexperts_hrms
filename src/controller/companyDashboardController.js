@@ -23,7 +23,7 @@ export const getCompanyDashboard = async (req, res) => {
       workLocation: req.query.workLocation,
     };
 
-    const dashboardData = await dashboardService.getDashboardStats(companyId, filters, req.user, req.companyStatus);
+    const dashboardData = await dashboardService.getDashboardStats(companyId, filters, req.user);
 
     res.status(200).json({
       success: true,

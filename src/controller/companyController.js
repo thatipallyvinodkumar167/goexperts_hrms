@@ -118,7 +118,8 @@ export const updateCompanyProfileController = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Company profile updated successfully",
-      isprofilecompleted: data.isProfileCompleted
+      isprofilecompleted: data.isProfileCompleted,
+      isFullRegistered: data.isProfileCompleted
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
