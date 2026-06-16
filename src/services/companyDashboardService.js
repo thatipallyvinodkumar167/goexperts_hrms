@@ -4,8 +4,19 @@ import prisma from "../config/db.js";
  * Get aggregated stats for the Company Owner Dashboard.
  * Supports filtering by date range, departmentId, and workLocation.
  */
-export const getDashboardStats = async (companyId, filters = {}) => {
+export const getDashboardStats = async (companyId, filters = {}, user = null) => {
   const now = new Date();
+  
+  // ============================================================
+  // EMPLOYEE DASHBOARD - Completely personal, lightweight response
+  // ============================================================
+  if (user?.role === 'EMPLOYEE') {
+    return await getEmployeeDashboard(companyId, user, now);
+  }
+
+  // ============================================================
+  // OWNER / HR DASHBOARD - Company-wide stats
+  // ============================================================
   
   // 1. Process Filters
   const { fromDate, toDate, departmentId, workLocation } = filters;
@@ -223,6 +234,37 @@ export const getDashboardStats = async (companyId, filters = {}) => {
     dueInDays: 5
   };
 
+  // --- HR/Employee Personal Attendance ---
+  let selfAttendance = null;
+  if (user && user.role !== 'OWNER') {
+    const employee = await prisma.employee.findUnique({ where: { userId: user.id } });
+    if (employee) {
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date(now);
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const todaysRecord = await prisma.attendance.findFirst({
+        where: {
+          employeeId: employee.id,
+          date: { gte: todayStart, lte: todayEnd }
+        }
+      });
+      
+      selfAttendance = todaysRecord ? {
+        id: todaysRecord.id,
+        checkInTime: todaysRecord.checkInTime,
+        checkOutTime: todaysRecord.checkOutTime,
+        status: todaysRecord.status,
+        workTypeForToday: todaysRecord.workTypeForToday
+      } : {
+        checkInTime: null,
+        checkOutTime: null,
+        status: 'NOT_CHECKED_IN'
+      };
+    }
+  }
+
   // 4. Construct Final JSON
   return {
     kpis: {
@@ -241,7 +283,7 @@ export const getDashboardStats = async (companyId, filters = {}) => {
       },
       payrollDue
     },
-    subscription: subData,
+    ...(user?.role === 'OWNER' ? { subscription: subData } : { selfAttendance }),
     todaysAttendance: {
       date: startOfDay.toISOString().split('T')[0],
       totalExpected: expectedAttendance,
@@ -265,5 +307,166 @@ export const getDashboardStats = async (companyId, filters = {}) => {
       ]
     },
     recentActivity
+  };
+};
+
+/**
+ * Employee Dashboard - Personal stats only
+ * Returns: check-in/out, monthly attendance, leave balance, pending corrections
+ */
+const getEmployeeDashboard = async (companyId, user, now) => {
+  // Find the employee record
+  const employee = await prisma.employee.findUnique({
+    where: { userId: user.id },
+    include: {
+      department: { select: { name: true } },
+      designation: { select: { name: true } },
+    }
+  });
+
+  if (!employee) {
+    throw new Error("Employee record not found");
+  }
+
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(now);
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  // Run all queries in parallel
+  const [
+    todaysRecord,
+    monthlyAttendance,
+    totalLeavesApproved,
+    pendingLeaves,
+    pendingCorrections,
+    leaveTypes
+  ] = await Promise.all([
+    // 1. Today's check-in/out record
+    prisma.attendance.findFirst({
+      where: {
+        employeeId: employee.id,
+        date: { gte: todayStart, lte: todayEnd }
+      }
+    }),
+
+    // 2. This month's attendance grouped by status
+    prisma.attendance.groupBy({
+      by: ['status'],
+      where: {
+        employeeId: employee.id,
+        date: { gte: startOfMonth, lte: endOfMonth }
+      },
+      _count: { id: true }
+    }),
+
+    // 3. Total approved leaves this year
+    prisma.leave.count({
+      where: {
+        employeeId: employee.id,
+        status: "APPROVED",
+        fromDate: { gte: new Date(now.getFullYear(), 0, 1) }
+      }
+    }),
+
+    // 4. Pending leave requests
+    prisma.leave.count({
+      where: { employeeId: employee.id, status: "PENDING" }
+    }),
+
+    // 5. Pending correction requests
+    prisma.correctionRequest.count({
+      where: { employeeId: employee.id, status: "PENDING" }
+    }),
+
+    // 6. Leave types with max days for balance calculation
+    prisma.leaveType.findMany({
+      where: { companyId },
+      select: { id: true, name: true, maxDays: true }
+    })
+  ]);
+
+  // --- Self Attendance (Check In / Check Out) ---
+  const selfAttendance = todaysRecord ? {
+    id: todaysRecord.id,
+    checkInTime: todaysRecord.checkInTime,
+    checkOutTime: todaysRecord.checkOutTime,
+    status: todaysRecord.status,
+    workTypeForToday: todaysRecord.workTypeForToday
+  } : {
+    checkInTime: null,
+    checkOutTime: null,
+    status: 'NOT_CHECKED_IN'
+  };
+
+  // --- Monthly Attendance Summary ---
+  let presentDays = 0;
+  let absentDays = 0;
+  let halfDays = 0;
+  let earlyExits = 0;
+
+  monthlyAttendance.forEach(stat => {
+    const count = stat._count.id;
+    if (stat.status === 'PRESENT') presentDays += count;
+    if (stat.status === 'HALF_DAY') halfDays += count;
+    if (stat.status === 'ABSENT') absentDays += count;
+    if (stat.status === 'EARLY_EXIT') earlyExits += count;
+  });
+
+  // --- Leave Balance ---
+  const usedLeavesPerType = await prisma.leave.groupBy({
+    by: ['leaveTypeId'],
+    where: {
+      employeeId: employee.id,
+      status: "APPROVED",
+      fromDate: { gte: new Date(now.getFullYear(), 0, 1) }
+    },
+    _count: { id: true }
+  });
+
+  const usedMap = {};
+  usedLeavesPerType.forEach(item => { usedMap[item.leaveTypeId] = item._count.id; });
+
+  const leaveBalance = leaveTypes.map(lt => ({
+    type: lt.name,
+    total: lt.maxDays,
+    used: usedMap[lt.id] || 0,
+    remaining: lt.maxDays - (usedMap[lt.id] || 0)
+  }));
+
+  // --- Working days so far this month ---
+  const dayOfMonth = now.getDate();
+
+  return {
+    employee: {
+      id: employee.id,
+      name: `${employee.firstName || ''} ${employee.lastName || ''}`.trim(),
+      employeeCode: employee.employeeCode,
+      department: employee.department?.name || null,
+      designation: employee.designation?.name || null,
+      workModel: employee.workModel,
+      profilePhoto: employee.profilePhoto
+    },
+    selfAttendance,
+    monthlyAttendance: {
+      month: now.toLocaleString('default', { month: 'long', year: 'numeric' }),
+      dayOfMonth,
+      present: presentDays,
+      absent: absentDays,
+      halfDays,
+      earlyExits,
+      attendanceRate: dayOfMonth > 0 ? Math.round((presentDays / dayOfMonth) * 100) : 0
+    },
+    leaveBalance,
+    pendingActions: {
+      total: pendingLeaves + pendingCorrections,
+      items: [
+        { type: "LEAVE_REQUESTS", count: pendingLeaves, label: "My Pending Leaves" },
+        { type: "CORRECTION_REQUESTS", count: pendingCorrections, label: "My Pending Corrections" }
+      ]
+    }
   };
 };

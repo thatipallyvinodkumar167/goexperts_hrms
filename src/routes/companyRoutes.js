@@ -34,8 +34,8 @@ router.post("/logo", authMiddleware, allowRoles("OWNER", "HR"), uploadCompanyLog
 
 router.post("/create", authMiddleware, allowRoles("SUPER_ADMIN"), createCompany);
 
-// OWNER/HR → Dashboard stats
-router.get("/dashboard", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getCompanyDashboard);
+// OWNER/HR/EMPLOYEE → Dashboard stats (token-based, returns role-specific data)
+router.get("/dashboard", authMiddleware, allowRoles("OWNER", "HR", "EMPLOYEE"), companyGuard, getCompanyDashboard);
 
 // Consolidated Profile Update (Industry Standard)
 // - If ID is provided: Only Super Admin can use it to update any company.

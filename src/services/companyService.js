@@ -73,8 +73,13 @@ export const createCompanyWithInvite = async ({
       },
     });
 
-    const ownerUser = await tx.user.create({
-      data: {
+    const ownerUser = await tx.user.upsert({
+      where: { email: normalizedOwnerEmail || normalizedCompanyEmail },
+      update: {
+        companyId: company.id,
+        role: "OWNER",
+      },
+      create: {
         name: ownerName || (normalizedOwnerEmail || normalizedCompanyEmail).split('@')[0],
         email: normalizedOwnerEmail || normalizedCompanyEmail,
         password: "", // not set yet
