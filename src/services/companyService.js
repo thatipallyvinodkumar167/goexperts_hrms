@@ -584,33 +584,62 @@ export const getCompaniesForAdmin = async () => {
     where: {
       status: { not: "INACTIVE" } // Only get active/invited companies
     },
-    include: {
-      industryType: true,
+    select: {
+      id: true,
+      companyLogo: true,
+      name: true,
+      email: true,
+      status: true,
+      website: true,
+      address: {
+        select: {
+          city: true,
+          state: true,
+          country: true,
+        }
+      },
       subscriptions: {
-        include: { plan: true },
+        select: {
+          startDate: true,
+          endDate: true,
+          plan: { select: { name: true } },
+        },
         orderBy: { endDate: "desc" },
         take: 1,
       },
-      createdBy: {
-        select: { name: true, email: true }
-      }
     },
     orderBy: { createdAt: "desc" },
   });
 
   return companies.map(company => {
-    const { subscriptions, ...rest } = company;
-    let currentSubscription = null;
-    
-    if (subscriptions?.length > 0) {
-      currentSubscription = { ...subscriptions[0] };
-      const now = new Date();
-      currentSubscription.isSubscriptionActive = new Date(currentSubscription.startDate) <= now && new Date(currentSubscription.endDate) >= now;
+    const sub = company.subscriptions?.[0] || null;
+    const now = new Date();
+
+    let subscriptionStatus = "NO_PLAN";
+    let planName = null;
+
+    if (sub) {
+      const isActive = new Date(sub.startDate) <= now && new Date(sub.endDate) >= now;
+      subscriptionStatus = isActive ? "ACTIVE" : "EXPIRED";
+      planName = sub.plan?.name || null;
     }
 
+    // Build location string from address
+    const addr = company.address;
+    const location = addr
+      ? [addr.city, addr.state, addr.country].filter(Boolean).join(", ")
+      : null;
+
     return {
-      ...rest,
-      currentSubscription
+      id: company.id,
+      companyLogo: company.companyLogo,
+      companyName: company.name,
+      companyEmail: company.email,
+      status: company.status,
+      subscriptionStatus,
+      planName,
+      location,
+      website: company.website,
     };
   });
 };
