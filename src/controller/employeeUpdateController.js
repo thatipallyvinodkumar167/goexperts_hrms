@@ -256,3 +256,233 @@ export const updateSelf = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+/**
+ * ─────────────────────────────────────────────────────────
+ * NEW SPLIT API: GET /api/employee/self/:id/basic
+ * ─────────────────────────────────────────────────────────
+ */
+export const getBasicProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true, role: true, status: true, lastLoginAt: true } },
+        department: true,
+        designation: true,
+      },
+    });
+
+    if (!employee || employee.userId !== userId) {
+      return res.status(403).json({ success: false, message: "Not authorized or not found." });
+    }
+
+    if (!employee.firstName && employee.user?.name) {
+      const parts = employee.user.name.trim().split(/\s+/);
+      employee.firstName = parts[0] || "";
+      employee.lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
+    }
+
+    res.status(200).json({
+      success: true,
+      section: "basic",
+      data: {
+        id: employee.id,
+        companyId: employee.companyId,
+        employeeCode: employee.employeeCode,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        profilePhoto: employee.profilePhoto,
+        onboardingCompleted: employee.onboardingCompleted,
+        status: employee.status,
+        joiningDate: employee.joiningDate,
+        employmentType: employee.employmentType,
+        workModel: employee.workModel,
+        probationPeriod: employee.probationPeriod,
+        noticePeriod: employee.noticePeriod,
+        user: employee.user,
+        department: employee.department ? { name: employee.department.name } : null,
+        designation: employee.designation ? { title: employee.designation.title, level: employee.designation.level } : null,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────
+ * NEW SPLIT API: GET /api/employee/self/:id/personal
+ * ─────────────────────────────────────────────────────────
+ */
+export const getPersonalProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      include: { personal: true, emergencyContacts: true },
+    });
+
+    if (!employee || employee.userId !== req.user.id) {
+       return res.status(403).json({ success: false, message: "Not authorized or not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      section: "personal",
+      data: {
+        personal: employee.personal || null,
+        emergencyContacts: employee.emergencyContacts || [],
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────
+ * NEW SPLIT API: GET /api/employee/self/:id/professional
+ * ─────────────────────────────────────────────────────────
+ */
+export const getProfessionalProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      include: { educations: true, experiences: true, skills: true },
+    });
+
+    if (!employee || employee.userId !== req.user.id) {
+       return res.status(403).json({ success: false, message: "Not authorized or not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      section: "professional",
+      data: {
+        educations: employee.educations || [],
+        experiences: employee.experiences || [],
+        skills: employee.skills || null,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────
+ * NEW SPLIT API: GET /api/employee/self/:id/financial
+ * ─────────────────────────────────────────────────────────
+ */
+export const getFinancialProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      include: { bankDetails: true, nominee: true, compliance: true },
+    });
+
+    if (!employee || employee.userId !== req.user.id) {
+       return res.status(403).json({ success: false, message: "Not authorized or not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      section: "financial",
+      data: {
+        bankDetails: employee.bankDetails || null,
+        nominee: employee.nominee || null,
+        compliance: employee.compliance || null,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────
+ * NEW SPLIT API: GET /api/employee/self/:id/documents
+ * (Includes Deduplication Logic)
+ * ─────────────────────────────────────────────────────────
+ */
+export const getDocumentsProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      include: {
+        documents: {
+          orderBy: { createdAt: "desc" }, // Newest first
+        }
+      },
+    });
+
+    if (!employee || employee.userId !== req.user.id) {
+       return res.status(403).json({ success: false, message: "Not authorized or not found." });
+    }
+
+    // Deduplication logic: Keep only the most recent document for each type
+    const uniqueDocsMap = {};
+    if (employee.documents) {
+      for (const doc of employee.documents) {
+        if (!uniqueDocsMap[doc.name]) {
+          uniqueDocsMap[doc.name] = {
+            name: doc.name,
+            fileUrl: doc.fileUrl,
+            status: doc.status,
+            uploadedAt: doc.createdAt
+          };
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      section: "documents",
+      data: uniqueDocsMap, // Returns an object with unique documents by name
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/**
+ * ─────────────────────────────────────────────────────────
+ * NEW SPLIT API: GET /api/employee/self/:id/corrections
+ * ─────────────────────────────────────────────────────────
+ */
+export const getCorrectionsProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await prisma.employee.findUnique({
+      where: { id },
+      include: {
+        correctionRequests: {
+          orderBy: { createdAt: "desc" },
+        }
+      },
+    });
+
+    if (!employee || employee.userId !== req.user.id) {
+       return res.status(403).json({ success: false, message: "Not authorized or not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      section: "corrections",
+      data: {
+        total: employee.correctionRequests?.length || 0,
+        items: employee.correctionRequests || [],
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

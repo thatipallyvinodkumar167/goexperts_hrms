@@ -3,7 +3,16 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { companyGuard } from "../middleware/companyGuard.js";
 import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, getDeletedEmployeesList, restoreEmployee, updateWorkModel } from "../controller/employeeController.js";
-import { getSelf, updateSelf } from "../controller/employeeUpdateController.js";
+import { 
+  getSelf, 
+  updateSelf, 
+  getBasicProfile, 
+  getPersonalProfile, 
+  getProfessionalProfile, 
+  getFinancialProfile, 
+  getDocumentsProfile, 
+  getCorrectionsProfile 
+} from "../controller/employeeUpdateController.js";
 import { uploadProfileImage } from "../config/multer.js";
 
 const router = express.Router();
@@ -17,8 +26,16 @@ import {
 } from "../controller/correctionController.js";
 
 // ── Self routes (must be BEFORE /:id so Express doesn't treat "self" as an id) ──
-//get own profile
+//get own profile (Legacy - everything)
 router.get("/self/:id", authMiddleware, getSelf);
+
+// ── NEW SPLIT PROFILE APIS ──
+router.get("/self/:id/basic", authMiddleware, getBasicProfile);
+router.get("/self/:id/personal", authMiddleware, getPersonalProfile);
+router.get("/self/:id/professional", authMiddleware, getProfessionalProfile);
+router.get("/self/:id/financial", authMiddleware, getFinancialProfile);
+router.get("/self/:id/documents", authMiddleware, getDocumentsProfile);
+router.get("/self/:id/corrections", authMiddleware, getCorrectionsProfile);
 // update own profile (after HR approval + optional profile photo upload)
 router.patch("/self/:id", authMiddleware, uploadProfileImage.single("profilePhoto"), updateSelf);
 router.put("/self/:id", authMiddleware, uploadProfileImage.single("profilePhoto"), updateSelf);
