@@ -358,8 +358,9 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
       throw new Error("Company office location is not configured. Contact admin.");
     }
     const distance = calculateDistance(latitude, longitude, company.latitude, company.longitude);
-    if (distance > 100) {
-      throw new Error(`Location check failed: You are ${Math.round(distance)} meters away from the office. You must be within 100 meters to check in.`);
+    const allowedRadius = company.geofenceRadius || 100;
+    if (distance > allowedRadius) {
+      throw new Error(`Location check failed: You are ${Math.round(distance)} meters away from the office. You must be within ${allowedRadius} meters to check in.`);
     }
 
     // Face recognition for WFO

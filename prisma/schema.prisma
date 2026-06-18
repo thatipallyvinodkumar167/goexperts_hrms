@@ -53,6 +53,7 @@
     foundedYear        Int?
     latitude           Float?
     longitude          Float?
+    geofenceRadius     Int?                   @default(100)
     status             Status                 @default(INVITED)
     isEmailVerified    Boolean                @default(false)
     isProfileCompleted Boolean                @default(false)

@@ -254,6 +254,7 @@ const applyFieldUpdates = async (employeeId, fields) => {
     firstName,
     lastName,
     profilePhoto,
+    documents,
   } = fields;
 
   // Top-level employee fields
@@ -332,6 +333,18 @@ const applyFieldUpdates = async (employeeId, fields) => {
     await prisma.employeeExperience.deleteMany({ where: { employeeId } });
     await prisma.employeeExperience.createMany({
       data: experiences.map((e) => ({ employeeId, ...e })),
+    });
+  }
+
+  // Documents — append new documents (deduplication is handled at read-time)
+  if (documents && Array.isArray(documents)) {
+    await prisma.employeeDocument.createMany({
+      data: documents.map((doc) => ({
+        employeeId,
+        name: doc.name,
+        fileUrl: doc.fileUrl,
+        status: doc.status || "PENDING"
+      }))
     });
   }
 };

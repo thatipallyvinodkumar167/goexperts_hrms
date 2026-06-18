@@ -229,6 +229,7 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
     cinNumber: data.cinNumber || undefined,
     latitude: data.latitude ? parseFloat(data.latitude) : undefined,
     longitude: data.longitude ? parseFloat(data.longitude) : undefined,
+    geofenceRadius: data.geofenceRadius ? parseInt(data.geofenceRadius) : undefined,
     termsAndConditions: data.termsAndConditions || undefined,
     signature: data.signature || undefined,
 
