@@ -253,16 +253,14 @@ export const getDashboardStats = async (companyId, filters = {}, user = null) =>
       
       selfAttendance = todaysRecord ? {
         id: todaysRecord.id,
-        checkInTime: todaysRecord.checkIn,
-        checkOutTime: todaysRecord.checkOut,
-        status: todaysRecord.status,
+        checkInTime: todaysRecord.checkInTime,
+        checkOutTime: todaysRecord.checkOutTime,
+        status: true,
         workTypeForToday: todaysRecord.workTypeForToday
       } : {
-        id: null,
         checkInTime: null,
         checkOutTime: null,
-        status: 'NOT_CHECKED_IN',
-        workTypeForToday: null
+        status: false
       };
     }
   }
@@ -394,16 +392,14 @@ const getEmployeeDashboard = async (companyId, user, now) => {
   // --- Self Attendance (Check In / Check Out) ---
   const selfAttendance = todaysRecord ? {
     id: todaysRecord.id,
-    checkInTime: todaysRecord.checkIn,
-    checkOutTime: todaysRecord.checkOut,
-    status: todaysRecord.status,
+    checkInTime: todaysRecord.checkInTime,
+    checkOutTime: todaysRecord.checkOutTime,
+    status: true,
     workTypeForToday: todaysRecord.workTypeForToday
   } : {
-    id: null,
     checkInTime: null,
     checkOutTime: null,
-    status: 'NOT_CHECKED_IN',
-    workTypeForToday: null
+    status: false
   };
 
   // --- Monthly Attendance Summary ---
