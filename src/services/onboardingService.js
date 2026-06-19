@@ -966,6 +966,30 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
         throw Error("You must accept the legal declaration to complete onboarding.");
     }
 
+    if (files.experienceLetter && !files.relieving_letter) {
+        files.relieving_letter = files.experienceLetter;
+        delete files.experienceLetter;
+    }
+
+    const validExperience = Array.isArray(data.experience)
+        ? data.experience
+            .filter(exp => exp && (
+                exp.companyName ||
+                exp.designation ||
+                exp.role ||
+                exp.startDate ||
+                exp.endDate ||
+                exp.responsibilities ||
+                (Array.isArray(exp.technologies) && exp.technologies.length > 0)
+            ))
+            .map(exp => ({
+                ...exp,
+                companyName: exp.companyName?.trim(),
+                role: (exp.designation || exp.role)?.trim(),
+                responsibilities: exp.responsibilities?.trim()
+            }))
+        : [];
+
     // 2. Mandatory Documents Check for All Employees
     if (!files.aadhaar) {
         throw Error("Aadhaar card upload is mandatory.");
@@ -989,8 +1013,19 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
     // 3. Experienced Professional Check
     const hasExperience = data.isExperienced || employee.employmentType === "EXPERIENCED";
     if (hasExperience) {
-        if (!data.experience || !Array.isArray(data.experience) || data.experience.length === 0) {
+        if (validExperience.length === 0) {
             throw Error("Previous work experience is mandatory for experienced professionals.");
+        }
+        for (const exp of validExperience) {
+            if (!exp.companyName || !exp.role || !exp.startDate || Number.isNaN(new Date(exp.startDate).getTime())) {
+                throw Error("Company name, role, and valid start date are mandatory for each previous experience.");
+            }
+            if (exp.endDate && Number.isNaN(new Date(exp.endDate).getTime())) {
+                throw Error("Valid end date is required when an experience end date is provided.");
+            }
+            if (exp.endDate && new Date(exp.endDate) < new Date(exp.startDate)) {
+                throw Error("Experience end date cannot be earlier than start date.");
+            }
         }
         if (!files.relieving_letter) {
             throw Error("Relieving letter from the previous employer is mandatory.");
@@ -999,6 +1034,7 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
             throw Error("Recent payslips are mandatory for salary verification.");
         }
     }
+    data.experience = validExperience;
 
     const result = await prisma.$transaction(async (tx) => {
         // 1. Personal & Identity
@@ -1070,19 +1106,21 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
         }
 
         // 4. Experience
-        if (data.experience && Array.isArray(data.experience)) {
+        if (hasExperience) {
             await tx.employeeExperience.deleteMany({ where: { employeeId: employee.id } });
             await tx.employeeExperience.createMany({
                 data: data.experience.map(exp => ({
                     employeeId: employee.id,
                     companyName: exp.companyName,
-                    role: exp.designation || exp.role,
+                    role: exp.role,
                     startDate: new Date(exp.startDate),
                     endDate: exp.endDate ? new Date(exp.endDate) : null,
                     technologies: exp.technologies,
                     responsibilities: exp.responsibilities
                 }))
             });
+        } else {
+            await tx.employeeExperience.deleteMany({ where: { employeeId: employee.id } });
         }
 
         // 5. Skills
@@ -1223,6 +1261,7 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
                 firstName: data.personal?.firstName || undefined,
                 middleName: data.personal?.middleName || undefined,
                 lastName: data.personal?.lastName || undefined,
+                employmentType: hasExperience ? "EXPERIENCED" : "FRESHER",
                 onboardingCompleted: true,
                 isDeclaredTrue: true,
                 status: "PENDING_APPROVAL"
