@@ -15,12 +15,32 @@ import {
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import prisma from "../config/db.js";
+import {
+  createCountry,
+  getCountries,
+  createState,
+  getStates,
+  createCity,
+  getCities
+} from "../controller/stateCityController.js";
 
 const router = express.Router();
 
 // ==========================================
 // 🔓 PUBLIC ROUTES (For UI Dropdowns)
 // ==========================================
+
+// Countries routes
+router.post("/countries", createCountry);
+router.get("/countries", getCountries);
+
+// States routes
+router.post("/states", createState);
+router.get("/states", getStates);
+
+// Cities routes
+router.post("/cities", createCity);
+router.get("/cities", getCities);
 
 // 1. Get all industries
 router.get("/industries", getAllIndustryTypes);

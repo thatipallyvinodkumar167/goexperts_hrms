@@ -973,9 +973,9 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
     if (!files.pan) {
         throw Error("PAN card upload is mandatory.");
     }
-    if (!files.bankPassbook) {
-        throw Error("Bank Passbook or Statement upload is mandatory.");
-    }
+    // if (!files.bankPassbook) {
+    //     throw Error("Bank Passbook or Statement upload is mandatory.");
+    // }
     if (!files.education_proof) {
         throw Error("Education proof upload is mandatory.");
     }

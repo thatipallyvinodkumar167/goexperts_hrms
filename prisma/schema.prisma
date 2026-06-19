@@ -920,3 +920,36 @@
     createdAt DateTime @default(now())
   }
 
+  model Country {
+    id        String   @id @default(uuid())
+    name      String   @unique
+    states    State[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+  }
+
+  model State {
+    id        String   @id @default(uuid())
+    name      String
+    countryId String
+    country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+    cities    City[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([name, countryId])
+    @@index([countryId])
+  }
+
+  model City {
+    id        String   @id @default(uuid())
+    name      String
+    stateId   String
+    state     State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([name, stateId])
+    @@index([stateId])
+  }
+
