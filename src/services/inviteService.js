@@ -23,11 +23,14 @@ export const inviteService = async (data) => {
   const normalizedEmail = email.trim().toLowerCase();
 
   const existingUser = await prisma.user.findFirst({
-    where: { email: normalizedEmail, companyId }
+    where: {
+      email: normalizedEmail,
+      role: { in: ["EMPLOYEE", "HR"] }
+    }
   });
 
   if (existingUser) {
-    throw new Error("User already exists in company");
+    throw new Error("This email is already used by an employee or HR account");
   }
 
   const rawToken = crypto.randomBytes(32).toString("hex");
@@ -206,6 +209,17 @@ export const acceptInviteService = async ({ token, password, name }) => {
 
   if (!invite) {
     throw new Error("Invalid or expired invite");
+  }
+
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      email: invite.email,
+      role: { in: ["EMPLOYEE", "HR"] }
+    }
+  });
+
+  if (existingUser) {
+    throw new Error("This email is already used by an employee or HR account");
   }
 
   const hashedPassword = await hashPassword(password);

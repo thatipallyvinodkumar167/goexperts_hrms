@@ -32,10 +32,14 @@ export const acceptInviteService = async ({token, password, name}) => {
         
         // 1. Check if user already exists from a previous failed attempt
         let user = await tx.user.findFirst({
-            where: { email: invite.email, companyId: invite.companyId }
+            where: { email: invite.email }
         });
 
         if (user) {
+            if (user.companyId !== invite.companyId || ["EMPLOYEE", "HR"].includes(user.role)) {
+                throw Error("This email is already used by an employee or HR account");
+            }
+
             user = await tx.user.update({
                 where: { id: user.id },
                 data: { password: hashedPassword, name: name || user.name }
@@ -103,7 +107,7 @@ export const acceptInviteService = async ({token, password, name}) => {
 
     // We must return the user ID for the next steps, so fetch it outside transaction
     const finalUser = await prisma.user.findFirst({
-        where: { email: invite.email, companyId: invite.companyId }
+        where: { email: invite.email }
     });
 
     return {

@@ -30,14 +30,17 @@ export const createEmployeeService = async (data) => {
 
 
     //checking emp is there or not
+    const normalizedEmail = email.trim().toLowerCase();
+
     const existing = await prisma.user.findFirst({
         where : {
-            email, companyId
+            email: normalizedEmail,
+            role: { in: ["EMPLOYEE", "HR"] }
         }
     });
 
     if(existing){
-        throw Error(" Employee already existx in this company");
+        throw Error("This email is already used by an employee or HR account");
     }
 
     const hashedPassword = await hashPassword(password);
@@ -47,7 +50,7 @@ export const createEmployeeService = async (data) => {
         const user = await tx.user.create({
             data : {
                 name,
-                email,
+                email: normalizedEmail,
                 password : hashedPassword,
                 role : "EMPLOYEE",
                 companyId
