@@ -987,19 +987,51 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
     }
 
     // 3. Experienced Professional Check
-    const hasExperience = (employee.employmentType === "EXPERIENCED") || (data.experience && Array.isArray(data.experience) && data.experience.length > 0);
-    if (hasExperience) {
-        if (!data.experience || !Array.isArray(data.experience) || data.experience.length === 0) {
-            throw Error("Previous work experience is mandatory for experienced professionals.");
-        }
-        if (!files.relieving_letter) {
-            throw Error("Relieving letter from the previous employer is mandatory.");
-        }
-        if (!files.payslips) {
-            throw Error("Recent payslips are mandatory for salary verification.");
-        }
+// =====================================================
+// EXPERIENCED / FRESHER VALIDATION
+// =====================================================
+
+console.log("===== EXPERIENCE DEBUG =====");
+console.log("data.isExperienced:", data.isExperienced);
+console.log("experience:", data.experience);
+console.log("employee.employmentType:", employee.employmentType);
+console.log("uploaded files:", Object.keys(files || {}));
+
+// Frontend should send:
+// isExperienced = true  -> experienced employee
+// isExperienced = false -> fresher
+
+const hasExperience = data.isExperienced === true;
+
+if (hasExperience) {
+
+    if (
+        !Array.isArray(data.experience) ||
+        data.experience.length === 0
+    ) {
+        throw Error(
+            "Experience details are mandatory for experienced employees."
+        );
     }
 
+    if (!files.relieving_letter) {
+        throw Error(
+            "Relieving letter from the previous employer is mandatory."
+        );
+    }
+
+    if (!files.payslips) {
+        throw Error(
+            "Recent payslips are mandatory for salary verification."
+        );
+    }
+
+} else {
+
+    // Fresher
+    console.log("Fresher onboarding detected.");
+
+}
     const result = await prisma.$transaction(async (tx) => {
         // 1. Personal & Identity
         if (data.personal) {
