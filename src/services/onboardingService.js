@@ -987,7 +987,7 @@ export const finalizeFullOnboardingService = async (userId, data, files = {}) =>
     }
 
     // 3. Experienced Professional Check
-    const hasExperience = (employee.employmentType === "EXPERIENCED") || (data.experience && Array.isArray(data.experience) && data.experience.length > 0);
+    const hasExperience = data.isExperienced || employee.employmentType === "EXPERIENCED";
     if (hasExperience) {
         if (!data.experience || !Array.isArray(data.experience) || data.experience.length === 0) {
             throw Error("Previous work experience is mandatory for experienced professionals.");

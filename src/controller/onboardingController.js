@@ -191,6 +191,7 @@ export const finalizeFullOnboarding = async (req, res) => {
             bank: parseJson(body.bank),
             nominee: parseJson(body.nominee),
             compliance: parseJson(body.compliance),
+            isExperienced: parseJson(body.isExperienced) === true || body.isExperienced === 'true',
             isDeclaredTrue: parseJson(body.isDeclaredTrue) === true || body.isDeclaredTrue === 'true'
         };
 
