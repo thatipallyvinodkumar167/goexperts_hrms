@@ -866,20 +866,46 @@ export const getAllEmployeeReviewsService = async (companyId) => {
 
     const employees = await prisma.employee.findMany({
         where: { companyId },
-        include: {
-            user: { select: { id: true, name: true, email: true, status: true } },
-            department: { select: { id: true, name: true } },
-            personal: { select: { gender: true, dob: true, maritalStatus: true, bloodGroup: true, nationality: true } },
-            educations: true,
-            experiences: true,
-            bankDetails: true,
-            skills: true,
-            documents: { select: { id: true, name: true, status: true } }
+        select: {
+            id: true,
+            employeeCode: true,
+            status: true,
+            bgvStatus: true,
+            onboardingCompleted: true,
+            joiningDate: true,
+            employmentType: true,
+            profilePhoto: true,
+            user: { select: { name: true, email: true } },
+            department: { select: { name: true } },
+            designation: { select: { title: true } },
+            documents: { select: { status: true } }
         },
         orderBy: { joiningDate: "desc" }
     });
 
-    return employees;
+    // 🏆 Industry Level Polish: Return only a slim summary for the list view
+    return employees.map(emp => {
+        const totalDocs = emp.documents.length;
+        const approvedDocs = emp.documents.filter(d => d.status === "APPROVED").length;
+        const documentProgress = totalDocs > 0 ? Math.round((approvedDocs / totalDocs) * 100) : 0;
+
+        return {
+            id: emp.id,
+            employeeCode: emp.employeeCode,
+            name: emp.user?.name || "Unknown",
+            email: emp.user?.email || "N/A",
+            avatar: emp.profilePhoto || null,
+            department: emp.department?.name || "Not Assigned",
+            designation: emp.designation?.title || "Not Assigned",
+            employmentType: emp.employmentType,
+            joiningDate: emp.joiningDate,
+            status: emp.status,
+            bgvStatus: emp.bgvStatus,
+            onboardingCompleted: emp.onboardingCompleted,
+            documentProgress: `${documentProgress}%`,
+            pendingAction: emp.status === "PENDING_APPROVAL"
+        };
+    });
 };
 
 
