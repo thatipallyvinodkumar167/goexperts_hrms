@@ -701,7 +701,7 @@ export const finalizeEmployeeJoiningService = async ({
                 });
 
                 const template = company.industryType?.salaryTemplate;
-                const gross = offer.salary;
+                const gross = offer.ctc;
 
                 if (template) {
                     // ✅ ADVANCED INDUSTRY CALCULATION
@@ -758,7 +758,7 @@ export const finalizeEmployeeJoiningService = async ({
             await tx.salaryStructure.upsert({
                 where: { employeeId },
                 create: { 
-                    employeeId, 
+                    employee: { connect: { id: employeeId } }, 
                     basic: finalSalary.basic, 
                     hra: finalSalary.hra, 
                     allowances: finalSalary.allowances, 
