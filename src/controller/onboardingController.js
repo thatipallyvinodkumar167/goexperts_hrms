@@ -103,7 +103,11 @@ export const saveComplianceAndFinalize = async (req, res) => {
 
 export const finalizeJoining = async (req, res) => {
     try {
-        const data = await finalizeEmployeeJoiningService(req.body);
+        const payload = {
+            ...req.body,
+            employeeId: req.params.employeeId
+        };
+        const data = await finalizeEmployeeJoiningService(payload);
         res.status(200).json({ success: true, ...data });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
@@ -144,7 +148,17 @@ export const getEmployeeReview = async (req, res) => {
     try {
         const { employeeId } = req.params;
         const data = await getEmployeeOnboardingDetailsService(employeeId);
-        res.status(200).json({ success: true, data });
+        
+        // Map Prisma relations to expected JSON response format for Flutter
+        const responseData = {
+            ...data,
+            education: data.educations || [],
+            experience: data.experiences || []
+        };
+        delete responseData.educations;
+        delete responseData.experiences;
+
+        res.status(200).json({ success: true, data: responseData });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
