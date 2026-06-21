@@ -510,6 +510,20 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     throw new Error("You have already checked out for today.");
   }
 
+  // ── WFH: Enforce <1km Distance ──
+  if (attendance.workTypeForToday === "WFH") {
+    if (!latitude || !longitude) {
+      throw new Error("Location coordinates are required to check out from WFH.");
+    }
+    if (!attendance.checkInLat || !attendance.checkInLng) {
+      throw new Error("No check-in location found. Cannot verify WFH checkout location.");
+    }
+    const distance = calculateDistance(latitude, longitude, attendance.checkInLat, attendance.checkInLng);
+    if (distance > 1000) {
+      throw new Error("You are not in the check-in location, will not allow to check out.");
+    }
+  }
+
   // ── MANDATORY: Daily Work Summary ──
   if (!dailyWorkSummary || dailyWorkSummary.trim() === "") {
     throw new Error("You must submit your Daily Work Summary before you can check out.");
@@ -640,6 +654,27 @@ export const heartbeatService = async (userId, companyId, { latitude, longitude 
 
   // 1 km = 1000 meters
   if (distance > 1000) {
+    // ── 3 STRIKES RULE ──
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const monthEnd = new Date(monthStart);
+    monthEnd.setMonth(monthEnd.getMonth() + 1);
+    monthEnd.setDate(0);
+    monthEnd.setHours(23, 59, 59, 999);
+
+    const previousViolations = await prisma.attendance.count({
+      where: {
+        employeeId: employee.id,
+        date: { gte: monthStart, lte: monthEnd },
+        isAutoCheckout: true,
+        checkoutReason: "You went outside during working hours"
+      }
+    });
+
+    const newStatus = previousViolations >= 3 ? "ABSENT" : "EARLY_EXIT";
+
     // AUTO-CHECKOUT
     await prisma.attendance.update({
       where: { id: attendance.id },
@@ -648,8 +683,8 @@ export const heartbeatService = async (userId, companyId, { latitude, longitude 
         checkOutLat: latitude,
         checkOutLng: longitude,
         isAutoCheckout: true,
-        checkoutReason: `System Auto-Checkout: Employee moved ${Math.round(distance)}m away from the 1km WFH radius.`,
-        status: "EARLY_EXIT",
+        checkoutReason: "You went outside during working hours",
+        status: newStatus,
       },
     });
 
@@ -680,12 +715,15 @@ export const midnightAttendanceCron = async () => {
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  // Find all employees still checked in without checkout
+  // Find all employees still checked in without checkout, OR who didn't submit work
   const unclosedAttendances = await prisma.attendance.findMany({
     where: {
       date: { gte: todayStart, lte: todayEnd },
       checkIn: { not: null },
-      checkOut: null,
+      OR: [
+        { checkOut: null },
+        { dailyWorkSummary: null }
+      ]
     },
     include: {
       employee: {
@@ -703,7 +741,7 @@ export const midnightAttendanceCron = async () => {
     const hasSubmittedWork = !!attendance.dailyWorkSummary;
 
     if (hasSubmittedWork) {
-      // Work was submitted — auto-close shift, keep as PRESENT
+      // Work was submitted, meaning checkOut was null — auto-close shift, keep as PRESENT
       await prisma.attendance.update({
         where: { id: attendance.id },
         data: {
@@ -717,7 +755,7 @@ export const midnightAttendanceCron = async () => {
       await prisma.attendance.update({
         where: { id: attendance.id },
         data: {
-          checkOut: new Date(),
+          checkOut: attendance.checkOut || new Date(),
           status: "ABSENT",
           isAutoCheckout: true,
           checkoutReason: "System Auto-Checkout: No daily work submitted. Marked as Absent.",
