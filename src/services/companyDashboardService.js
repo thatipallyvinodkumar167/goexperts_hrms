@@ -320,7 +320,7 @@ const getEmployeeDashboard = async (companyId, user, now) => {
     where: { userId: user.id },
     include: {
       department: { select: { name: true } },
-      designation: { select: { name: true } },
+      designation: { select: { title: true } },
     }
   });
 
