@@ -219,6 +219,8 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
   }
 
   const updateData = {
+    ownerName: data.ownerName || undefined,
+    ownerEmail: data.ownerEmail || undefined,
     legalName: data.legalName || undefined,
     phone: data.phone || undefined,
     website: data.website || undefined,
