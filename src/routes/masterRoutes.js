@@ -78,14 +78,24 @@ router.get("/company-departments", async (req, res) => {
     // Auto-seed if empty (fixes bug for existing companies)
     if (data.length === 0) {
       const company = await prisma.company.findUnique({ where: { id: companyId } });
-      if (company && company.industryTypeId) {
-        const { seedCompanyMastersFromTemplate } = await import("../services/masterSeedService.js");
-        await seedCompanyMastersFromTemplate(companyId, company.industryTypeId);
+      if (company) {
+        let indId = company.industryTypeId;
         
-        // Re-fetch after seeding
-        data = await prisma.department.findMany({
-          where: { companyId }
-        });
+        // If they still don't have an industry set, force a fallback so they aren't stuck
+        if (!indId) {
+          const fallbackIndustry = await prisma.industryType.findFirst();
+          if (fallbackIndustry) indId = fallbackIndustry.id;
+        }
+
+        if (indId) {
+          const { seedCompanyMastersFromTemplate } = await import("../services/masterSeedService.js");
+          await seedCompanyMastersFromTemplate(companyId, indId);
+          
+          // Re-fetch after seeding
+          data = await prisma.department.findMany({
+            where: { companyId }
+          });
+        }
       }
     }
 
