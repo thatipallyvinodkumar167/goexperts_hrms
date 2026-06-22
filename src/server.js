@@ -80,6 +80,47 @@ app.get("/", (req, res) => {
 });
 
 /* ========================
+   DEEP LINK REDIRECT (FLUTTER)
+   ======================== */
+app.get("/setup-password", (req, res) => {
+  const token = req.query.token;
+  if (!token) {
+    return res.status(400).send("Invalid setup link. Token missing.");
+  }
+
+  // This HTML attempts to auto-open the Flutter app via custom URL scheme.
+  // We use "goexpertshrms://" as the custom scheme.
+  res.send(`
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Setup Password</title>
+        <script>
+          window.onload = function() {
+            // Attempt to auto-redirect to the Flutter app
+            window.location.href = "goexpertshrms://setup-password?token=${token}";
+          };
+        </script>
+        <style>
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 40px; background-color: #f3f4f6; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+          .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
+          .btn { display: inline-block; background: #4F46E5; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; margin-top: 24px; font-weight: bold; font-size: 16px; transition: background 0.2s; }
+          .btn:hover { background: #4338CA; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h2 style="color: #1f2937; margin-top: 0;">Opening App...</h2>
+          <p style="color: #4b5563; line-height: 1.5;">You are being redirected to the GoExperts HRMS app to set up your password.</p>
+          <p style="color: #9ca3af; font-size: 14px; margin-top: 20px;">If the app does not open automatically, please tap the button below.</p>
+          <a href="goexpertshrms://setup-password?token=${token}" class="btn">Open App to Setup Password</a>
+        </div>
+      </body>
+    </html>
+  `);
+});
+
+/* ========================
    STATIC FILES
    ======================== */
 app.use("/uploads", express.static(join(__dirname, "../uploads")));
@@ -97,83 +138,6 @@ app.use("/api/master", masterRoutes);
 app.use("/api/master/leaves", globalLeaveRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/leaves", leaveRoutes);
-
-/* ========================
-   WEB VIEWS (FOR MOBILE APP FLOW)
-   ======================== */
-app.get("/setup-password", (req, res) => {
-  const token = req.query.token;
-  if (!token) {
-    return res.send(`<div style="text-align:center; padding:40px; font-family:sans-serif;"><h2 style="color:red;">Error: No token provided</h2></div>`);
-  }
-  
-  res.send(`
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Setup Password</title>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-          .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; }
-          input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 16px; outline: none; }
-          input:focus { border-color: #10B981; }
-          button { width: 100%; padding: 12px; background: #10B981; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; transition: background 0.3s; }
-          button:hover { background: #059669; }
-          button:disabled { background: #9ca3af; cursor: not-allowed; }
-          .error { color: #ef4444; font-size: 14px; margin-top: 10px; }
-          .success { color: #10B981; font-size: 24px; margin-top: 10px; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <div class="card" id="formCard">
-          <h2 style="color: #1f2937; margin-top: 0;">Set Up Password</h2>
-          <p style="color: #6b7280; font-size: 14px;">Please create a secure password for your new account.</p>
-          <input type="password" id="password" placeholder="Enter new password" />
-          <button id="submitBtn" onclick="setupPassword()">Save Password</button>
-          <div id="message" class="error"></div>
-        </div>
-
-        <script>
-          async function setupPassword() {
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('submitBtn');
-            const msg = document.getElementById('message');
-            
-            if (!password || password.length < 6) {
-              msg.textContent = "Password must be at least 6 characters.";
-              return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = "Saving...";
-            msg.textContent = "";
-
-            try {
-              const res = await fetch('/api/invite/setup-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: "${token}", password: password })
-              });
-              const data = await res.json();
-              
-              if (data.success) {
-                document.getElementById('formCard').innerHTML = '<div class="success">🎉 Success!</div><p style="color:#6b7280; margin-top:16px;">Your password has been set successfully. You can now open the app and login.</p>';
-              } else {
-                msg.textContent = data.message || "Failed to set password.";
-                btn.disabled = false;
-                btn.textContent = "Save Password";
-              }
-            } catch(e) {
-              msg.textContent = "Network error. Please try again.";
-              btn.disabled = false;
-              btn.textContent = "Save Password";
-            }
-          }
-        </script>
-      </body>
-    </html>
-  `);
-});
 
 /* ========================
    FAVICON IGNORE
