@@ -80,47 +80,6 @@ app.get("/", (req, res) => {
 });
 
 /* ========================
-   DEEP LINK REDIRECT (FLUTTER)
-   ======================== */
-app.get("/setup-password", (req, res) => {
-  const token = req.query.token;
-  if (!token) {
-    return res.status(400).send("Invalid setup link. Token missing.");
-  }
-
-  // This HTML attempts to auto-open the Flutter app via custom URL scheme.
-  // We use "goexpertshrms://" as the custom scheme.
-  res.send(`
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Setup Password</title>
-        <script>
-          window.onload = function() {
-            // Attempt to auto-redirect to the Flutter app
-            window.location.href = "goexpertshrms://setup-password?token=${token}";
-          };
-        </script>
-        <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 40px; background-color: #f3f4f6; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-          .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
-          .btn { display: inline-block; background: #4F46E5; color: white; padding: 14px 24px; text-decoration: none; border-radius: 8px; margin-top: 24px; font-weight: bold; font-size: 16px; transition: background 0.2s; }
-          .btn:hover { background: #4338CA; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h2 style="color: #1f2937; margin-top: 0;">Opening App...</h2>
-          <p style="color: #4b5563; line-height: 1.5;">You are being redirected to the GoExperts HRMS app to set up your password.</p>
-          <p style="color: #9ca3af; font-size: 14px; margin-top: 20px;">If the app does not open automatically, please tap the button below.</p>
-          <a href="goexpertshrms://setup-password?token=${token}" class="btn">Open App to Setup Password</a>
-        </div>
-      </body>
-    </html>
-  `);
-});
-
-/* ========================
    STATIC FILES
    ======================== */
 app.use("/uploads", express.static(join(__dirname, "../uploads")));
