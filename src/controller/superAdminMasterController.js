@@ -72,10 +72,21 @@ export const getDesignations = async (req, res) => {
     if (industryTypeId) where.industryTypeId = industryTypeId;
     if (departmentId) where.departmentId = departmentId;
 
-    const data = await prisma.designationTemplate.findMany({
+    let data = await prisma.designationTemplate.findMany({
       where,
       include: { department: true }
     });
+
+    // 🚨 ULTIMATE FAILSAFE: If no designation templates exist for this department, return generic ones
+    if (data.length === 0) {
+      data = [
+        { id: "gen-1", title: "Manager", level: "Senior" },
+        { id: "gen-2", title: "Team Lead", level: "Mid" },
+        { id: "gen-3", title: "Associate", level: "Junior" },
+        { id: "gen-4", title: "Executive", level: "Entry" }
+      ];
+    }
+
     res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
