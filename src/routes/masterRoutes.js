@@ -71,10 +71,24 @@ router.get("/company-departments", async (req, res) => {
   try {
     const { companyId } = req.query;
     if (!companyId) throw new Error("companyId is required");
-    
-    const data = await prisma.department.findMany({
+    let data = await prisma.department.findMany({
       where: { companyId }
     });
+
+    // Auto-seed if empty (fixes bug for existing companies)
+    if (data.length === 0) {
+      const company = await prisma.company.findUnique({ where: { id: companyId } });
+      if (company && company.industryTypeId) {
+        const { seedCompanyMastersFromTemplate } = await import("../services/masterSeedService.js");
+        await seedCompanyMastersFromTemplate(companyId, company.industryTypeId);
+        
+        // Re-fetch after seeding
+        data = await prisma.department.findMany({
+          where: { companyId }
+        });
+      }
+    }
+
     res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
