@@ -83,7 +83,7 @@ export const inviteService = async (data) => {
              <p>Please find your formal offer letter attached to this email.</p>
              <br/>
              <p>Click below to accept your offer directly:</p>
-             <a href="${process.env.BACKEND_URL || 'https://goexperts-hrms.onrender.com'}/api/invite/accept-offer?email=${normalizedEmail}" 
+             <a href="${process.env.BACKEND_URL || 'https://goexperts-hrms-coun.onrender.com'}/api/invite/accept-offer?email=${normalizedEmail}" 
                 style="background: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 10px;">
                 Accept Offer
              </a>`,
