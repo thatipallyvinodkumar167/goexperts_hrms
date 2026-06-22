@@ -10,6 +10,7 @@ import {
   resendInvitation,
   updateCompanyProfileController,
   removeCompany,
+  restoreCompany,
   uploadCompanyDocumentsController,
   getCompanyProfileController,
   uploadCompanyLogoController,
@@ -134,6 +135,9 @@ router.post("/resend-invite/:id", authMiddleware, allowRoles("SUPER_ADMIN"), res
 
 // SUPER ADMIN → delete company
 router.delete("/:id", authMiddleware, allowRoles("SUPER_ADMIN"), removeCompany);
+
+// SUPER ADMIN → restore company
+router.patch("/restore/:id", authMiddleware, allowRoles("SUPER_ADMIN"), restoreCompany);
 
 
 export default router;

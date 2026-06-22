@@ -230,6 +230,7 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
     latitude: data.latitude ? parseFloat(data.latitude) : undefined,
     longitude: data.longitude ? parseFloat(data.longitude) : undefined,
     geofenceRadius: data.geofenceRadius ? parseInt(data.geofenceRadius) : undefined,
+    industryTypeId: data.industryTypeId || undefined,
     termsAndConditions: data.termsAndConditions || undefined,
     signature: data.signature || undefined,
 
@@ -779,4 +780,33 @@ export const deleteCompany = async (companyId, type = "soft") => {
     });
     return { message: "Company has been soft deleted successfully (marked as inactive)" };
   }
+};
+
+//////////////////////////
+// 8. RESTORE COMPANY
+//////////////////////////
+
+export const restoreCompanyService = async (companyId) => {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+  });
+
+  if (!company) {
+    throw new Error("Company not found");
+  }
+
+  if (!company.deletedAt) {
+    throw new Error("Company is not deleted");
+  }
+
+  // Restore the company by clearing deletedAt and setting status back to ACTIVE
+  await prisma.company.update({
+    where: { id: companyId },
+    data: {
+      status: "ACTIVE",
+      deletedAt: null,
+    },
+  });
+
+  return { message: "Company has been restored successfully and is now active" };
 };

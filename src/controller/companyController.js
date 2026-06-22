@@ -325,6 +325,28 @@ export const removeCompany = async (req, res) => {
   }
 };
 
+//////////////////////////
+// RESTORE COMPANY
+//////////////////////////
+
+export const restoreCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Dynamically import the service function to avoid circular dependency issues if any
+    const { restoreCompanyService } = await import("../services/companyService.js");
+    const result = await restoreCompanyService(id);
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 export const uploadCompanyLogoController = async (req, res) => {
   try {
     const companyId = req.user.companyId;
