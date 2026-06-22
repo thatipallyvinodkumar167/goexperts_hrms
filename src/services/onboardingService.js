@@ -93,7 +93,10 @@ export const acceptInviteService = async ({token, password, name}) => {
                   designationId: finalDesigId,
                   joiningDate: new Date(),
                   employmentType: "FRESHER",
-                  status: "INVITED"
+                  status: "INVITED",
+                  // ✅ Dynamically carry over workModel from the invite set by HR
+                  workModel: invite.workModel || "WFO",
+                  expectedOfficeDays: invite.expectedOfficeDays || null,
               }
             });
         }
