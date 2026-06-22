@@ -96,6 +96,21 @@ router.get("/company-departments", async (req, res) => {
             where: { companyId }
           });
         }
+
+        // 🚨 ULTIMATE FAILSAFE: If STILL empty (because the industry template itself had no departments)
+        if (data.length === 0) {
+          await prisma.department.createMany({
+            data: [
+              { name: "Human Resources", companyId },
+              { name: "Engineering", companyId },
+              { name: "Sales", companyId },
+              { name: "Operations", companyId },
+            ]
+          });
+          data = await prisma.department.findMany({
+            where: { companyId }
+          });
+        }
       }
     }
 
