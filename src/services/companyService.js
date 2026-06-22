@@ -557,10 +557,20 @@ export const activateCompany = async (companyId) => {
     where: { id: companyId },
     data: {
       status: "ACTIVE",
+      isEmailVerified: true,
       activatedAt: new Date(),
       lastActiveAt: new Date(),
     },
+    include: { users: { where: { role: "OWNER" } } }
   });
+
+  // Also verify the owner's email
+  if (updatedCompany.users && updatedCompany.users.length > 0) {
+    await prisma.user.updateMany({
+      where: { companyId: companyId, role: "OWNER" },
+      data: { isEmailVerified: true }
+    });
+  }
 
   // ✅ Send email notification to Owner about company activation
   const recipientEmail = company.ownerEmail || company.email;
