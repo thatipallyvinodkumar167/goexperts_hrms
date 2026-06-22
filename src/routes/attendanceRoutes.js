@@ -24,8 +24,20 @@ router.post(
   clockIn
 );
 
+// ── Alias: check-in (for Flutter compatibility) ──
+router.post(
+  "/check-in",
+  authMiddleware,
+  companyGuard,
+  uploadAttendanceSelfie.single("livePhoto"),
+  clockIn
+);
+
 // ── Check-Out (JSON body — no photo needed) ──
 router.post("/clock-out", authMiddleware, companyGuard, clockOut);
+
+// ── Alias: check-out (for Flutter compatibility) ──
+router.post("/check-out", authMiddleware, companyGuard, clockOut);
 
 // ── Submit Daily Work (standalone, useful after auto-checkout) ──
 router.post("/daily-work", authMiddleware, companyGuard, submitDailyWork);
