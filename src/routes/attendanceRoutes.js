@@ -17,15 +17,6 @@ const router = express.Router();
 
 // ── Check-In (WFO requires selfie, WFH does not) ──
 router.post(
-  "/clock-in",
-  authMiddleware,
-  companyGuard,
-  uploadAttendanceSelfie.single("livePhoto"),
-  clockIn
-);
-
-// ── Alias: check-in (for Flutter compatibility) ──
-router.post(
   "/check-in",
   authMiddleware,
   companyGuard,
@@ -34,9 +25,6 @@ router.post(
 );
 
 // ── Check-Out (JSON body — no photo needed) ──
-router.post("/clock-out", authMiddleware, companyGuard, clockOut);
-
-// ── Alias: check-out (for Flutter compatibility) ──
 router.post("/check-out", authMiddleware, companyGuard, clockOut);
 
 // ── Submit Daily Work (standalone, useful after auto-checkout) ──
