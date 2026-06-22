@@ -32,6 +32,17 @@ export const companyGuard = async (req, res, next) => {
     }
 
     // ──────────────────────────────────────────────
+    // CHECK 0: SOFT DELETED (Suspended by Super Admin)
+    // ──────────────────────────────────────────────
+    if (company.deletedAt) {
+      return res.status(403).json({
+        success: false,
+        code: "COMPANY_SUSPENDED",
+        message: "Your company has been suspended. Please contact the Super Admin to restore access.",
+      });
+    }
+
+    // ──────────────────────────────────────────────
     // CHECK 1: SUSPENDED
     // ──────────────────────────────────────────────
     if (company.status === "SUSPENDED") {
