@@ -521,7 +521,9 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
   }
 
   // ── MANDATORY: Daily Work Summary ──
-  if (!dailyWorkSummary || dailyWorkSummary.trim() === "") {
+  let finalDailyWork = dailyWorkSummary?.trim() || attendance.dailyWorkSummary;
+
+  if (!finalDailyWork) {
     throw new Error("You must submit your Daily Work Summary before you can check out.");
   }
 
@@ -541,8 +543,8 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     checkOut: now,
     checkOutLat: latitude || null,
     checkOutLng: longitude || null,
-    dailyWorkSummary: dailyWorkSummary.trim(),
-    workSubmittedAt: now,
+    dailyWorkSummary: finalDailyWork,
+    workSubmittedAt: attendance.workSubmittedAt || now,
     checkoutReason: checkoutReason?.trim() || null,
     isEarlyCheckout: isEarly,
     status: isEarly ? "EARLY_EXIT" : "PRESENT",
