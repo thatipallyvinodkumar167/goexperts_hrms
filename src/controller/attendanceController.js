@@ -42,7 +42,7 @@ export const clockIn = async (req, res) => {
 // ─────────────────────────────────────────────────────────
 export const clockOut = async (req, res) => {
   try {
-    const { latitude, longitude, dailyWorkSummary, checkoutReason } = req.body;
+    const { latitude, longitude, dailyWorkSummary, checkoutReason } = req.body || {};
     const userId = req.user?.id;
     const companyId = req.user?.companyId;
 
@@ -51,10 +51,6 @@ export const clockOut = async (req, res) => {
 
     if (!latitude || !longitude)
       return res.status(400).json({ success: false, message: "Valid coordinates are required." });
-
-    // 👉 Enforce daily work summary before checkout
-    if (!dailyWorkSummary || dailyWorkSummary.trim() === "")
-      return res.status(400).json({ success: false, message: "You must submit your Daily Work Summary before you can check out." });
 
     const result = await clockOutService(userId, companyId, {
       latitude: parseFloat(latitude),
