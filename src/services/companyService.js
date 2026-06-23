@@ -741,6 +741,78 @@ export const getPendingApprovalCompanies = async () => {
   });
 };
 
+// ──────────────────────────────────────────────
+// GET SINGLE PENDING APPROVAL COMPANY (SUPER ADMIN)
+// ──────────────────────────────────────────────
+export const getPendingApprovalCompanyById = async (companyId) => {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    include: {
+      industryType: { select: { id: true, name: true } },
+      address: true,
+      documents: true,
+      hrSetting: true,
+      subscriptions: {
+        include: { plan: true },
+        orderBy: { endDate: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  if (!company) {
+    throw new Error("Company not found");
+  }
+
+  const sub = company.subscriptions?.[0] || null;
+  const now = new Date();
+  const addr = company.address;
+
+  return {
+    id: company.id,
+    companyName: company.name,
+    companyEmail: company.email,
+    ownerName: company.ownerName,
+    ownerEmail: company.ownerEmail,
+    phone: company.phone,
+    status: company.status,
+    isEmailVerified: company.isEmailVerified,
+    isProfileCompleted: company.isProfileCompleted,
+    logo: company.companyLogo,
+    website: company.website,
+    legalName: company.legalName,
+    cinNumber: company.cinNumber,
+    linkedinUrl: company.linkedinUrl,
+    companySize: company.companySize,
+    foundedYear: company.foundedYear,
+    signature: company.signature,
+    termsAndConditions: company.termsAndConditions,
+    geofenceRadius: company.geofenceRadius,
+    latitude: company.latitude,
+    longitude: company.longitude,
+    industryType: company.industryType,
+    location: addr
+      ? [addr.city, addr.state, addr.country].filter(Boolean).join(", ")
+      : null,
+    address: company.address,
+    documents: company.documents,
+    hrSetting: company.hrSetting,
+    subscription: sub
+      ? {
+          planName: sub.plan?.name || null,
+          price: sub.plan?.price || 0,
+          startDate: sub.startDate,
+          endDate: sub.endDate,
+          status: new Date(sub.startDate) <= now && new Date(sub.endDate) >= now ? "ACTIVE" : "INACTIVE",
+        }
+      : null,
+    createdAt: company.createdAt,
+    invitedAt: company.invitedAt,
+    activatedAt: company.activatedAt,
+    lastActiveAt: company.lastActiveAt,
+  };
+};
+
 export const getSoftDeletedCompanies = async () => {
   return prisma.company.findMany({
     where: {
