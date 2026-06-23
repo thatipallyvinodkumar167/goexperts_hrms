@@ -690,65 +690,53 @@ export const getPendingApprovalCompanies = async () => {
       companyLogo: true,
       name: true,
       email: true,
-      ownerName: true,
-      ownerEmail: true,
-      phone: true,
+      website: true,
       status: true,
       isProfileCompleted: true,
       isEmailVerified: true,
-      industryType: {
-        select: { id: true, name: true },
-      },
       address: {
         select: {
-          addressLine1: true,
           city: true,
           state: true,
           country: true,
-          pincode: true,
         },
       },
       subscriptions: {
         select: {
           startDate: true,
           endDate: true,
-          plan: { select: { name: true, price: true } },
+          plan: { select: { name: true } },
         },
         orderBy: { endDate: "desc" },
         take: 1,
       },
-      createdAt: true,
-      invitedAt: true,
-      lastActiveAt: true,
     },
     orderBy: { createdAt: "desc" },
   });
 
   return companies.map((company) => {
     const sub = company.subscriptions?.[0] || null;
+    const now = new Date();
     const addr = company.address;
-    const location = addr
-      ? [addr.city, addr.state, addr.country].filter(Boolean).join(", ")
-      : null;
 
     return {
       id: company.id,
-      companyLogo: company.companyLogo,
       companyName: company.name,
       companyEmail: company.email,
-      ownerName: company.ownerName,
-      ownerEmail: company.ownerEmail,
-      phone: company.phone,
       status: company.status,
-      isProfileCompleted: company.isProfileCompleted,
       isEmailVerified: company.isEmailVerified,
-      industryType: company.industryType,
-      location,
-      address: company.address,
-      plan: sub ? { name: sub.plan?.name, price: sub.plan?.price } : null,
-      createdAt: company.createdAt,
-      invitedAt: company.invitedAt,
-      lastActiveAt: company.lastActiveAt,
+      isProfileCompleted: company.isProfileCompleted,
+      location: addr
+        ? [addr.city, addr.state, addr.country].filter(Boolean).join(", ")
+        : null,
+      website: company.website,
+      logo: company.companyLogo,
+      subscription: sub
+        ? {
+            planName: sub.plan?.name || null,
+            status: new Date(sub.startDate) <= now && new Date(sub.endDate) >= now ? "ACTIVE" : "INACTIVE",
+          }
+        : null,
     };
   });
 };
