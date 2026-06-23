@@ -93,6 +93,7 @@ export const updateCompanyProfileController = async (req, res) => {
     const tanFile = files.tanProof?.[0];
     const logoFile = files.logo?.[0];
     const regFile = files.regCertificate?.[0];
+    const signatureFile = files.signature?.[0];
 
     if (gstFile?.path) {
       documents.push({ name: "GST_CERTIFICATE", fileUrl: gstFile.path });
@@ -110,6 +111,7 @@ export const updateCompanyProfileController = async (req, res) => {
     const payload = {
       ...req.body,
       companyLogo: logoFile ? logoFile.path : undefined,
+      signature: signatureFile ? signatureFile.path : undefined,
       documents: [...(Array.isArray(req.body.documents) ? req.body.documents : []), ...documents],
     };
 
