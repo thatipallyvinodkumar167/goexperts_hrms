@@ -168,9 +168,22 @@ export const setupCompanyAccount = async (token, password) => {
     throw new Error("The password has already been set for this account");
   }
 
-  const user = await prisma.user.findFirst({
+  let user = await prisma.user.findFirst({
     where: { email: invite.email },
   });
+
+  // Fallback: if ownerEmail doesn't match any user, find the user by company email
+  if (!user) {
+    const company = await prisma.company.findUnique({
+      where: { id: invite.companyId },
+      select: { email: true },
+    });
+    if (company) {
+      user = await prisma.user.findFirst({
+        where: { email: company.email },
+      });
+    }
+  }
 
   if (!user) {
     throw new Error("User not found");
