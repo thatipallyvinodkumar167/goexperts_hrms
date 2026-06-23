@@ -74,7 +74,12 @@ export const createCompanyWithInvite = async ({
     });
 
     const existingOwner = await tx.user.findFirst({
-      where: { email: normalizedOwnerEmail || normalizedCompanyEmail }
+      where: {
+        OR: [
+          ...(normalizedOwnerEmail ? [{ email: normalizedOwnerEmail }] : []),
+          { email: normalizedCompanyEmail },
+        ]
+      }
     });
 
     let ownerUser;
