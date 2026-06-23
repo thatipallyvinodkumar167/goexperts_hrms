@@ -352,7 +352,9 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
     workTypeForToday: effectiveWorkType,
   };
 
-  // ── WFO: Office GPS + Face Recognition ──
+  let locationMessage = "";
+
+  // ── 1. Location Validation ──
   if (effectiveWorkType === "WFO") {
     if (!company.latitude || !company.longitude) {
       throw new Error("Company office location is not configured. Contact admin.");
@@ -362,64 +364,26 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
     if (distance > allowedRadius) {
       throw new Error(`Location check failed: You are ${Math.round(distance)} meters away from the office. You must be within ${allowedRadius} meters to check in.`);
     }
+    locationMessage = `Location validated within ${Math.round(distance)}m.`;
+  } else if (effectiveWorkType === "WFH") {
+    attendanceData.checkInLat = latitude;
+    attendanceData.checkInLng = longitude;
+    locationMessage = `WFH Home base locked at your current location.`;
+  }
 
-    // Face recognition for WFO
-    const masterPhoto = employee.faceVerificationPhoto || employee.profilePhoto || employee.user?.profileLogo;
-    if (!masterPhoto) throw new Error("Profile picture missing. Please update your photo to clock in.");
+  // ── 2. Face Recognition (For ALL) ──
+  const masterPhoto = employee.faceVerificationPhoto || employee.profilePhoto || employee.user?.profileLogo;
+  if (!masterPhoto) throw new Error("Profile picture missing. Please update your photo to clock in.");
 
-    attendanceData.checkInSelfie = livePhoto;
-    const currentAttempts = (existingAttendance?.faceMatchAttempts || 0) + 1;
+  attendanceData.checkInSelfie = livePhoto;
+  const currentAttempts = (existingAttendance?.faceMatchAttempts || 0) + 1;
 
-    try {
-      const faceMatch = await verifyFace(livePhoto, masterPhoto);
-      attendanceData.faceMatchScore = faceMatch.confidence;
-      attendanceData.faceMatchAttempts = currentAttempts;
+  try {
+    const faceMatch = await verifyFace(livePhoto, masterPhoto);
+    attendanceData.faceMatchScore = faceMatch.confidence;
+    attendanceData.faceMatchAttempts = currentAttempts;
 
-      if (!faceMatch.isMatch) {
-        if (currentAttempts < 3) {
-          if (existingAttendance) {
-            await prisma.attendance.update({
-              where: { id: existingAttendance.id },
-              data: { faceMatchAttempts: currentAttempts }
-            });
-          } else {
-            await prisma.attendance.create({
-              data: {
-                employeeId: employee.id,
-                date: todayStart,
-                status: "ABSENT",
-                faceMatchAttempts: currentAttempts
-              }
-            });
-          }
-          throw new Error(`Face mismatch. Attempt ${currentAttempts}/2 failed. Please retry check-in.`);
-        }
-
-        // 3rd attempt failed -> Allow check-in, set PENDING_VERIFICATION
-        attendanceData.status = "PENDING_VERIFICATION";
-        return processCheckin(
-          existingAttendance,
-          attendanceData,
-          `Face mismatch on attempt ${currentAttempts}. Check-in allowed but flagged for HR review.`
-        );
-      }
-
-      // Successful match
-      attendanceData.status = "PRESENT";
-      attendanceData.faceMatchAttempts = currentAttempts;
-      return processCheckin(
-        existingAttendance,
-        attendanceData,
-        `Location validated within ${Math.round(distance)}m. Face matched successfully at ${faceMatch.confidence}%.`
-      );
-    } catch (faceError) {
-      if (faceError.message.includes("Attempt")) {
-        throw faceError;
-      }
-
-      attendanceData.faceMatchScore = 0;
-      attendanceData.faceMatchAttempts = currentAttempts;
-
+    if (!faceMatch.isMatch) {
       if (currentAttempts < 3) {
         if (existingAttendance) {
           await prisma.attendance.update({
@@ -436,28 +400,60 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
             }
           });
         }
-        throw new Error(`Facial recognition error: ${faceError.message}. Attempt ${currentAttempts}/2 failed. Please retry check-in.`);
+        throw new Error(`Face mismatch. Attempt ${currentAttempts}/2 failed. Please retry check-in.`);
       }
 
-      // 3rd attempt has error -> Allow check-in, set PENDING_VERIFICATION
+      // 3rd attempt failed -> Allow check-in, set PENDING_VERIFICATION
       attendanceData.status = "PENDING_VERIFICATION";
       return processCheckin(
         existingAttendance,
         attendanceData,
-        `Location validated. Face verification error: ${faceError.message}. Flagged for HR review.`
+        `${locationMessage} Face mismatch on attempt ${currentAttempts}. Check-in allowed but flagged for HR review.`
       );
     }
-  }
 
-  // ── WFH: Lock Home Base GPS ──
-  if (effectiveWorkType === "WFH") {
+    // Successful match
     attendanceData.status = "PRESENT";
-    attendanceData.checkInLat = latitude;
-    attendanceData.checkInLng = longitude;
-    if (livePhoto) {
-      attendanceData.checkInSelfie = livePhoto;
+    attendanceData.faceMatchAttempts = currentAttempts;
+    return processCheckin(
+      existingAttendance,
+      attendanceData,
+      `${locationMessage} Face matched successfully at ${faceMatch.confidence}%.`
+    );
+  } catch (faceError) {
+    if (faceError.message.includes("Attempt")) {
+      throw faceError;
     }
-    return processCheckin(existingAttendance, attendanceData, `WFH Check-In successful. Home base locked at your current location.`);
+
+    attendanceData.faceMatchScore = 0;
+    attendanceData.faceMatchAttempts = currentAttempts;
+
+    if (currentAttempts < 3) {
+      if (existingAttendance) {
+        await prisma.attendance.update({
+          where: { id: existingAttendance.id },
+          data: { faceMatchAttempts: currentAttempts }
+        });
+      } else {
+        await prisma.attendance.create({
+          data: {
+            employeeId: employee.id,
+            date: todayStart,
+            status: "ABSENT",
+            faceMatchAttempts: currentAttempts
+          }
+        });
+      }
+      throw new Error(`Facial recognition error: ${faceError.message}. Attempt ${currentAttempts}/2 failed. Please retry check-in.`);
+    }
+
+    // 3rd attempt has error -> Allow check-in, set PENDING_VERIFICATION
+    attendanceData.status = "PENDING_VERIFICATION";
+    return processCheckin(
+      existingAttendance,
+      attendanceData,
+      `${locationMessage} Face verification error: ${faceError.message}. Flagged for HR review.`
+    );
   }
 };
 
