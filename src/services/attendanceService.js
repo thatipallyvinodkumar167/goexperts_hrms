@@ -514,18 +514,20 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     throw new Error("You have already checked out for today.");
   }
 
-  // ── Face Verification on Checkout ──
-  if (livePhoto) {
-    const masterPhoto = employee.faceVerificationPhoto || employee.profilePhoto || employee.user?.profileLogo;
-    if (!masterPhoto) throw new Error("Profile picture missing. Please update your photo to check out.");
-    const faceMatch = await verifyFace(livePhoto, masterPhoto);
-    if (!faceMatch.isMatch) {
-      throw new Error("Face verification failed. Face does not match registered profile picture.");
+  // 1. Location Validation
+  if (attendance.workTypeForToday === "WFO") {
+    if (!latitude || !longitude) {
+      throw new Error("Location coordinates are required to check out from WFO.");
     }
-  }
-
-  // ── WFH: Enforce <1km Distance ──
-  if (attendance.workTypeForToday === "WFH") {
+    if (!company.latitude || !company.longitude) {
+      throw new Error("Company office location is not configured. Contact admin.");
+    }
+    const distance = calculateDistance(latitude, longitude, company.latitude, company.longitude);
+    const allowedRadius = company.geofenceRadius || 100;
+    if (distance > allowedRadius) {
+      throw new Error(`Location check failed: You are ${Math.round(distance)} meters away from the office. You must be within ${allowedRadius} meters to check out.`);
+    }
+  } else if (attendance.workTypeForToday === "WFH") {
     if (!latitude || !longitude) {
       throw new Error("Location coordinates are required to check out from WFH.");
     }
@@ -538,9 +540,19 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     }
   }
 
-  // ── MANDATORY: Daily Work Summary ──
-  let finalDailyWork = dailyWorkSummary?.trim() || attendance.dailyWorkSummary;
+  // 2. Live Photo Validation
+  if (!livePhoto) {
+    throw new Error("Live photo is required to check out.");
+  }
+  const masterPhoto = employee.faceVerificationPhoto || employee.profilePhoto || employee.user?.profileLogo;
+  if (!masterPhoto) throw new Error("Profile picture missing. Please update your photo to check out.");
+  const faceMatch = await verifyFace(livePhoto, masterPhoto);
+  if (!faceMatch.isMatch) {
+    throw new Error("Face verification failed. Face does not match registered profile picture.");
+  }
 
+  // 3. Daily Work Submission Validation
+  let finalDailyWork = dailyWorkSummary?.trim() || attendance.dailyWorkSummary;
   if (!finalDailyWork) {
     throw new Error("You must submit your Daily Work Summary before you can check out.");
   }
@@ -566,7 +578,7 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     workSubmittedAt: attendance.workSubmittedAt || now,
     checkoutReason: checkoutReason?.trim() || null,
     isEarlyCheckout: isEarly,
-    status: isEarly ? "EARLY_EXIT" : "PRESENT",
+    status: "PRESENT",
   };
 
   const updated = await prisma.attendance.update({
