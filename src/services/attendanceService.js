@@ -316,6 +316,10 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
   });
   if (!employee) throw new Error("Employee profile details missing.");
 
+  if (employee.bgvStatus !== "APPROVED") {
+    throw new Error("BGV verification is pending at the industry level. You cannot check in until HR approves it.");
+  }
+
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     include: { hrSetting: true },
@@ -481,6 +485,10 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
   });
   if (!employee) throw new Error("Employee profile details missing.");
 
+  if (employee.bgvStatus !== "APPROVED") {
+    throw new Error("BGV verification is pending at the industry level. You cannot check out until HR approves it.");
+  }
+
   const company = await prisma.company.findUnique({
     where: { id: companyId },
     include: {
@@ -587,6 +595,10 @@ export const submitDailyWorkService = async (userId, { title, dailyWorkSummary }
 
   const employee = await prisma.employee.findUnique({ where: { userId } });
   if (!employee) throw new Error("Employee not found.");
+
+  if (employee.bgvStatus !== "APPROVED") {
+    throw new Error("BGV verification is pending at the industry level. You cannot submit daily work until HR approves it.");
+  }
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
