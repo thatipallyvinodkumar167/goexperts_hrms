@@ -385,6 +385,7 @@ export const updateBasicSettings = async (companyId, data, isSuperAdmin = false)
     companySize: data.companySize || undefined,
     latitude: data.latitude ? parseFloat(data.latitude) : undefined,
     longitude: data.longitude ? parseFloat(data.longitude) : undefined,
+    geofenceRadius: data.geofenceRadius ? parseInt(data.geofenceRadius) : undefined,
     termsAndConditions: data.termsAndConditions || undefined,
     
     // Locked Fields (Only Super Admin can update)
