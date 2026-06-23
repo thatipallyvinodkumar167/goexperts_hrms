@@ -18,7 +18,8 @@ import {
   updateHrSettingsController,
   updatePayrollSettingsController,
   updateComplianceSettingsController,
-  getSoftDeletedCompaniesController
+  getSoftDeletedCompaniesController,
+  getPendingApprovalCompaniesController
 } from "../controller/companyController.js";
 import { getCompanyDashboard } from "../controller/companyDashboardController.js";
 import { companyGuard } from "../middleware/companyGuard.js";
@@ -29,6 +30,9 @@ router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), getAllCompanies);
 
 // SUPER ADMIN → list soft-deleted companies
 router.get("/soft-deleted", authMiddleware, allowRoles("SUPER_ADMIN"), getSoftDeletedCompaniesController);
+
+// SUPER ADMIN → list companies pending onboarding approval
+router.get("/pending-approval", authMiddleware, allowRoles("SUPER_ADMIN"), getPendingApprovalCompaniesController);
 
 // OWNER/HR → upload logo
 router.post("/logo", authMiddleware, allowRoles("OWNER", "HR"), uploadCompanyLogo.single("logo"), uploadCompanyLogoController);

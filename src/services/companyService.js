@@ -676,6 +676,83 @@ export const getCompaniesForAdmin = async () => {
   });
 };
 
+// ──────────────────────────────────────────────
+// GET PENDING APPROVAL COMPANIES (SUPER ADMIN)
+// ──────────────────────────────────────────────
+export const getPendingApprovalCompanies = async () => {
+  const companies = await prisma.company.findMany({
+    where: {
+      status: "PENDING_APPROVAL",
+      deletedAt: null,
+    },
+    select: {
+      id: true,
+      companyLogo: true,
+      name: true,
+      email: true,
+      ownerName: true,
+      ownerEmail: true,
+      phone: true,
+      status: true,
+      isProfileCompleted: true,
+      isEmailVerified: true,
+      industryType: {
+        select: { id: true, name: true },
+      },
+      address: {
+        select: {
+          addressLine1: true,
+          city: true,
+          state: true,
+          country: true,
+          pincode: true,
+        },
+      },
+      subscriptions: {
+        select: {
+          startDate: true,
+          endDate: true,
+          plan: { select: { name: true, price: true } },
+        },
+        orderBy: { endDate: "desc" },
+        take: 1,
+      },
+      createdAt: true,
+      invitedAt: true,
+      lastActiveAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return companies.map((company) => {
+    const sub = company.subscriptions?.[0] || null;
+    const addr = company.address;
+    const location = addr
+      ? [addr.city, addr.state, addr.country].filter(Boolean).join(", ")
+      : null;
+
+    return {
+      id: company.id,
+      companyLogo: company.companyLogo,
+      companyName: company.name,
+      companyEmail: company.email,
+      ownerName: company.ownerName,
+      ownerEmail: company.ownerEmail,
+      phone: company.phone,
+      status: company.status,
+      isProfileCompleted: company.isProfileCompleted,
+      isEmailVerified: company.isEmailVerified,
+      industryType: company.industryType,
+      location,
+      address: company.address,
+      plan: sub ? { name: sub.plan?.name, price: sub.plan?.price } : null,
+      createdAt: company.createdAt,
+      invitedAt: company.invitedAt,
+      lastActiveAt: company.lastActiveAt,
+    };
+  });
+};
+
 export const getSoftDeletedCompanies = async () => {
   return prisma.company.findMany({
     where: {

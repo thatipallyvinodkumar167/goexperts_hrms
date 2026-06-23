@@ -11,7 +11,8 @@ import {
   updatePayrollSettings,
   updateComplianceSettings,
   deleteCompany,
-  getSoftDeletedCompanies
+  getSoftDeletedCompanies,
+  getPendingApprovalCompanies
 } from "../services/companyService.js";
 import prisma from "../config/db.js";
 import fs from "fs";
@@ -38,6 +39,20 @@ export const getAllCompanies = async (req, res) => {
 export const getSoftDeletedCompaniesController = async (req, res) => {
   try {
     const data = await getSoftDeletedCompanies();
+
+    res.status(200).json({
+      success: true,
+      count: data.length,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPendingApprovalCompaniesController = async (req, res) => {
+  try {
+    const data = await getPendingApprovalCompanies();
 
     res.status(200).json({
       success: true,
