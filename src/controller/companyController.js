@@ -12,7 +12,8 @@ import {
   updateComplianceSettings,
   deleteCompany,
   getSoftDeletedCompanies,
-  getPendingApprovalCompanies
+  getPendingApprovalCompanies,
+  getPendingApprovalCompanyById
 } from "../services/companyService.js";
 import prisma from "../config/db.js";
 import fs from "fs";
@@ -61,6 +62,19 @@ export const getPendingApprovalCompaniesController = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getPendingApprovalCompanyByIdController = async (req, res) => {
+  try {
+    const data = await getPendingApprovalCompanyById(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    res.status(error.message === "Company not found" ? 404 : 500).json({ success: false, message: error.message });
   }
 };
 
