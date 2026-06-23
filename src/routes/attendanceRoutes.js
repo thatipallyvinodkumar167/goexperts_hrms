@@ -24,8 +24,14 @@ router.post(
   clockIn
 );
 
-// ── Check-Out (JSON body — no photo needed) ──
-router.post("/check-out", authMiddleware, companyGuard, clockOut);
+// ── Check-Out (FormData — supports livePhoto) ──
+router.post(
+  "/check-out",
+  authMiddleware,
+  companyGuard,
+  uploadAttendanceSelfie.single("livePhoto"),
+  clockOut
+);
 
 // ── Submit Daily Work (standalone, useful after auto-checkout) ──
 router.post("/daily-work", authMiddleware, companyGuard, submitDailyWork);

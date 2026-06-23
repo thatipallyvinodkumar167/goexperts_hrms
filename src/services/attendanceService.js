@@ -474,7 +474,7 @@ const processCheckin = async (existingAttendance, data, message) => {
 // ─────────────────────────────────────────────────────────
 // 2. CLOCK OUT SERVICE
 // ─────────────────────────────────────────────────────────
-export const clockOutService = async (userId, companyId, { latitude, longitude, dailyWorkSummary, checkoutReason }) => {
+export const clockOutService = async (userId, companyId, { latitude, longitude, livePhoto, dailyWorkSummary, checkoutReason }) => {
   const employee = await prisma.employee.findUnique({
     where: { userId },
     include: {
@@ -514,6 +514,16 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     throw new Error("You have already checked out for today.");
   }
 
+  // ── Face Verification on Checkout ──
+  if (livePhoto) {
+    const masterPhoto = employee.faceVerificationPhoto || employee.profilePhoto || employee.user?.profileLogo;
+    if (!masterPhoto) throw new Error("Profile picture missing. Please update your photo to check out.");
+    const faceMatch = await verifyFace(livePhoto, masterPhoto);
+    if (!faceMatch.isMatch) {
+      throw new Error("Face verification failed. Face does not match registered profile picture.");
+    }
+  }
+
   // ── WFH: Enforce <1km Distance ──
   if (attendance.workTypeForToday === "WFH") {
     if (!latitude || !longitude) {
@@ -551,6 +561,7 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     checkOut: now,
     checkOutLat: latitude || null,
     checkOutLng: longitude || null,
+    checkOutSelfie: livePhoto || null,
     dailyWorkSummary: finalDailyWork,
     workSubmittedAt: attendance.workSubmittedAt || now,
     checkoutReason: checkoutReason?.trim() || null,

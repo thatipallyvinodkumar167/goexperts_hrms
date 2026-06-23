@@ -564,6 +564,7 @@
     isAutoCheckout    Boolean          @default(false)
     // Face verification and manual HR verification fields
     checkInSelfie     String?          @db.LongText  // Selfie taken during check-in
+    checkOutSelfie    String?          @db.LongText  // Selfie taken during check-out
     faceMatchScore    Float?                         // Match score / confidence percentage
     faceMatchAttempts Int              @default(0)   // Track face match failures before flagging
     verifiedBy        String?                        // Admin/HR user ID who verified

@@ -43,6 +43,7 @@ export const clockIn = async (req, res) => {
 export const clockOut = async (req, res) => {
   try {
     const { latitude, longitude, dailyWorkSummary, checkoutReason } = req.body || {};
+    const livePhoto = req.file ? req.file.path : req.body.livePhoto;
     const userId = req.user?.id;
     const companyId = req.user?.companyId;
 
@@ -55,6 +56,7 @@ export const clockOut = async (req, res) => {
     const result = await clockOutService(userId, companyId, {
       latitude: parseFloat(latitude),
       longitude: parseFloat(longitude),
+      livePhoto,
       dailyWorkSummary,
       checkoutReason,
     });
