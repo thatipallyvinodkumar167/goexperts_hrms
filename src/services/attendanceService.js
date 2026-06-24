@@ -468,7 +468,7 @@ const processCheckin = async (existingAttendance, data, message) => {
   } else {
     attendance = await prisma.attendance.create({ data });
   }
-  return { message, checkIn: attendance.checkIn, workType: attendance.workTypeForToday, status: attendance.status };
+  return { message, checkIn: attendance.checkIn, workType: attendance.workTypeForToday, status: attendance.status, isDailyWork: false };
 };
 
 // ─────────────────────────────────────────────────────────
@@ -602,6 +602,7 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     workingHours,
     isEarlyCheckout: isEarly,
     dailyWorkSubmitted: true,
+    isDailyWork: true,
   };
 };
 
@@ -643,7 +644,7 @@ export const submitDailyWorkService = async (userId, { title, dailyWorkSummary }
     },
   });
 
-  return { message: "Daily work summary submitted successfully." };
+  return { message: "Daily work summary submitted successfully.", isDailyWork: true };
 };
 
 // ─────────────────────────────────────────────────────────
@@ -916,6 +917,7 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
       dailyWorkTitle: record?.dailyWorkTitle || null,
       dailyWorkSummary: record?.dailyWorkSummary || null,
       workSubmittedAt: record?.workSubmittedAt || null,
+      isDailyWork: !!record?.dailyWorkSummary,
     });
 
     current.setDate(current.getDate() + 1);
