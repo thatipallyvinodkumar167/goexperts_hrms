@@ -392,14 +392,20 @@ const getEmployeeDashboard = async (companyId, user, now) => {
   // --- Self Attendance (Check In / Check Out) ---
   const selfAttendance = todaysRecord ? {
     id: todaysRecord.id,
-    checkInTime: todaysRecord.checkInTime,
-    checkOutTime: todaysRecord.checkOutTime,
+    checkIn: todaysRecord.checkIn,
+    checkInTime: todaysRecord.checkIn,
+    checkOut: todaysRecord.checkOut,
+    checkOutTime: todaysRecord.checkOut,
     status: true,
-    workTypeForToday: todaysRecord.workTypeForToday
+    workTypeForToday: todaysRecord.workTypeForToday,
+    isDailyWork: !!todaysRecord.dailyWorkSummary
   } : {
+    checkIn: null,
     checkInTime: null,
+    checkOut: null,
     checkOutTime: null,
-    status: false
+    status: false,
+    isDailyWork: false
   };
 
   // --- Monthly Attendance Summary ---
@@ -451,6 +457,7 @@ const getEmployeeDashboard = async (companyId, user, now) => {
       profilePhoto: employee.profilePhoto
     },
     selfAttendance,
+    isDailyWork: todaysRecord ? !!todaysRecord.dailyWorkSummary : false,
     monthlyAttendance: {
       month: now.toLocaleString('default', { month: 'long', year: 'numeric' }),
       dayOfMonth,
