@@ -578,7 +578,7 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
     workSubmittedAt: attendance.workSubmittedAt || now,
     checkoutReason: checkoutReason?.trim() || null,
     isEarlyCheckout: isEarly,
-    status: "PRESENT",
+    status: isEarly ? "HALF_DAY" : "PRESENT",  // Early checkout → auto HALF_DAY
   };
 
   const updated = await prisma.attendance.update({
@@ -595,8 +595,9 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
 
   return {
     message: isEarly
-      ? "Early check-out recorded. Your HR has been notified."
+      ? "Early check-out recorded. Your attendance has been marked as Half Day."
       : "Check-out successful. Have a great evening!",
+    status: isEarly ? "HALF_DAY" : "PRESENT",
     checkIn: updated.checkIn,
     checkOut: updated.checkOut,
     workingHours,
