@@ -1,11 +1,19 @@
 import express from "express";
-import { changePassword, forgotPassword, login, resetPassword, updateProfile } from "../controller/authController.js";
+import {
+  changePassword,
+  forgotPassword,
+  login,
+  registerSuperAdmin,
+  resetPassword,
+  updateProfile,
+} from "../controller/authController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { uploadProfileImage } from "../config/multer.js";
 
 const router = express.Router();
 
 router.post("/login", login);
+router.post("/register", registerSuperAdmin);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);

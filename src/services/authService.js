@@ -328,3 +328,64 @@ export const updateUserProfileService = async (userId, data = {}) => {
     }
   };
 };
+
+
+//super admin register 
+export const registerSuperAdminService = async ({
+  name,
+  email,
+  password,
+}) => {
+  if (!name || !email || !password) {
+    throw new Error("Name, email and password are required");
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Check if Super Admin already exists
+  const existingSuperAdmin = await prisma.user.findFirst({
+    where: {
+      role: "SUPER_ADMIN",
+      companyId: null,
+    },
+  });
+
+  if (existingSuperAdmin) {
+    throw new Error("Super Admin already exists");
+  }
+
+  // Check email
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      email: normalizedEmail,
+    },
+  });
+
+  if (existingUser) {
+    throw new Error("Email already exists");
+  }
+
+  const hashedPassword = await hashPassword(password);
+
+  const superAdmin = await prisma.user.create({
+    data: {
+      name: name.trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: "SUPER_ADMIN",
+      status: "ACTIVE",
+      companyId: null,
+    },
+  });
+
+  return {
+    message: "Super Admin registered successfully",
+    user: {
+      id: superAdmin.id,
+      name: superAdmin.name,
+      email: superAdmin.email,
+      role: superAdmin.role,
+      status: superAdmin.status,
+    },
+  };
+};

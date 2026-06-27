@@ -77,7 +77,7 @@ router.put(
   ]),
   updateCompanyProfileController
 );
-router.get("/profile", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR"), getCompanyProfileController);
+router.get("/profile", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "EMPLOYEE"), getCompanyProfileController);
 router.get("/profile/:id", authMiddleware, allowRoles("SUPER_ADMIN"), getCompanyProfileController);
 router.post(
   "/profile/upload-documents",
