@@ -342,18 +342,6 @@ export const registerSuperAdminService = async ({
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Check if Super Admin already exists
-  const existingSuperAdmin = await prisma.user.findFirst({
-    where: {
-      role: "SUPER_ADMIN",
-      companyId: null,
-    },
-  });
-
-  if (existingSuperAdmin) {
-    throw new Error("Super Admin already exists");
-  }
-
   // Check email
   const existingUser = await prisma.user.findFirst({
     where: {
