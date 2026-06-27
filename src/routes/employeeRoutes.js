@@ -2,7 +2,7 @@ import express from "express";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { companyGuard } from "../middleware/companyGuard.js";
-import { getAllEmployees, getEmployeeById, updateEmployee, deleteEmployee, getDeletedEmployeesList, restoreEmployee, updateWorkModel } from "../controller/employeeController.js";
+import { getAllEmployees, getEmployeeById, getEmployeeByCode, updateEmployee, deleteEmployee, getDeletedEmployeesList, restoreEmployee, updateWorkModel } from "../controller/employeeController.js";
 import { 
   getSelf, 
   updateSelf, 
@@ -42,6 +42,9 @@ router.put("/self/:id", authMiddleware, uploadProfileImage.single("profilePhoto"
 
 //get all emps
 router.get("/", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getAllEmployees);
+
+// get employee/HR by employeeCode (must be BEFORE /:id)
+router.get("/code/:code", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getEmployeeByCode);
 
 //get list of soft-deleted accounts
 router.get("/deleted-list", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getDeletedEmployeesList);

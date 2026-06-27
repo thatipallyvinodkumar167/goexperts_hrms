@@ -118,7 +118,7 @@ export const loginUser = async ({ email, password } = {}) => {
 
   // Only include employee onboarding fields if the user is an employee or HR
   if (user.role === "EMPLOYEE" || user.role === "HR") {
-    responseUser.id = user.employee ? user.employee.id : null; // Set Employee ID under 'id' key
+    responseUser.id = user.employee ? user.employee.userId : null; // Set Employee userId as the 'id' key
     responseUser.onboardingCompleted = user.employee ? user.employee.onboardingCompleted : false;
     responseUser.isFullRegistered = user.employee ? user.employee.onboardingCompleted : false;
   }

@@ -2,27 +2,27 @@ import prisma from "../config/db";
 import { createNotificationService } from "../services/notificationService"
 
 
-export const createNotification = async(req, res) => {
+export const createNotification = async (req, res) => {
 
     try {
-        
+
 
         const data = await createNotificationService({
             ...req.body,
-            sentById:req.user.id
+            sentById: req.user.id
         });
 
         res.status(201).json({
-            success : true,
+            success: true,
             ...data
         });
 
     } catch (error) {
         res.status(400).json({
-            success : false,
-            message : error.message
+            success: false,
+            message: error.message
         });
-        
+
     }
 };
 
@@ -30,30 +30,30 @@ export const createNotification = async(req, res) => {
 export const getCompanyNotifications = async (req, res) => {
 
     try {
-        
+
         const data = await prisma.companyNotification.findMany({
 
-            where : {
-                companyId : req.user.companyId,
+            where: {
+                companyId: req.user.companyId,
             },
-            include : {
-                Notification :true,
+            include: {
+                Notification: true,
             },
-            orderBy : {
-                createdAt : "desc"
+            orderBy: {
+                createdAt: "desc"
             }
         });
 
         res.status(200).json({
-            success : true,
+            success: true,
             data
         });
 
     } catch (error) {
-        
+
         res.status(400).json({
-            success : false,
-            message : error.message
+            success: false,
+            message: error.message
         });
     }
 
@@ -63,22 +63,23 @@ export const getCompanyNotifications = async (req, res) => {
 export const markAsRead = async (req, res) => {
 
     try {
-        
-        const {id} = req.params;
+
+        const { id } = req.params;
 
         await prisma.companyNotification.update({
-            where : { id },
-            data : {
-                isRead : true,
-                readAt : new Date()
+            where: { id },
+            data: {
+                isRead: true,
+                readAt: new Date()
             }
         });
 
-        res.status(200).json({ success : true,
-            message :"Notification marked as read"
+        res.status(200).json({
+            success: true,
+            message: "Notification marked as read"
         });
 
     } catch (error) {
-        res.status(400).json({ success : false, message: error.message});
+        res.status(400).json({ success: false, message: error.message });
     }
 };

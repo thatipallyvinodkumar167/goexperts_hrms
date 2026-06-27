@@ -1,5 +1,6 @@
 import { createEmployeeService } from "../services/createEmployeeService.js"
 import prisma from "../config/db.js";
+import { employeeFullInclude } from "../config/employeeIncludes.js";
 
 //create emp
 export const createEmployee = async (req, res) => {
@@ -86,7 +87,7 @@ export const getEmployeeById = async (req, res) => {
     }
 
     const employee = await prisma.employee.findFirst({
-      where: { id, deletedAt: null, user: { companyId, deletedAt: null } },
+      where: { userId: id, deletedAt: null, user: { companyId, deletedAt: null } },
       include: { user: true, personal: true, experience: true, department: true, designation: true },
     });
 
@@ -106,6 +107,49 @@ export const getEmployeeById = async (req, res) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+
+// get employee/HR by employeeCode — returns ALL data including full company details
+export const getEmployeeByCode = async (req, res) => {
+  try {
+    const companyId = req.user?.companyId;
+    const { code } = req.params;
+
+    if (!companyId) {
+      return res.status(400).json({ success: false, message: "Invalid company context" });
+    }
+
+    // Uses employeeFullInclude from src/config/employeeIncludes.js
+    // To add a new relation → just update that file. No changes needed here.
+    const employee = await prisma.employee.findFirst({
+      where: {
+        employeeCode: code,
+        deletedAt: null,
+        user: { companyId, deletedAt: null },
+      },
+      include: employeeFullInclude,
+    });
+
+    if (!employee) {
+      return res.status(404).json({ success: false, message: `No employee found with code: ${code}` });
+    }
+
+    // Smart Fallback: Fix null names
+    if (!employee.firstName && employee.user?.name) {
+      const parts = employee.user.name.trim().split(/\s+/);
+      employee.firstName = parts[0] || "";
+      employee.lastName = parts.length > 1 ? parts.slice(1).join(" ") : "";
+    }
+
+    res.status(200).json({ success: true, data: employee });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
 
 
 //update emp by id

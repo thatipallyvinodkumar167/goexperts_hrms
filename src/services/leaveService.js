@@ -55,6 +55,27 @@ export const updateLeaveType = async (leaveTypeId, companyId, data) => {
     });
 };
 
+export const deleteLeaveType = async (leaveTypeId, companyId) => {
+    // 1. Make sure the leave type belongs to this company
+    const leaveType = await prisma.leaveType.findFirst({
+        where: { id: leaveTypeId, companyId }
+    });
+    if (!leaveType) throw new Error("Leave type not found or access denied.");
+
+    // 2. Block delete if any leave requests are linked to this type
+    const linkedLeaves = await prisma.leave.count({
+        where: { leaveTypeId }
+    });
+    if (linkedLeaves > 0) {
+        throw new Error(
+            `Cannot delete "${leaveType.name}" — ${linkedLeaves} leave request(s) are linked to it.`
+        );
+    }
+
+    await prisma.leaveType.delete({ where: { id: leaveTypeId } });
+    return { message: `Leave type "${leaveType.name}" deleted successfully.` };
+};
+
 // ==========================================
 // 2. LEAVE APPLICATION & BALANCES (EMPLOYEES)
 // ==========================================
@@ -141,7 +162,7 @@ export const getEmployeeLeaveHistory = async (employeeId) => {
 };
 
 // ==========================================
-// 3. LEAVE APPROVAL (HR/ADMIN)
+// 3. LEAVE APPROVAL (HR/ADMIN)   
 // ==========================================
 
 export const getCompanyLeaveRequests = async (companyId, status = null) => {

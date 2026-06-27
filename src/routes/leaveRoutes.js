@@ -15,6 +15,7 @@ router.use(authMiddleware, companyGuard);
 router.post("/types", allowRoles("OWNER", "HR"), leaveController.createLeaveType);
 router.get("/types", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.getCompanyLeaveTypes);
 router.patch("/types/:id", allowRoles("OWNER", "HR"), leaveController.updateLeaveType);
+router.delete("/types/:id", allowRoles("OWNER", "HR"), leaveController.deleteLeaveType);
 
 router.get("/company", allowRoles("OWNER", "HR"), leaveController.getCompanyLeaveRequests);
 router.patch("/:id/status", allowRoles("OWNER", "HR"), leaveController.updateLeaveStatus);

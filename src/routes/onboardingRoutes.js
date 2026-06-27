@@ -47,3 +47,4 @@ router.post("/finalize-joining/:employeeId", authMiddleware, allowRoles("OWNER",
 router.get("/salary-preview/:employeeId", authMiddleware, allowRoles("OWNER", "HR"), getSalaryPreview);
 
 export default router;
+

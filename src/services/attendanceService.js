@@ -333,7 +333,7 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
   todayEnd.setHours(23, 59, 59, 999);
 
   const existingAttendance = await prisma.attendance.findFirst({
-    where: { employeeId: employee.id, date: { gte: todayStart, lte: todayEnd } },
+    where: { employeeId: employee.userId, date: { gte: todayStart, lte: todayEnd } },
   });
   if (existingAttendance?.checkIn) {
     throw new Error("You have already checked in for today.");
@@ -350,7 +350,7 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
   }
 
   let attendanceData = {
-    employeeId: employee.id,
+    employeeId: employee.userId,
     date: todayStart,
     checkIn: new Date(),
     workTypeForToday: effectiveWorkType,
@@ -397,7 +397,7 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
         } else {
           await prisma.attendance.create({
             data: {
-              employeeId: employee.id,
+              employeeId: employee.userId,
               date: todayStart,
               status: "ABSENT",
               faceMatchAttempts: currentAttempts
@@ -441,7 +441,7 @@ export const clockInService = async (userId, companyId, { latitude, longitude, l
       } else {
         await prisma.attendance.create({
           data: {
-            employeeId: employee.id,
+            employeeId: employee.userId,
             date: todayStart,
             status: "ABSENT",
             faceMatchAttempts: currentAttempts
@@ -505,7 +505,7 @@ export const clockOutService = async (userId, companyId, { latitude, longitude, 
   todayEnd.setHours(23, 59, 59, 999);
 
   const attendance = await prisma.attendance.findFirst({
-    where: { employeeId: employee.id, date: { gte: todayStart, lte: todayEnd } },
+    where: { employeeId: employee.userId, date: { gte: todayStart, lte: todayEnd } },
   });
   if (!attendance || !attendance.checkIn) {
     throw new Error("You have not checked in today. Please check in first.");
@@ -631,7 +631,7 @@ export const submitDailyWorkService = async (userId, { title, dailyWorkSummary }
   todayEnd.setHours(23, 59, 59, 999);
 
   const attendance = await prisma.attendance.findFirst({
-    where: { employeeId: employee.id, date: { gte: todayStart, lte: todayEnd } },
+    where: { employeeId: employee.userId, date: { gte: todayStart, lte: todayEnd } },
   });
   if (!attendance) throw new Error("No attendance record found for today.");
   if (attendance.dailyWorkSummary) throw new Error("Daily work summary has already been submitted for today.");
@@ -671,7 +671,7 @@ export const heartbeatService = async (userId, companyId, { latitude, longitude 
   todayEnd.setHours(23, 59, 59, 999);
 
   const attendance = await prisma.attendance.findFirst({
-    where: { employeeId: employee.id, date: { gte: todayStart, lte: todayEnd } },
+    where: { employeeId: employee.userId, date: { gte: todayStart, lte: todayEnd } },
   });
 
   // Only run geofence check for active WFH check-ins
@@ -701,7 +701,7 @@ export const heartbeatService = async (userId, companyId, { latitude, longitude 
 
     const previousViolations = await prisma.attendance.count({
       where: {
-        employeeId: employee.id,
+        employeeId: employee.userId,
         date: { gte: monthStart, lte: monthEnd },
         isAutoCheckout: true,
         checkoutReason: "You went outside during working hours"
@@ -838,7 +838,7 @@ export const getEmployeeAttendanceHistory = async (userId, { month, year, fromDa
 
   const approvedLeaves = await prisma.leave.findMany({
     where: {
-      employeeId: employee.id,
+      employeeId: employee.userId,
       status: "APPROVED",
       OR: [{ fromDate: { lte: endDate }, toDate: { gte: startDate } }],
     },

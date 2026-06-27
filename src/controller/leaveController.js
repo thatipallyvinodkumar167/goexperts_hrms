@@ -46,6 +46,19 @@ export const updateLeaveType = async (req, res) => {
     }
 };
 
+export const deleteLeaveType = async (req, res) => {
+    try {
+        const companyId = req.user.companyId;
+        const leaveTypeId = req.params.id;
+
+        const result = await leaveService.deleteLeaveType(leaveTypeId, companyId);
+        res.status(200).json({ success: true, ...result });
+    } catch (error) {
+        console.error("Delete Leave Type Error:", error);
+        res.status(400).json({ success: false, message: error.message || "Internal server error" });
+    }
+};
+
 // ==========================================
 // 2. LEAVE APPLICATION & BALANCES (EMPLOYEES)
 // ==========================================
