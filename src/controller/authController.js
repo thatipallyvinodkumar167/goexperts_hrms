@@ -126,6 +126,8 @@ export const changePassword = async (req, res) => {
 
 export const registerSuperAdmin = async (req, res) => {
   try {
+    console.log("REQ BODY:", req.body);
+
     const data = await registerSuperAdminService(req.body);
 
     res.status(201).json({
@@ -133,6 +135,7 @@ export const registerSuperAdmin = async (req, res) => {
       ...data,
     });
   } catch (error) {
+    console.log(error);
     res.status(400).json({
       success: false,
       message: error.message,
