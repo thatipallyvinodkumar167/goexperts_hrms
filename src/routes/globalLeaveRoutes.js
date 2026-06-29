@@ -11,6 +11,7 @@ router.use(authMiddleware, allowRoles("SUPER_ADMIN"));
 router.post("/", globalLeaveController.createGlobalLeaveType);
 router.get("/", globalLeaveController.getAllGlobalLeaveTypes);
 router.patch("/:id", globalLeaveController.updateGlobalLeaveType);
+router.put("/:id", globalLeaveController.updateGlobalLeaveType);
 router.delete("/:id", globalLeaveController.deleteGlobalLeaveType);
 
 
