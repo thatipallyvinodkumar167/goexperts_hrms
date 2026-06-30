@@ -685,7 +685,6 @@ export const getCompaniesForAdmin = async (page, limit) => {
       location,
       website: company.website,
     };
-    };
   });
 
   return {
