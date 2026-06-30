@@ -2,7 +2,7 @@ import express from "express";
 import {
   changePassword,
   forgotPassword,
-
+  getSuperAdminProfile,
   login,
   registerSuperAdmin,
   resetPassword,
