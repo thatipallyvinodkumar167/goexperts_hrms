@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "build": "./render-build.sh",
+    "build": "npx prisma generate",
     "start": "node --dns-result-order=ipv4first src/server.js",
     "postinstall": "npx prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"

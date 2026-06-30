@@ -611,11 +611,20 @@ export const activateCompany = async (companyId) => {
 // 5. ADMIN VIEW
 //////////////////////////
 
-export const getCompaniesForAdmin = async () => {
-  const companies = await prisma.company.findMany({
-    where: {
-      status: { not: "INACTIVE" } // Only get active/invited companies
-    },
+export const getCompaniesForAdmin = async (page, limit) => {
+  const where = {
+    status: { not: "INACTIVE" } // Only get active/invited companies
+  };
+
+  const skip = page && limit ? (page - 1) * limit : undefined;
+  const take = limit ? Number(limit) : undefined;
+
+  const [total, companies] = await Promise.all([
+    prisma.company.count({ where }),
+    prisma.company.findMany({
+      where,
+      skip,
+      take,
     select: {
       id: true,
       companyLogo: true,
@@ -623,6 +632,7 @@ export const getCompaniesForAdmin = async () => {
       email: true,
       status: true,
       website: true,
+      createdAt: true,
       address: {
         select: {
           city: true,
@@ -641,9 +651,10 @@ export const getCompaniesForAdmin = async () => {
       },
     },
     orderBy: { createdAt: "desc" },
-  });
+  })
+  ]);
 
-  return companies.map(company => {
+  const formattedData = companies.map(company => {
     const sub = company.subscriptions?.[0] || null;
     const now = new Date();
 
@@ -668,12 +679,19 @@ export const getCompaniesForAdmin = async () => {
       companyName: company.name,
       companyEmail: company.email,
       status: company.status,
+      createdAt: company.createdAt,
       subscriptionStatus,
       planName,
       location,
       website: company.website,
     };
+    };
   });
+
+  return {
+    total,
+    data: formattedData
+  };
 };
 
 // ──────────────────────────────────────────────

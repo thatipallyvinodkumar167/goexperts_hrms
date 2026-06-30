@@ -24,12 +24,17 @@ import fs from "fs";
 
 export const getAllCompanies = async (req, res) => {
   try {
-    const data = await getCompaniesForAdmin();
+    const { page, limit } = req.query;
+    const result = await getCompaniesForAdmin(page, limit);
 
     res.status(200).json({
       success: true,
-      count: data.length,
-      data,
+      count: result.data.length,
+      total: result.total,
+      data: result.data,
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : result.total,
+      totalPages: limit ? Math.ceil(result.total / Number(limit)) : 1
     });
 
   } catch (error) {
