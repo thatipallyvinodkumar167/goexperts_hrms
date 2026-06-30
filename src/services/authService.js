@@ -329,6 +329,37 @@ export const updateUserProfileService = async (userId, data = {}) => {
   };
 };
 
+export const getSuperAdminProfileService = async (userId) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      id: userId,
+      role: "SUPER_ADMIN",
+      companyId: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      profileLogo: true,
+      isEmailVerified: true,
+      lastLoginAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("Super admin profile not found");
+  }
+
+  return {
+    message: "Super admin profile fetched successfully",
+    user,
+  };
+};
+
 
 //super admin register 
 export const registerSuperAdminService = async ({

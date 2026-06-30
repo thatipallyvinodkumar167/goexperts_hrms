@@ -2,12 +2,14 @@ import express from "express";
 import {
   changePassword,
   forgotPassword,
+
   login,
   registerSuperAdmin,
   resetPassword,
   updateProfile,
 } from "../controller/authController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
+import { allowRoles } from "../middleware/roleMiddleware.js";
 import { uploadProfileImage } from "../config/multer.js";
 
 const router = express.Router();
@@ -20,6 +22,8 @@ router.post("/reset-password", resetPassword);
 
 router.post("/change-password", authMiddleware, changePassword);
 router.put("/change-password", authMiddleware, changePassword);
+
+router.get("/super-admin/profile", authMiddleware, allowRoles("SUPER_ADMIN"), getSuperAdminProfile);
 
 // Unified update profile (accepts name, email, and profileLogo file)
 router.put("/update-profile", authMiddleware, uploadProfileImage.single("profileLogo"), updateProfile);

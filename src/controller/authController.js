@@ -3,6 +3,7 @@ import {
   forgotPasswordService,
   resetPasswordService,
   changePasswordService,
+  getSuperAdminProfileService,
   updateUserProfileService,
   registerSuperAdminService,
 } from "../services/authService.js";
@@ -23,6 +24,15 @@ export const updateProfile = async (req, res) => {
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
+};
+
+export const getSuperAdminProfile = async (req, res) => {
+  try {
+    const data = await getSuperAdminProfileService(req.user.id);
+    res.status(200).json({ success: true, ...data });
+  } catch (error) {
+    res.status(404).json({ success: false, message: error.message });
+  }
 };
 
 
