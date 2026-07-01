@@ -283,7 +283,28 @@ export const uploadCompanyDocumentsController = async (req, res) => {
       return res.status(400).json({ success: false, message: "No document images provided" });
     }
 
-    await prisma.companyDocument.createMany({ data: docsToInsert });
+    await prisma.$transaction(
+      docsToInsert.map((doc) =>
+        prisma.companyDocument.upsert({
+          where: {
+            companyId_name: {
+              companyId,
+              name: doc.name,
+            },
+          },
+          update: {
+            fileUrl: doc.fileUrl,
+            status: "PENDING",
+            uploadedAt: new Date(),
+          },
+          create: {
+            companyId,
+            name: doc.name,
+            fileUrl: doc.fileUrl,
+          },
+        })
+      )
+    );
 
     res.status(200).json({
       success: true,

@@ -369,13 +369,28 @@ export const updateCompanyProfile = async (companyId, data, isSuperAdmin = false
 
   const documentsPayload = Array.isArray(data.documents) ? data.documents : [];
   if (documentsPayload.length) {
-    await prisma.companyDocument.createMany({
-      data: documentsPayload.map((doc) => ({
-        companyId,
-        name: doc.name,
-        fileUrl: doc.fileUrl,
-      })),
-    });
+    await prisma.$transaction(
+      documentsPayload.map((doc) =>
+        prisma.companyDocument.upsert({
+          where: {
+            companyId_name: {
+              companyId,
+              name: doc.name,
+            },
+          },
+          update: {
+            fileUrl: doc.fileUrl,
+            status: "PENDING", // reset status if they re-upload
+            uploadedAt: new Date(),
+          },
+          create: {
+            companyId,
+            name: doc.name,
+            fileUrl: doc.fileUrl,
+          },
+        })
+      )
+    );
   }
 
   return prisma.company.findUnique({

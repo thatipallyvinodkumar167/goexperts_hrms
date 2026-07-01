@@ -196,6 +196,7 @@
     verifiedAt DateTime?
     company    Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
+    @@unique([companyId, name])
     @@index([companyId], map: "CompanyDocument_companyId_fkey")
   }
 
