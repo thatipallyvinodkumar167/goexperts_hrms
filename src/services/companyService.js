@@ -659,7 +659,7 @@ export const getCompaniesForAdmin = async (page, limit) => {
         select: {
           startDate: true,
           endDate: true,
-          plan: { select: { name: true } },
+          plan: { select: { title: true } },
         },
         orderBy: { endDate: "desc" },
         take: 1,
@@ -737,7 +737,7 @@ export const getPendingApprovalCompanies = async () => {
         select: {
           startDate: true,
           endDate: true,
-          plan: { select: { name: true } },
+          plan: { select: { title: true } },
         },
         orderBy: { endDate: "desc" },
         take: 1,
