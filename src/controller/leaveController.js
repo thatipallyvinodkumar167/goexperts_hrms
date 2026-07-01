@@ -1,4 +1,5 @@
 import * as leaveService from '../services/leaveService.js';
+import prisma from '../config/db.js';
 
 // ==========================================
 // 1. LEAVE TYPE MANAGEMENT (HR/ADMIN)
