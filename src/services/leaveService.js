@@ -182,7 +182,10 @@ export const getCompanyLeaveRequests = async (companyId, status = null) => {
                     id: true,
                     firstName: true,
                     lastName: true,
-                    email: true
+                    profilePhoto: true,
+                    user: {
+                        select: { email: true }
+                    }
                 }
             },
             leaveType: true
