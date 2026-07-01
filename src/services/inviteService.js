@@ -224,26 +224,66 @@ export const acceptInviteService = async ({ token, password, name }) => {
 
   const hashedPassword = await hashPassword(password);
 
-  const user = await prisma.user.create({
-    data: {
-      name,
-      email: invite.email,
-      password: hashedPassword,
-      role: invite.role,
-      companyId: invite.companyId,
-      status: "PENDING_APPROVAL",
-      isEmailVerified: false
-    }
-  });
+  const result = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name,
+        email: invite.email,
+        password: hashedPassword,
+        role: invite.role,
+        companyId: invite.companyId,
+        status: "PENDING_APPROVAL",
+        isEmailVerified: false
+      }
+    });
 
-  await prisma.employeeInvite.update({
-    where: { id: invite.id },
-    data: { acceptedAt: new Date() }
+    // ✅ Create Employee record for both EMPLOYEE and HR roles
+    // This ensures HR can apply leaves, mark attendance, and receive payroll
+    if (invite.departmentId && invite.designationId) {
+      const prefix = invite.role === "HR" ? "HR" : "EMP";
+      const employee = await tx.employee.create({
+        data: {
+          userId: user.id,
+          companyId: invite.companyId,
+          employeeCode: `${prefix}-${Date.now()}`,
+          departmentId: invite.departmentId,
+          designationId: invite.designationId,
+          joiningDate: new Date(),
+          employmentType: "EXPERIENCED",
+          workModel: invite.workModel || "WFO",
+          expectedOfficeDays: (invite.workModel === "HYBRID" && invite.expectedOfficeDays)
+            ? invite.expectedOfficeDays
+            : null,
+        }
+      });
+
+      // If HR, also create the HR record for permissions
+      if (invite.role === "HR") {
+        await tx.hR.create({
+          data: {
+            userId: user.id,
+            permissions: {
+              canManageEmployees: true,
+              canManageAttendance: true,
+              canManageLeaves: true,
+              canManagePayroll: true
+            }
+          }
+        });
+      }
+    }
+
+    await tx.employeeInvite.update({
+      where: { id: invite.id },
+      data: { acceptedAt: new Date() }
+    });
+
+    return user;
   });
 
   return {
     message: "Password set. Verify email next",
-    userId: user.id
+    userId: result.id
   };
 };
 
@@ -286,22 +326,39 @@ export const completeProfileService = async ({
   const workModel = invite?.workModel || "WFO";
   const expectedOfficeDays = invite?.expectedOfficeDays || null;
 
-  const employee = await prisma.employee.create({
-    data: {
-      userId,
-      companyId: user.companyId,
-      employeeCode: `EMP-${Date.now()}`,
-      departmentId,
-      designationId,
-      joiningDate: new Date(),
-      employmentType: "FRESHER",
-      workModel,
-      expectedOfficeDays,
-      personal: {
-        create: personal
+  // Check if employee already exists (e.g. HR who was already given an employee record)
+  const existingEmployee = await prisma.employee.findUnique({ where: { userId } });
+
+  let employee;
+  if (existingEmployee) {
+    // Just update personal details if employee record already exists
+    employee = await prisma.employee.update({
+      where: { userId },
+      data: {
+        departmentId: departmentId || existingEmployee.departmentId,
+        designationId: designationId || existingEmployee.designationId,
+        personal: personal ? { upsert: { create: personal, update: personal } } : undefined
       }
-    }
-  });
+    });
+  } else {
+    const prefix = user.role === "HR" ? "HR" : "EMP";
+    employee = await prisma.employee.create({
+      data: {
+        userId,
+        companyId: user.companyId,
+        employeeCode: `${prefix}-${Date.now()}`,
+        departmentId,
+        designationId,
+        joiningDate: new Date(),
+        employmentType: "FRESHER",
+        workModel,
+        expectedOfficeDays,
+        personal: {
+          create: personal
+        }
+      }
+    });
+  }
 
   return { message: "Profile completed", employee };
 };

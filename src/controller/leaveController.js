@@ -65,9 +65,13 @@ export const deleteLeaveType = async (req, res) => {
 
 export const getLeaveBalances = async (req, res) => {
     try {
-        const employeeId = req.user.id;
+        const userId = req.user.id;
         const companyId = req.user.companyId;
-        const balances = await leaveService.getEmployeeLeaveBalances(employeeId, companyId);
+        
+        const employee = await prisma.employee.findUnique({ where: { userId } });
+        if (!employee) return res.status(404).json({ success: false, message: "Employee record not found" });
+
+        const balances = await leaveService.getEmployeeLeaveBalances(employee.id, companyId);
         res.status(200).json({ success: true, data: balances });
     } catch (error) {
         console.error("Get Leave Balances Error:", error);
@@ -77,7 +81,7 @@ export const getLeaveBalances = async (req, res) => {
 
 export const applyLeave = async (req, res) => {
     try {
-        const employeeId = req.user.id;
+        const userId = req.user.id;
         const companyId = req.user.companyId;
         const data = req.body; // { leaveTypeId, fromDate, toDate, reason }
 
@@ -85,7 +89,10 @@ export const applyLeave = async (req, res) => {
             return res.status(400).json({ success: false, message: "leaveTypeId, fromDate, and toDate are required" });
         }
 
-        const newLeave = await leaveService.applyLeave(employeeId, companyId, data);
+        const employee = await prisma.employee.findUnique({ where: { userId } });
+        if (!employee) return res.status(404).json({ success: false, message: "Employee record not found" });
+
+        const newLeave = await leaveService.applyLeave(employee.id, companyId, data);
         res.status(201).json({ success: true, message: "Leave applied successfully", data: newLeave });
     } catch (error) {
         console.error("Apply Leave Error:", error);
@@ -95,8 +102,12 @@ export const applyLeave = async (req, res) => {
 
 export const getMyLeaveHistory = async (req, res) => {
     try {
-        const employeeId = req.user.id;
-        const history = await leaveService.getEmployeeLeaveHistory(employeeId);
+        const userId = req.user.id;
+        
+        const employee = await prisma.employee.findUnique({ where: { userId } });
+        if (!employee) return res.status(404).json({ success: false, message: "Employee record not found" });
+
+        const history = await leaveService.getEmployeeLeaveHistory(employee.id);
         res.status(200).json({ success: true, data: history });
     } catch (error) {
         console.error("Get Leave History Error:", error);
