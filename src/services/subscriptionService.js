@@ -29,7 +29,7 @@ export const getPlanById = async (planId) => {
 // 2. Assign Basic Subscription (30 Days)
 export const assignTrialSubscription = async (companyId) => {
   const basicPlan = await prisma.subscriptionPlan.findFirst({
-    where: { name: "Basic" }
+    where: { title: "Basic" }
   });
 
   if (!basicPlan) throw new Error("Basic plan not configured");

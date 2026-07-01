@@ -144,8 +144,8 @@ export const updateCompanyProfileController = async (req, res) => {
 
     const payload = {
       ...req.body,
-      companyLogo: logoFile ? logoFile.path : undefined,
-      signature: signatureFile ? signatureFile.path : undefined,
+      companyLogo: logoFile ? logoFile.path : req.body.companyLogo,
+      signature: signatureFile ? signatureFile.path : req.body.signature,
       documents: [...(Array.isArray(req.body.documents) ? req.body.documents : []), ...documents],
     };
 

@@ -629,7 +629,7 @@
 
   model SubscriptionPlan {
     id            String          @id @default(uuid())
-    name          String          @unique
+    title         String          @unique @map("name")
     price         Float
     duration      Int
     features      Json
