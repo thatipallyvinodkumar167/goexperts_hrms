@@ -14,9 +14,7 @@ import {
 const router = express.Router();
 
 // Public/All Auth Users
-router.get("git add .
-git commit -m "fix: update company api to select plan title instead of name"
-git push", authMiddleware, getPlans);
+router.get("/plans", authMiddleware, getPlans);
 router.get("/plans/:id", authMiddleware, getPlan);
 
 // Super Admin Only
