@@ -26,5 +26,6 @@ router.patch("/:id/status", allowRoles("OWNER", "HR"), leaveController.updateLea
 router.get("/balances", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.getLeaveBalances);
 router.post("/apply", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.applyLeave);
 router.get("/me", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.getMyLeaveHistory);
+router.patch("/:id/cancel", allowRoles("OWNER", "HR", "EMPLOYEE"), leaveController.cancelMyLeave);
 
 export default router;

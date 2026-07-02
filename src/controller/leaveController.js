@@ -150,3 +150,19 @@ export const updateLeaveStatus = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
+
+export const cancelMyLeave = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const leaveId = req.params.id;
+
+        const employee = await prisma.employee.findUnique({ where: { userId } });
+        if (!employee) return res.status(404).json({ success: false, message: "Employee record not found" });
+
+        const updatedLeave = await leaveService.cancelLeave(leaveId, employee.id);
+        res.status(200).json({ success: true, message: "Leave request cancelled successfully", data: updatedLeave });
+    } catch (error) {
+        console.error("Cancel Leave Error:", error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};

@@ -679,7 +679,7 @@ export const getCompaniesForAdmin = async (page, limit) => {
     if (sub) {
       const isActive = new Date(sub.startDate) <= now && new Date(sub.endDate) >= now;
       subscriptionStatus = isActive ? "ACTIVE" : "EXPIRED";
-      planName = sub.plan?.name || null;
+      planName = sub.plan?.title || null;
     }
 
     // Build location string from address
