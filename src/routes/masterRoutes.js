@@ -4,6 +4,8 @@ import {
   getDesignations,
   getIndustryTypeDetails,
   createIndustryType,
+  updateIndustryType,
+  deleteIndustryType,
   addDepartmentTemplate,
   removeDepartmentTemplate,
   addDesignationTemplate,
@@ -145,6 +147,7 @@ router.delete("/cities/:id", deleteCity);
 
 router.post("/industry/create", createIndustryType);
 router.put("/industries/:id", updateIndustryType);
+router.delete("/industries/:id", deleteIndustryType);
 router.post("/department/add", addDepartmentTemplate);
 router.delete("/department/:id", removeDepartmentTemplate);
 router.post("/designation/add", addDesignationTemplate);

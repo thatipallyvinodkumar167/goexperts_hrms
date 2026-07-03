@@ -74,6 +74,22 @@ export const updateIndustryType = async (req, res) => {
   }
 };
 
+export const deleteIndustryType = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existingIndustry = await prisma.industryType.findUnique({ where: { id } });
+    if (!existingIndustry) {
+      return res.status(404).json({ success: false, message: "Industry type not found" });
+    }
+
+    await prisma.industryType.delete({ where: { id } });
+    res.status(200).json({ success: true, message: "Industry type deleted" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 //////////////////////////
 // DEPARTMENT TEMPLATES
 //////////////////////////
