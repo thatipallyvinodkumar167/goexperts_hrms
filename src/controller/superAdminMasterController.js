@@ -209,7 +209,7 @@ export const addDesignationTemplate = async (req, res) => {
         title,
         level: parsedLevel,
         industryType: { connect: { id: industryTypeId } },
-        ...(departmentId ? { departmentId } : {})
+        ...(departmentId ? { department: { connect: { id: departmentId } } } : {})
       }
     });
     res.status(201).json({ success: true, data });
