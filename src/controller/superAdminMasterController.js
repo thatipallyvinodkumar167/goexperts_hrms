@@ -194,9 +194,23 @@ export const updateDepartmentTemplate = async (req, res) => {
 
 export const addDesignationTemplate = async (req, res) => {
   try {
-    const { industryTypeId, title, level } = req.body;
+    const { industryTypeId, departmentId, title, level } = req.body;
+    const parsedLevel = Number(level);
+
+    if (!title || !industryTypeId || isNaN(parsedLevel)) {
+      return res.status(400).json({
+        success: false,
+        message: "title, industryTypeId and valid level are required"
+      });
+    }
+
     const data = await prisma.designationTemplate.create({
-      data: { title, level: Number(level), industryTypeId }
+      data: {
+        title,
+        level: parsedLevel,
+        industryType: { connect: { id: industryTypeId } },
+        ...(departmentId ? { departmentId } : {})
+      }
     });
     res.status(201).json({ success: true, data });
   } catch (error) {
