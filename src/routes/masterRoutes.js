@@ -8,6 +8,7 @@ import {
   deleteIndustryType,
   addDepartmentTemplate,
   removeDepartmentTemplate,
+  updateDepartmentTemplate,
   addDesignationTemplate,
   updateDesignationTemplate,
   removeDesignationTemplate,
@@ -149,6 +150,7 @@ router.post("/industry/create", createIndustryType);
 router.put("/industries/:id", updateIndustryType);
 router.delete("/industries/:id", deleteIndustryType);
 router.post("/department/add", addDepartmentTemplate);
+router.put("/department/:id", updateDepartmentTemplate);
 router.delete("/department/:id", removeDepartmentTemplate);
 router.post("/designation/add", addDesignationTemplate);
 router.put("/designation/:id", updateDesignationTemplate);

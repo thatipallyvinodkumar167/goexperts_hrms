@@ -159,6 +159,35 @@ export const removeDepartmentTemplate = async (req, res) => {
   }
 };
 
+export const updateDepartmentTemplate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, industryTypeId } = req.body;
+
+    if (!name && !industryTypeId) {
+      return res.status(400).json({ success: false, message: "At least one field (name or industryTypeId) is required" });
+    }
+
+    const existingDepartment = await prisma.departmentTemplate.findUnique({ where: { id } });
+    if (!existingDepartment) {
+      return res.status(404).json({ success: false, message: "Department template not found" });
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (industryTypeId) updateData.industryTypeId = industryTypeId;
+
+    const data = await prisma.departmentTemplate.update({
+      where: { id },
+      data: updateData
+    });
+
+    res.status(200).json({ success: true, message: "Department template updated", data });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 //////////////////////////
 // DESIGNATION TEMPLATES
 //////////////////////////
