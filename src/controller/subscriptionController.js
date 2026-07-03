@@ -29,7 +29,8 @@ export const updatePlan = async (req, res) => {
 
 export const getPlans = async (req, res) => {
   try {
-    const plans = await subsService.getAllPlans();
+    const companyId = req.user?.companyId;
+    const plans = await subsService.getAllPlans(companyId);
     res.status(200).json({ success: true, data: plans });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

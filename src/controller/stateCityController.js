@@ -210,3 +210,83 @@ export const getCities = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// PUT /api/master/cities/:id
+export const updateCity = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: "City name is required" });
+    const updated = await prisma.city.update({
+      where: { id },
+      data: { name: name.trim() }
+    });
+    res.status(200).json({ success: true, message: "City updated", data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/master/cities/:id
+export const deleteCity = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.city.delete({ where: { id } });
+    res.status(200).json({ success: true, message: "City deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Cannot delete city, it might be in use." });
+  }
+};
+// PUT /api/master/countries/:id
+export const updateCountry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: "Country name is required" });
+    const updated = await prisma.country.update({
+      where: { id },
+      data: { name: name.trim() }
+    });
+    res.status(200).json({ success: true, message: "Country updated", data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/master/countries/:id
+export const deleteCountry = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.country.delete({ where: { id } });
+    res.status(200).json({ success: true, message: "Country deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Cannot delete country, it might be in use." });
+  }
+};
+
+// PUT /api/master/states/:id
+export const updateState = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ success: false, message: "State name is required" });
+    const updated = await prisma.state.update({
+      where: { id },
+      data: { name: name.trim() }
+    });
+    res.status(200).json({ success: true, message: "State updated", data: updated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE /api/master/states/:id
+export const deleteState = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.state.delete({ where: { id } });
+    res.status(200).json({ success: true, message: "State deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Cannot delete state, it might be in use." });
+  }
+};

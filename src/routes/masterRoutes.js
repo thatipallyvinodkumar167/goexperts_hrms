@@ -7,6 +7,7 @@ import {
   addDepartmentTemplate,
   removeDepartmentTemplate,
   addDesignationTemplate,
+  updateDesignationTemplate,
   removeDesignationTemplate,
   upsertSystemPolicy,
   getSystemPolicies,
@@ -21,7 +22,13 @@ import {
   createState,
   getStates,
   createCity,
-  getCities
+  getCities,
+  updateCountry,
+  deleteCountry,
+  updateState,
+  deleteState,
+  updateCity,
+  deleteCity
 } from "../controller/stateCityController.js";
 
 const router = express.Router();
@@ -129,10 +136,19 @@ router.get("/policies", getSystemPolicies);
 // ==========================================
 router.use(authMiddleware, allowRoles("SUPER_ADMIN"));
 
+router.put("/countries/:id", updateCountry);
+router.delete("/countries/:id", deleteCountry);
+router.put("/states/:id", updateState);
+router.delete("/states/:id", deleteState);
+router.put("/cities/:id", updateCity);
+router.delete("/cities/:id", deleteCity);
+
 router.post("/industry/create", createIndustryType);
+router.put("/industries/:id", updateIndustryType);
 router.post("/department/add", addDepartmentTemplate);
 router.delete("/department/:id", removeDepartmentTemplate);
 router.post("/designation/add", addDesignationTemplate);
+router.put("/designation/:id", updateDesignationTemplate);
 router.delete("/designation/:id", removeDesignationTemplate);
 router.post("/policies/upsert", upsertSystemPolicy);
 router.post("/seed-data", seedSystemData);

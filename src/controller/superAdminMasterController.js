@@ -46,6 +46,34 @@ export const createIndustryType = async (req, res) => {
   }
 };
 
+export const updateIndustryType = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ success: false, message: "Name is required" });
+    }
+
+    const existingIndustry = await prisma.industryType.findUnique({ where: { id } });
+    if (!existingIndustry) {
+      return res.status(404).json({ success: false, message: "Industry type not found" });
+    }
+
+    const data = await prisma.industryType.update({
+      where: { id },
+      data: { name }
+    });
+
+    res.status(200).json({ success: true, message: "Industry type updated", data });
+  } catch (error) {
+    if (error.code === "P2002") {
+      return res.status(400).json({ success: false, message: "Industry type name already exists" });
+    }
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 //////////////////////////
 // DEPARTMENT TEMPLATES
 //////////////////////////
@@ -136,6 +164,25 @@ export const removeDesignationTemplate = async (req, res) => {
     const { id } = req.params;
     await prisma.designationTemplate.delete({ where: { id } });
     res.status(200).json({ success: true, message: "Designation template removed" });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+export const updateDesignationTemplate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, level } = req.body;
+    
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (level !== undefined) updateData.level = Number(level);
+    
+    const data = await prisma.designationTemplate.update({
+      where: { id },
+      data: updateData
+    });
+    res.status(200).json({ success: true, message: "Designation template updated", data });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }

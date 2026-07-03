@@ -16,8 +16,25 @@ export const updatePlan = async (planId, data) => {
   });
 };
 
-export const getAllPlans = async () => {
-  return prisma.subscriptionPlan.findMany();
+export const getAllPlans = async (companyId = null) => {
+  let plans = await prisma.subscriptionPlan.findMany();
+
+  if (companyId) {
+    const basicPlan = plans.find(p => p.title.toLowerCase() === "basic");
+    if (basicPlan) {
+      const hasTakenBasic = await prisma.subscription.findFirst({
+        where: {
+          companyId,
+          planId: basicPlan.id
+        }
+      });
+      if (hasTakenBasic) {
+        plans = plans.filter(p => p.id !== basicPlan.id);
+      }
+    }
+  }
+
+  return plans;
 };
 
 export const getPlanById = async (planId) => {
