@@ -48,34 +48,108 @@ export const getAllCompanies = async (req, res) => {
 
 export const getSuperAdminDashboard = async (req, res) => {
   try {
+    // ─── Section 1: KPI Cards ─────────────────────────────────────────────
     const [
       totalCompanies,
       activeCompanies,
       pendingCompanies,
       softDeletedCompanies,
-      activeSubscriptions
+      activeSubscriptions,
+
+      // ─── Section 2: Industry Mini-KPI Cards ───────────────────────────
+      totalIndustryTypes,
+      totalDepartments,
+      totalDesignations,
+
+      // ─── Section 4: Industry Breakdown Table ──────────────────────────
+      industryList
     ] = await Promise.all([
       prisma.company.count(),
       prisma.company.count({ where: { status: "ACTIVE" } }),
       prisma.company.count({ where: { status: "PENDING_APPROVAL" } }),
       prisma.company.count({ where: { status: "INACTIVE" } }),
-      prisma.subscription.count({ where: { endDate: { gt: new Date() } } })
+      prisma.subscription.count({ where: { endDate: { gt: new Date() } } }),
+
+      prisma.industryType.count(),
+      prisma.departmentTemplate.count(),
+      prisma.designationTemplate.count(),
+
+      // Each industry with its departments and their designation counts
+      prisma.industryType.findMany({
+        select: {
+          id: true,
+          name: true,
+          _count: {
+            select: { departments: true }
+          },
+          departments: {
+            select: {
+              _count: {
+                select: { designations: true }
+              }
+            }
+          }
+        },
+        orderBy: { name: "asc" }
+      })
     ]);
+
+    // ─── Section 3 & 4: Build industry breakdown ──────────────────────────
+    const industryBreakdown = industryList.map(industry => {
+      const departmentCount = industry._count.departments;
+      const designationCount = industry.departments.reduce(
+        (sum, dept) => sum + dept._count.designations, 0
+      );
+      return {
+        id: industry.id,
+        name: industry.name,
+        departmentCount,
+        designationCount
+      };
+    });
+
+    // ─── Section 3: Pie chart data (company status) ───────────────────────
+    const companyStatusChart = [
+      { label: "Active",        value: activeCompanies,       color: "#22c55e" },
+      { label: "Pending",       value: pendingCompanies,      color: "#f59e0b" },
+      { label: "Soft Deleted",  value: softDeletedCompanies,  color: "#ef4444" }
+    ];
+
+    // ─── Section 3: Bar chart data (depts & desigs per industry) ─────────
+    const industryBarChart = industryBreakdown.map(i => ({
+      name: i.name,
+      departments: i.departmentCount,
+      designations: i.designationCount
+    }));
 
     res.status(200).json({
       success: true,
       data: {
+        // Section 1 — KPI Cards
         totalCompanies,
         activeCompanies,
         pendingCompanies,
         softDeletedCompanies,
-        activeSubscriptions
+        activeSubscriptions,
+
+        // Section 2 — Industry Mini-KPI Cards
+        totalIndustryTypes,
+        totalDepartments,
+        totalDesignations,
+
+        // Section 3 — Chart data
+        companyStatusChart,
+        industryBarChart,
+
+        // Section 4 — Industry Breakdown Table
+        industryBreakdown
       }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 export const getSoftDeletedCompaniesController = async (req, res) => {
   try {
