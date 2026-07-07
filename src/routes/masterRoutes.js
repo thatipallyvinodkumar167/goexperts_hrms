@@ -71,9 +71,21 @@ router.get("/departments", async (req, res) => {
     if (!industryTypeId) throw new Error("industryTypeId is required");
     
     const data = await prisma.departmentTemplate.findMany({
-      where: { industryTypeId }
+      where: { industryTypeId },
+      include: {
+        _count: {
+          select: { designations: true }
+        }
+      }
     });
-    res.status(200).json({ success: true, data });
+
+    const formatted = data.map(d => ({
+      ...d,
+      designationCount: d._count.designations,
+      _count: undefined
+    }));
+
+    res.status(200).json({ success: true, total: formatted.length, data: formatted });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }

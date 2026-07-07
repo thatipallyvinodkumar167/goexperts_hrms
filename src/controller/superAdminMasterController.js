@@ -131,7 +131,7 @@ export const getDesignations = async (req, res) => {
       ];
     }
 
-    res.status(200).json({ success: true, data });
+    res.status(200).json({ success: true, total: data.length, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -231,12 +231,14 @@ export const removeDesignationTemplate = async (req, res) => {
 export const updateDesignationTemplate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, level } = req.body;
-    
+    const { title, level, industryTypeId, departmentId } = req.body;
+
     const updateData = {};
     if (title) updateData.title = title;
     if (level !== undefined) updateData.level = Number(level);
-    
+    if (industryTypeId) updateData.industryType = { connect: { id: industryTypeId } };
+    if (departmentId) updateData.department = { connect: { id: departmentId } };
+
     const data = await prisma.designationTemplate.update({
       where: { id },
       data: updateData
