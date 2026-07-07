@@ -31,6 +31,7 @@ import {
   updateState,
   deleteState,
   updateCity,
+    getSuperAdminDashboard,
   deleteCity
 } from "../controller/stateCityController.js";
 
@@ -39,6 +40,11 @@ const router = express.Router();
 // ==========================================
 // 🔓 PUBLIC ROUTES (For UI Dropdowns)
 // ==========================================
+
+
+// SUPER ADMIN → dashboard stats
+router.get("/admin-dashboard", authMiddleware, allowRoles("SUPER_ADMIN"), getSuperAdminDashboard);
+
 
 // Countries routes
 router.post("/countries", createCountry);

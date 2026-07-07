@@ -42,6 +42,41 @@ export const getAllCompanies = async (req, res) => {
   }
 };
 
+//////////////////////////
+// SUPER ADMIN DASHBOARD
+//////////////////////////
+
+export const getSuperAdminDashboard = async (req, res) => {
+  try {
+    const [
+      totalCompanies,
+      activeCompanies,
+      pendingCompanies,
+      softDeletedCompanies,
+      activeSubscriptions
+    ] = await Promise.all([
+      prisma.company.count(),
+      prisma.company.count({ where: { status: "ACTIVE" } }),
+      prisma.company.count({ where: { status: "PENDING_APPROVAL" } }),
+      prisma.company.count({ where: { status: "INACTIVE" } }),
+      prisma.subscription.count({ where: { endDate: { gt: new Date() } } })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalCompanies,
+        activeCompanies,
+        pendingCompanies,
+        softDeletedCompanies,
+        activeSubscriptions
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export const getSoftDeletedCompaniesController = async (req, res) => {
   try {
     const data = await getSoftDeletedCompanies();

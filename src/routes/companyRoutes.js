@@ -7,6 +7,7 @@ import {
   createCompany,
   activateCompanyController,
   getAllCompanies,
+
   resendInvitation,
   updateCompanyProfileController,
   removeCompany,
@@ -25,6 +26,9 @@ import {
 import { getCompanyDashboard } from "../controller/companyDashboardController.js";
 import { companyGuard } from "../middleware/companyGuard.js";
 const router = express.Router();
+
+// // SUPER ADMIN → dashboard stats
+// router.get("/admin-dashboard", authMiddleware, allowRoles("SUPER_ADMIN"), getSuperAdminDashboard);
 
 // SUPER ADMIN → list all companies
 router.get("/", authMiddleware, allowRoles("SUPER_ADMIN"), getAllCompanies);
