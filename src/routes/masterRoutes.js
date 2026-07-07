@@ -31,9 +31,9 @@ import {
   updateState,
   deleteState,
   updateCity,
-    getSuperAdminDashboard,
   deleteCity
 } from "../controller/stateCityController.js";
+import { getSuperAdminDashboard } from "../controller/companyController.js";
 
 const router = express.Router();
 
