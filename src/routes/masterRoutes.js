@@ -141,27 +141,35 @@ router.get("/policies", getSystemPolicies);
 
 
 // ==========================================
-// 🔒 PROTECTED ROUTES (Super Admin Management)
+// 🔒 SUPER ADMIN ONLY ROUTES
 // ==========================================
-router.use(authMiddleware, allowRoles("SUPER_ADMIN"));
+router.put("/countries/:id", authMiddleware, allowRoles("SUPER_ADMIN"), updateCountry);
+router.delete("/countries/:id", authMiddleware, allowRoles("SUPER_ADMIN"), deleteCountry);
+router.put("/states/:id", authMiddleware, allowRoles("SUPER_ADMIN"), updateState);
+router.delete("/states/:id", authMiddleware, allowRoles("SUPER_ADMIN"), deleteState);
+router.put("/cities/:id", authMiddleware, allowRoles("SUPER_ADMIN"), updateCity);
+router.delete("/cities/:id", authMiddleware, allowRoles("SUPER_ADMIN"), deleteCity);
 
-router.put("/countries/:id", updateCountry);
-router.delete("/countries/:id", deleteCountry);
-router.put("/states/:id", updateState);
-router.delete("/states/:id", deleteState);
-router.put("/cities/:id", updateCity);
-router.delete("/cities/:id", deleteCity);
+router.post("/policies/upsert", authMiddleware, allowRoles("SUPER_ADMIN"), upsertSystemPolicy);
+router.post("/seed-data", authMiddleware, allowRoles("SUPER_ADMIN"), seedSystemData);
 
-router.post("/industry/create", createIndustryType);
-router.put("/industries/:id", updateIndustryType);
-router.delete("/industries/:id", deleteIndustryType);
-router.post("/department/add", addDepartmentTemplate);
-router.put("/department/:id", updateDepartmentTemplate);
-router.delete("/department/:id", removeDepartmentTemplate);
-router.post("/designation/add", addDesignationTemplate);
-router.put("/designation/:id", updateDesignationTemplate);
-router.delete("/designation/:id", removeDesignationTemplate);
-router.post("/policies/upsert", upsertSystemPolicy);
-router.post("/seed-data", seedSystemData);
+// ==========================================
+// 🔒 MULTI-ROLE ROUTES (SUPER_ADMIN, OWNER, HR, MANAGER)
+// ==========================================
+
+// Industry Types
+router.post("/industry/create", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), createIndustryType);
+router.put("/industries/:id", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), updateIndustryType);
+router.delete("/industries/:id", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), deleteIndustryType);
+
+// Departments
+router.post("/department/add", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), addDepartmentTemplate);
+router.put("/department/:id", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), updateDepartmentTemplate);
+router.delete("/department/:id", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), removeDepartmentTemplate);
+
+// Designations
+router.post("/designation/add", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), addDesignationTemplate);
+router.put("/designation/:id", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), updateDesignationTemplate);
+router.delete("/designation/:id", authMiddleware, allowRoles("SUPER_ADMIN", "OWNER", "HR", "MANAGER"), removeDesignationTemplate);
 
 export default router;
