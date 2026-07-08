@@ -5,9 +5,9 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "build": "node_modules/.bin/prisma generate",
+    "build": "prisma generate",
     "start": "node --dns-result-order=ipv4first src/server.js",
-    "postinstall": "node_modules/.bin/prisma generate",
+    "postinstall": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
