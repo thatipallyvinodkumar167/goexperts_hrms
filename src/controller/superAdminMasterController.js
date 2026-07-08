@@ -277,6 +277,36 @@ export const getSystemPolicies = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+export const getPrivacyPolicy = async (req, res) => {
+  try {
+    const data = await prisma.systemPolicy.findUnique({ where: { type: "PRIVACY_POLICY" } });
+    if (!data) return res.status(404).json({ success: false, message: "Privacy Policy not found" });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getTermsAndConditions = async (req, res) => {
+  try {
+    const data = await prisma.systemPolicy.findUnique({ where: { type: "TERMS_AND_CONDITIONS" } });
+    if (!data) return res.status(404).json({ success: false, message: "Terms and Conditions not found" });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAboutUs = async (req, res) => {
+  try {
+    const data = await prisma.systemPolicy.findUnique({ where: { type: "ABOUT_US" } });
+    if (!data) return res.status(404).json({ success: false, message: "About Us not found" });
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 export const seedSystemData = async (req, res) => {
   try {
     const industries = [
