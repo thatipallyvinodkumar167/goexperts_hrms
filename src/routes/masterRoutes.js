@@ -14,6 +14,9 @@ import {
   removeDesignationTemplate,
   upsertSystemPolicy,
   getSystemPolicies,
+  getPrivacyPolicy,
+  getTermsAndConditions,
+  getAboutUs,
   seedSystemData
 } from "../controller/superAdminMasterController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
@@ -150,6 +153,9 @@ router.get("/company-departments", async (req, res) => {
 
 // 5. Get System Policies
 router.get("/policies", getSystemPolicies);
+router.get("/policies/privacy-policy", getPrivacyPolicy);
+router.get("/policies/terms-and-conditions", getTermsAndConditions);
+router.get("/policies/about-us", getAboutUs);
 
 
 // ==========================================
