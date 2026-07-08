@@ -7,7 +7,7 @@ import { sendEmail } from "../utils/sendEmail.js";
 
 
 //login user service
-export const loginUser = async ({ email, password } = {}) => {
+export const loginUser = async ({ email, password } = {}, fcmToken = null) => {
   if (!email || !password) {
     throw new Error("email and password are required");
   }
@@ -29,11 +29,13 @@ export const loginUser = async ({ email, password } = {}) => {
       throw new Error("Invalid credentials");
     }
 
-
+    // Save FCM token + lastLoginAt in one DB call
     await prisma.user.update({
-      where : { id : superAdmin.id},
-      data : {lastLoginAt : new Date() }
-
+      where: { id: superAdmin.id },
+      data: {
+        lastLoginAt: new Date(),
+        ...(fcmToken && { fcmToken })
+      }
     });
 
     return {
@@ -93,10 +95,13 @@ export const loginUser = async ({ email, password } = {}) => {
   }
 
 
-    // ⭐ CHANGE 3 → UPDATE LAST LOGIN
+    // ⭐ UPDATE LAST LOGIN + FCM TOKEN in one DB call
   await prisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: new Date() },
+    data: {
+      lastLoginAt: new Date(),
+      ...(fcmToken && { fcmToken })   // ← Save FCM token if Flutter sent it
+    },
   });
 
   const responseUser = {

@@ -46,8 +46,11 @@ export const login = async (req, res) => {
                 message: "Invalid request body. Send JSON with email and password."
             });
         }
-        
-        const data = await loginUser(req.body);
+
+        // fcmToken is optional — sent by Flutter app on login
+        const { fcmToken, ...loginBody } = req.body;
+
+        const data = await loginUser(loginBody, fcmToken);
 
         res.status(200).json({
             success : true,
@@ -55,7 +58,6 @@ export const login = async (req, res) => {
             ...data
         });
 
-        
     } catch (error) {
         res.status(400).json({
             success :false,

@@ -1,5 +1,5 @@
 import { CompanyDocumentType } from "@prisma/client";
-import prisma from "../config/db";
+import prisma from "../config/db.js";
 
 export const createNotificationService = async ({
     title,

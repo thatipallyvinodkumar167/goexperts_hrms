@@ -17,6 +17,7 @@
     profileLogo         String?              @db.LongText
     companyId           String?
     isEmailVerified     Boolean              @default(false)
+    fcmToken            String?              @db.LongText
     lastLoginAt         DateTime?
     failedLoginAttempts Int                  @default(0)
     lockUntil           DateTime?
@@ -30,6 +31,8 @@
     employeeInvites     EmployeeInvite[]
     hr                  HR?
     notificationsSent   Notification[]
+    userNotifSent       UserNotification[]   @relation("UserNotifSender")
+    userNotifReceived   UserNotification[]   @relation("UserNotifRecipient")
     passwordResetTokens PasswordResetToken[]
     company             Company?             @relation("CompanyUsers", fields: [companyId], references: [id])
 
@@ -797,6 +800,28 @@
     @@index([companyId], map: "CompanyNotification_companyId_fkey")
   }
 
+  // User-level notifications (OWNER→HR/MGR/EMP, HR→EMP, MANAGER→HR/EMP)
+  model UserNotification {
+    id           String           @id @default(uuid())
+    title        String
+    message      String           @db.LongText
+    type         NotificationType @default(INFO)
+    senderId     String
+    senderRole   String
+    recipientId  String
+    companyId    String?
+    isRead       Boolean          @default(false)
+    readAt       DateTime?
+    createdAt    DateTime         @default(now())
+    updatedAt    DateTime         @updatedAt
+    sender       User             @relation("UserNotifSender",    fields: [senderId],    references: [id])
+    recipient    User             @relation("UserNotifRecipient", fields: [recipientId], references: [id])
+
+    @@index([senderId])
+    @@index([recipientId])
+    @@index([companyId])
+  }
+
   enum Role {
     SUPER_ADMIN
     OWNER
@@ -890,6 +915,7 @@
     PRIVACY_POLICY
     REFUND_POLICY
     COOKIE_POLICY
+    ABOUT_US
   }
 
   enum NotificationType {
