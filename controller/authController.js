@@ -5,6 +5,7 @@ import {
   changePasswordService,
   getSuperAdminProfileService,
   updateUserProfileService,
+  deleteUserAccountService,
   registerSuperAdminService,
 } from "../services/authService.js";
 
@@ -135,6 +136,16 @@ export const changePassword = async (req, res) => {
         res.status(400).json({success : false, message : error.message});
     }
 }
+
+export const deleteAccount = async (req, res) => {
+  try {
+    const { email, reason } = req.body;
+    const data = await deleteUserAccountService(req.user.id, { email, reason });
+    res.status(200).json({ success: true, ...data });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
 
 export const registerSuperAdmin = async (req, res) => {
   try {

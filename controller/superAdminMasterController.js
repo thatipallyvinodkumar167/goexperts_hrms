@@ -307,6 +307,7 @@ export const getAboutUs = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 export const seedSystemData = async (req, res) => {
   try {
     const industries = [

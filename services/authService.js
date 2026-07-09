@@ -277,6 +277,79 @@ export const changePasswordService = async ({ userId, oldPassword, newPassword }
   return {message : "password changed successfully"};
 }
 
+export const deleteUserAccountService = async (userId, { email, reason } = {}) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { employee: true },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (user.deletedAt) {
+    throw new Error("Account is already deleted");
+  }
+
+  if (email && email.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+    throw new Error("Email does not match authenticated user");
+  }
+
+  const now = new Date();
+  const operations = [
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        deletedAt: now,
+        status: "INACTIVE",
+      },
+    }),
+  ];
+
+  if (user.employee) {
+    operations.push(
+      prisma.employee.update({
+        where: { id: user.employee.id },
+        data: {
+          deletedAt: now,
+          status: "INACTIVE",
+        },
+      })
+    );
+  }
+
+  if (user.role === "OWNER" && user.companyId) {
+    operations.push(
+      prisma.company.update({
+        where: { id: user.companyId },
+        data: {
+          deletedAt: now,
+          status: "INACTIVE",
+        },
+      })
+    );
+  }
+
+  await prisma.$transaction(operations);
+
+  await prisma.auditLog.create({
+    data: {
+      userId,
+      action: "delete_account",
+      module: "AUTH",
+      metadata: {
+        email: email ? email.trim().toLowerCase() : user.email,
+        reason: reason || null,
+      },
+    },
+  });
+
+  return {
+    message: "Account deleted successfully",
+    deletedAt: now.toISOString(),
+  };
+};
+
 export const updateUserProfileService = async (userId, data = {}) => {
   const { name, email, profileLogo } = data;
   console.log(`🛠️ Updating profile for user ${userId}. Received fields:`, Object.keys(data));

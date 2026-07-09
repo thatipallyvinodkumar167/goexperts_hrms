@@ -19,6 +19,7 @@ import attendanceRoutes from "./routes/attendanceRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
 import globalLeaveRoutes from "./routes/globalLeaveRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 
 import logger from "./middleware/loggerMiddleware.js";
 import { companyStatusCron } from "./jobs/companyStatusCron.js";
@@ -125,6 +126,7 @@ app.use("/api/master/leaves", globalLeaveRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/payments", paymentRoutes);
 
 /* ========================
    FAVICON IGNORE

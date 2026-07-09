@@ -41,7 +41,7 @@ export const createNotificationService = async ({
      await prisma.companyNotification.createMany({
         data : companies.map((company) => ({
             notificationId : notification.id,
-            comapnyId : Company.id 
+            companyId : company.id 
         }))
      });
 

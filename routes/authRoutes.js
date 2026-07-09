@@ -7,6 +7,7 @@ import {
   registerSuperAdmin,
   resetPassword,
   updateProfile,
+  deleteAccount,
 } from "../controller/authController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
@@ -22,6 +23,8 @@ router.post("/reset-password", resetPassword);
 
 router.post("/change-password", authMiddleware, changePassword);
 router.put("/change-password", authMiddleware, changePassword);
+
+router.delete("/delete-account", authMiddleware, deleteAccount);
 
 router.get("/super-admin/profile", authMiddleware, allowRoles("SUPER_ADMIN"), getSuperAdminProfile);
 
