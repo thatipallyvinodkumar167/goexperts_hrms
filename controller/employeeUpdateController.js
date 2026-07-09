@@ -7,11 +7,10 @@ import prisma from "../config/db.js";
  */
 export const getSelf = async (req, res) => {
   try {
-    const { id } = req.params; // Get Employee ID from path
     const userId = req.user.id;
 
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
       include: {
         user: {
           select: {
@@ -183,7 +182,6 @@ export const getSelf = async (req, res) => {
  */
 export const updateSelf = async (req, res) => {
   try {
-    const { id } = req.params; // Get Employee ID from path
     const userId = req.user.id;
 
     // If the body comes as multipart/form-data, the JSON fields
@@ -200,7 +198,7 @@ export const updateSelf = async (req, res) => {
 
     // Get the employee record by ID (UUID)
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
     });
 
     if (!employee) {
@@ -264,11 +262,10 @@ export const updateSelf = async (req, res) => {
  */
 export const getBasicProfile = async (req, res) => {
   try {
-    const { id } = req.params;
     const userId = req.user.id;
 
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
       include: {
         user: { select: { id: true, name: true, email: true, role: true, status: true, lastLoginAt: true } },
         department: true,
@@ -320,10 +317,10 @@ export const getBasicProfile = async (req, res) => {
  */
 export const getPersonalProfile = async (req, res) => {
   try {
-    const { id } = req.params;
+    const userId = req.user.id;
 
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
       include: { personal: true, emergencyContacts: true },
     });
 
@@ -351,9 +348,9 @@ export const getPersonalProfile = async (req, res) => {
  */
 export const getProfessionalProfile = async (req, res) => {
   try {
-    const { id } = req.params;
+    const userId = req.user.id;
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
       include: { educations: true, experiences: true, skills: true },
     });
 
@@ -382,9 +379,9 @@ export const getProfessionalProfile = async (req, res) => {
  */
 export const getFinancialProfile = async (req, res) => {
   try {
-    const { id } = req.params;
+    const userId = req.user.id;
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
       include: { bankDetails: true, nominee: true, compliance: true },
     });
 
@@ -414,9 +411,9 @@ export const getFinancialProfile = async (req, res) => {
  */
 export const getDocumentsProfile = async (req, res) => {
   try {
-    const { id } = req.params;
+    const userId = req.user.id;
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
       include: {
         documents: {
           orderBy: { createdAt: "desc" }, // Newest first
@@ -460,9 +457,9 @@ export const getDocumentsProfile = async (req, res) => {
  */
 export const getCorrectionsProfile = async (req, res) => {
   try {
-    const { id } = req.params;
+    const userId = req.user.id;
     const employee = await prisma.employee.findUnique({
-      where: { id },
+      where: { userId },
       include: {
         correctionRequests: {
           orderBy: { createdAt: "desc" },

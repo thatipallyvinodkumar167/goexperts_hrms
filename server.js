@@ -22,6 +22,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 
 import logger from "./middleware/loggerMiddleware.js";
+import { globalLimiter } from "./middleware/rateLimiter.js";
 import { companyStatusCron } from "./jobs/companyStatusCron.js";
 import { inviteReminderCron } from "./jobs/inviteReminderCron.js";
 import { startMidnightAttendanceCron } from "./jobs/midnightAttendanceCron.js";
@@ -111,6 +112,11 @@ app.get("/", (req, res) => {
    STATIC FILES
    ======================== */
 app.use("/uploads", express.static(join(__dirname, "../uploads")));
+
+/* ========================
+   RATE LIMITING
+   ======================== */
+app.use("/api/", globalLimiter);
 
 /* ========================
    API ROUTES

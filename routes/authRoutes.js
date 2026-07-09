@@ -12,14 +12,17 @@ import {
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 import { uploadProfileImage } from "../config/multer.js";
+import { authLimiter, passwordResetLimiter } from "../middleware/rateLimiter.js";
 
 const router = express.Router();
 
-router.post("/login", login);
-router.post("/register", registerSuperAdmin);
+// 🔒 Auth Limiter: max 5 attempts per IP per 15 min (brute-force protection)
+router.post("/login", authLimiter, login);
+router.post("/register", authLimiter, registerSuperAdmin);
 
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
+// 🔒 Password Reset Limiter: max 3 per IP per 60 min (email-bomb protection)
+router.post("/forgot-password", passwordResetLimiter, forgotPassword);
+router.post("/reset-password", passwordResetLimiter, resetPassword);
 
 router.post("/change-password", authMiddleware, changePassword);
 router.put("/change-password", authMiddleware, changePassword);

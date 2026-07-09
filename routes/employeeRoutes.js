@@ -27,18 +27,18 @@ import {
 
 // ── Self routes (must be BEFORE /:id so Express doesn't treat "self" as an id) ──
 //get own profile (Legacy - everything)
-router.get("/self/:id", authMiddleware, getSelf);
+router.get("/self", authMiddleware, getSelf);
 
 // ── NEW SPLIT PROFILE APIS ──
-router.get("/self/:id/basic", authMiddleware, getBasicProfile);
-router.get("/self/:id/personal", authMiddleware, getPersonalProfile);
-router.get("/self/:id/professional", authMiddleware, getProfessionalProfile);
-router.get("/self/:id/financial", authMiddleware, getFinancialProfile);
-router.get("/self/:id/documents", authMiddleware, getDocumentsProfile);
-router.get("/self/:id/corrections", authMiddleware, getCorrectionsProfile);
+router.get("/self/basic", authMiddleware, getBasicProfile);
+router.get("/self/personal", authMiddleware, getPersonalProfile);
+router.get("/self/professional", authMiddleware, getProfessionalProfile);
+router.get("/self/financial", authMiddleware, getFinancialProfile);
+router.get("/self/documents", authMiddleware, getDocumentsProfile);
+router.get("/self/corrections", authMiddleware, getCorrectionsProfile);
 // update own profile (after HR approval + optional profile photo upload)
-router.patch("/self/:id", authMiddleware, uploadProfileImage.single("profilePhoto"), updateSelf);
-router.put("/self/:id", authMiddleware, uploadProfileImage.single("profilePhoto"), updateSelf);
+router.patch("/self", authMiddleware, uploadProfileImage.single("profilePhoto"), updateSelf);
+router.put("/self", authMiddleware, uploadProfileImage.single("profilePhoto"), updateSelf);
 
 //get all emps
 router.get("/", authMiddleware, allowRoles("OWNER", "HR"), companyGuard, getAllEmployees);
